@@ -44,6 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const cleanEmail = email.toLowerCase().trim();
     
+    console.log('Attempting signin with:', { email: cleanEmail });
+    
     // Input validation
     if (!email || !password) {
       toast.error('Email and password are required');
@@ -57,53 +59,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Invalid email format');
     }
 
-    // Check account lockout status
-    const lockoutStatus = await AuthSecurity.checkAccountLockout(cleanEmail);
-    
-    if (lockoutStatus.is_locked) {
-      const timeRemaining = AuthSecurity.formatLockoutTime(lockoutStatus.locked_until!);
-      toast.error(`Account temporarily locked due to multiple failed attempts. Try again in ${timeRemaining}.`);
-      throw new Error('Account locked');
-    }
-
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
 
+      console.log('Signin response:', { data, error });
+
       if (error) {
-        // Record failed login attempt
-        const isLocked = await AuthSecurity.recordFailedLogin(cleanEmail);
-        
-        // Log security event
-        await AuthSecurity.logSecurityEvent('failed_login', cleanEmail, {
-          error: error.message,
-          attempts: lockoutStatus.attempts + 1
+        console.error('Signin error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
         });
         
-        if (isLocked) {
-          toast.error('Too many failed attempts. Account locked for 15 minutes.');
+        // Provide more helpful error message
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Invalid email or password. Please check your credentials and try again.');
+        } else if (error.message.includes('Email not confirmed')) {
+          toast.error('Account exists but email not confirmed. Contact support to manually confirm your account.');
+        } else if (error.message.includes('User not found')) {
+          toast.error('No account found with this email address. Please sign up first.');
         } else {
-          const remainingAttempts = 5 - (lockoutStatus.attempts + 1);
-          // Provide more helpful error message
-          if (error.message.includes('Invalid login credentials') || error.message.includes('Email not confirmed')) {
-            toast.error('Invalid email or password. Please check your credentials and try again.');
-          } else if (error.message.includes('User not found')) {
-            toast.error('No account found with this email address. Please sign up first.');
-          } else {
-            toast.error(`Invalid credentials. ${remainingAttempts} attempts remaining.`);
-          }
+          toast.error(`Login failed: ${error.message}`);
         }
         
         throw error;
       }
 
-      // Clear failed attempts on successful login
-      await AuthSecurity.clearFailedAttempts(cleanEmail);
-      
-      // Log successful login
-      await AuthSecurity.logSecurityEvent('successful_login', cleanEmail);
+      console.log('Login successful:', { 
+        user: data.user?.id, 
+        email: data.user?.email,
+        confirmed: data.user?.email_confirmed_at 
+      });
       
       toast.success('Welcome back!');
     } catch (error) {
