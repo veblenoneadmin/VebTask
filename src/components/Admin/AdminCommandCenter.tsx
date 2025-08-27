@@ -20,6 +20,8 @@ import {
   UserCheck,
   Zap
 } from 'lucide-react';
+// TODO: Replace with better-auth database operations
+/*
 import { 
   useUserPresence, 
   useAllUsers,
@@ -27,7 +29,8 @@ import {
   useProjects,
   useClientRequests,
   useTimeLogs 
-// TODO: Replace with better-auth database operations
+} from '@/hooks/useDatabase';
+*/
 
 const AdminCommandCenter: React.FC = () => {
   const [selectedView, setSelectedView] = useState('overview');
