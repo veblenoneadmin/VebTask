@@ -1,11 +1,14 @@
 import { betterAuth } from "better-auth";
 import Database from "better-auth/adapters/mysql2";
 
-const connectionString = import.meta.env.VITE_DATABASE_URL || "mysql://root:password@localhost:3306/vebtask";
+// Use Railway's internal MySQL URL for server-side connections
+const connectionString = process.env.DATABASE_URL || 
+  import.meta.env.VITE_DATABASE_URL || 
+  "mysql://root:password@localhost:3306/vebtask";
 
 export const auth = betterAuth({
   database: Database(connectionString),
-  baseURL: import.meta.env.VITE_APP_URL || "http://localhost:5173",
+  baseURL: process.env.VITE_APP_URL || import.meta.env.VITE_APP_URL || "http://localhost:5173",
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Instant registration like you requested
@@ -30,6 +33,11 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 24 hours
   },
+  trustedOrigins: [
+    "http://localhost:5173",
+    "http://localhost:3001", 
+    "https://vebtask-production.up.railway.app"
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;

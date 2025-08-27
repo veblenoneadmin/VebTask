@@ -8,11 +8,23 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/api/auth': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     host: "0.0.0.0",
     port: process.env.PORT ? parseInt(process.env.PORT) : 4173,
     allowedHosts: ["healthcheck.railway.app", ".railway.app"],
+    proxy: {
+      '/api/auth': {
+        target: process.env.VITE_APP_URL || 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     react(),
