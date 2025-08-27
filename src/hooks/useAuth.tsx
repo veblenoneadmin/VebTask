@@ -86,7 +86,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           toast.error('Too many failed attempts. Account locked for 15 minutes.');
         } else {
           const remainingAttempts = 5 - (lockoutStatus.attempts + 1);
-          toast.error(`Invalid credentials. ${remainingAttempts} attempts remaining.`);
+          // Provide more helpful error message
+          if (error.message.includes('Invalid login credentials') || error.message.includes('Email not confirmed')) {
+            toast.error('Invalid email or password. Please check your credentials and try again.');
+          } else if (error.message.includes('User not found')) {
+            toast.error('No account found with this email address. Please sign up first.');
+          } else {
+            toast.error(`Invalid credentials. ${remainingAttempts} attempts remaining.`);
+          }
         }
         
         throw error;
