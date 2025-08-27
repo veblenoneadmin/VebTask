@@ -22,7 +22,8 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { useAllUsers, useUpdateUserRole } from '@/hooks/useDatabase';
+import { useAllUsers, useUpdateUserRole, useProfile } from '@/hooks/useDatabase';
+import { dataMasking, auditSensitiveAccess } from '@/lib/data-masking';
 
 const UserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,17 +32,27 @@ const UserManagement: React.FC = () => {
   const [editForm, setEditForm] = useState<any>({});
 
   const { data: users, isLoading } = useAllUsers();
+  const { data: currentProfile } = useProfile();
   const updateUserRole = useUpdateUserRole();
 
-  const filteredUsers = users?.filter(user => {
+  // Apply data masking to user data
+  const maskedUsers = users?.map(user => {
+    const isOwnProfile = user.user_id === currentProfile?.user_id;
+    return dataMasking.maskProfileData(user, currentProfile?.role || 'employee', isOwnProfile);
+  }) || [];
+
+  const filteredUsers = maskedUsers.filter(user => {
     const matchesSearch = user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === 'all' || user.role === selectedRole;
     return matchesSearch && matchesRole;
-  }) || [];
+  });
 
   const handleEditUser = (user: any) => {
+    // Log sensitive data access
+    auditSensitiveAccess('edit_user_attempt', 'profiles', user.user_id, currentProfile?.role || 'employee');
+    
     setEditingUser(user.user_id);
     setEditForm({
       first_name: user.first_name,

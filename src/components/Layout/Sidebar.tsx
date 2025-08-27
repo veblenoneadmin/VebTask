@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useDatabase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

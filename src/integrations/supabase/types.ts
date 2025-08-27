@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_lockouts: {
+        Row: {
+          created_at: string
+          email: string
+          failed_attempts: number
+          id: string
+          locked_until: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          failed_attempts?: number
+          id?: string
+          locked_until?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          failed_attempts?: number
+          id?: string
+          locked_until?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       brain_dumps: {
         Row: {
           ai_analysis_complete: boolean | null
@@ -321,6 +348,7 @@ export type Database = {
           default_hourly_rate: number | null
           id: string
           is_active: boolean | null
+          organization_id: string | null
           payment_terms: number | null
           phone: string | null
           postal_code: string | null
@@ -343,6 +371,7 @@ export type Database = {
           default_hourly_rate?: number | null
           id?: string
           is_active?: boolean | null
+          organization_id?: string | null
           payment_terms?: number | null
           phone?: string | null
           postal_code?: string | null
@@ -365,6 +394,7 @@ export type Database = {
           default_hourly_rate?: number | null
           id?: string
           is_active?: boolean | null
+          organization_id?: string | null
           payment_terms?: number | null
           phone?: string | null
           postal_code?: string | null
@@ -374,7 +404,15 @@ export type Database = {
           updated_at?: string | null
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expenses: {
         Row: {
@@ -390,6 +428,7 @@ export type Database = {
           id: string
           is_billable: boolean | null
           is_reimbursable: boolean | null
+          organization_id: string | null
           project_id: string | null
           receipt_url: string | null
           status: Database["public"]["Enums"]["expense_status"] | null
@@ -408,6 +447,7 @@ export type Database = {
           id?: string
           is_billable?: boolean | null
           is_reimbursable?: boolean | null
+          organization_id?: string | null
           project_id?: string | null
           receipt_url?: string | null
           status?: Database["public"]["Enums"]["expense_status"] | null
@@ -426,6 +466,7 @@ export type Database = {
           id?: string
           is_billable?: boolean | null
           is_reimbursable?: boolean | null
+          organization_id?: string | null
           project_id?: string | null
           receipt_url?: string | null
           status?: Database["public"]["Enums"]["expense_status"] | null
@@ -444,6 +485,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -569,6 +617,7 @@ export type Database = {
           invoice_number: string
           issue_date: string
           notes: string | null
+          organization_id: string | null
           payment_date: string | null
           payment_method: string | null
           project_id: string | null
@@ -591,6 +640,7 @@ export type Database = {
           invoice_number: string
           issue_date: string
           notes?: string | null
+          organization_id?: string | null
           payment_date?: string | null
           payment_method?: string | null
           project_id?: string | null
@@ -613,6 +663,7 @@ export type Database = {
           invoice_number?: string
           issue_date?: string
           notes?: string | null
+          organization_id?: string | null
           payment_date?: string | null
           payment_method?: string | null
           project_id?: string | null
@@ -640,6 +691,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -664,6 +722,7 @@ export type Database = {
           id: string
           is_billable: boolean | null
           is_emergency: boolean | null
+          organization_id: string | null
           pause_reason: string | null
           paused_at: string | null
           priority: Database["public"]["Enums"]["task_priority"] | null
@@ -689,6 +748,7 @@ export type Database = {
           id?: string
           is_billable?: boolean | null
           is_emergency?: boolean | null
+          organization_id?: string | null
           pause_reason?: string | null
           paused_at?: string | null
           priority?: Database["public"]["Enums"]["task_priority"] | null
@@ -714,6 +774,7 @@ export type Database = {
           id?: string
           is_billable?: boolean | null
           is_emergency?: boolean | null
+          organization_id?: string | null
           pause_reason?: string | null
           paused_at?: string | null
           priority?: Database["public"]["Enums"]["task_priority"] | null
@@ -737,6 +798,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "macro_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -814,6 +882,86 @@ export type Database = {
           },
         ]
       }
+      organization_memberships: {
+        Row: {
+          created_at: string | null
+          id: string
+          invited_by: string | null
+          joined_at: string | null
+          organization_id: string
+          role: Database["public"]["Enums"]["organization_role"] | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id: string
+          role?: Database["public"]["Enums"]["organization_role"] | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id?: string
+          role?: Database["public"]["Enums"]["organization_role"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_memberships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          clerk_organization_id: string | null
+          created_at: string | null
+          created_by: string
+          current_user_count: number | null
+          id: string
+          name: string
+          settings: Json | null
+          slug: string
+          status: Database["public"]["Enums"]["organization_status"] | null
+          updated_at: string | null
+          user_limit: number | null
+        }
+        Insert: {
+          clerk_organization_id?: string | null
+          created_at?: string | null
+          created_by: string
+          current_user_count?: number | null
+          id?: string
+          name: string
+          settings?: Json | null
+          slug: string
+          status?: Database["public"]["Enums"]["organization_status"] | null
+          updated_at?: string | null
+          user_limit?: number | null
+        }
+        Update: {
+          clerk_organization_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          current_user_count?: number | null
+          id?: string
+          name?: string
+          settings?: Json | null
+          slug?: string
+          status?: Database["public"]["Enums"]["organization_status"] | null
+          updated_at?: string | null
+          user_limit?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -821,6 +969,7 @@ export type Database = {
           cost_rate: number | null
           created_at: string | null
           currency: string | null
+          current_organization_id: string | null
           department: string | null
           email: string
           first_name: string
@@ -839,6 +988,7 @@ export type Database = {
           cost_rate?: number | null
           created_at?: string | null
           currency?: string | null
+          current_organization_id?: string | null
           department?: string | null
           email: string
           first_name: string
@@ -857,6 +1007,7 @@ export type Database = {
           cost_rate?: number | null
           created_at?: string | null
           currency?: string | null
+          current_organization_id?: string | null
           department?: string | null
           email?: string
           first_name?: string
@@ -875,6 +1026,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_current_organization_id_fkey"
+            columns: ["current_organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -939,6 +1097,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          organization_id: string | null
           project_code: string
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"] | null
@@ -958,6 +1117,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          organization_id?: string | null
           project_code: string
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"] | null
@@ -977,6 +1137,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          organization_id?: string | null
           project_code?: string
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"] | null
@@ -996,6 +1157,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1028,6 +1196,68 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          billing_cycle: string | null
+          cancel_at_period_end: boolean | null
+          clerk_organization_id: string | null
+          created_at: string | null
+          currency: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          organization_id: string
+          plan_name: string | null
+          price_per_user: number | null
+          seats_included: number | null
+          seats_used: number | null
+          status: Database["public"]["Enums"]["subscription_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_cycle?: string | null
+          cancel_at_period_end?: boolean | null
+          clerk_organization_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          organization_id: string
+          plan_name?: string | null
+          price_per_user?: number | null
+          seats_included?: number | null
+          seats_used?: number | null
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_cycle?: string | null
+          cancel_at_period_end?: boolean | null
+          clerk_organization_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          organization_id?: string
+          plan_name?: string | null
+          price_per_user?: number | null
+          seats_included?: number | null
+          seats_used?: number | null
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_time_blocks: {
         Row: {
@@ -1102,6 +1332,7 @@ export type Database = {
           macro_task_id: string | null
           micro_task_id: string | null
           notes: string | null
+          organization_id: string | null
           previous_task_id: string | null
           project_id: string | null
           timestamp: string | null
@@ -1120,6 +1351,7 @@ export type Database = {
           macro_task_id?: string | null
           micro_task_id?: string | null
           notes?: string | null
+          organization_id?: string | null
           previous_task_id?: string | null
           project_id?: string | null
           timestamp?: string | null
@@ -1138,6 +1370,7 @@ export type Database = {
           macro_task_id?: string | null
           micro_task_id?: string | null
           notes?: string | null
+          organization_id?: string | null
           previous_task_id?: string | null
           project_id?: string | null
           timestamp?: string | null
@@ -1164,6 +1397,13 @@ export type Database = {
             columns: ["micro_task_id"]
             isOneToOne: false
             referencedRelation: "micro_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -1289,6 +1529,22 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      check_account_lockout: {
+        Args: { email_input: string }
+        Returns: {
+          attempts: number
+          is_locked: boolean
+          locked_until: string
+        }[]
+      }
+      clear_failed_attempts: {
+        Args: { email_input: string }
+        Returns: undefined
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_client_owner: {
         Args: { client_uuid: string; user_uuid: string }
         Returns: boolean
@@ -1299,6 +1555,14 @@ export type Database = {
       }
       is_project_team_member: {
         Args: { project_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      log_sensitive_data_access: {
+        Args: { action: string; record_id: string; table_name: string }
+        Returns: undefined
+      }
+      record_failed_login: {
+        Args: { email_input: string }
         Returns: boolean
       }
       sanitize_text_input: {
@@ -1347,12 +1611,20 @@ export type Database = {
         | "break_end"
         | "complete"
         | "switch_task"
+      organization_role: "owner" | "admin" | "member"
+      organization_status: "active" | "suspended" | "cancelled"
       project_status:
         | "planning"
         | "active"
         | "on_hold"
         | "completed"
         | "cancelled"
+      subscription_status:
+        | "active"
+        | "canceled"
+        | "past_due"
+        | "trialing"
+        | "paused"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status: "not_started" | "in_progress" | "paused" | "completed"
       time_block_type:
@@ -1521,12 +1793,21 @@ export const Constants = {
         "complete",
         "switch_task",
       ],
+      organization_role: ["owner", "admin", "member"],
+      organization_status: ["active", "suspended", "cancelled"],
       project_status: [
         "planning",
         "active",
         "on_hold",
         "completed",
         "cancelled",
+      ],
+      subscription_status: [
+        "active",
+        "canceled",
+        "past_due",
+        "trialing",
+        "paused",
       ],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["not_started", "in_progress", "paused", "completed"],

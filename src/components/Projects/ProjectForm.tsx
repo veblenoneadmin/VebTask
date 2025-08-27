@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useCreateProject, useUpdateProject } from '@/hooks/useDatabase';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { sanitizeInput, validationSchemas } from '@/lib/security';
 
 interface ProjectFormProps {
   project?: any;
@@ -35,22 +36,38 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, trigger }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const projectData = {
-      ...formData,
-      budget: formData.budget ? parseFloat(formData.budget) : null,
-      hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null
-    };
-
+    // Validate and sanitize input data
     try {
+      const sanitizedData = {
+        name: sanitizeInput.text(formData.name),
+        description: sanitizeInput.content(formData.description || ''),
+        project_code: sanitizeInput.text(formData.project_code),
+        status: formData.status,
+        budget: formData.budget ? parseFloat(formData.budget) : null,
+        hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        color: formData.color
+      };
+
+      // Validate required fields
+      validationSchemas.name.parse(sanitizedData.name);
+      
+      // Validate project code format
+      if (!/^[A-Z0-9\-]+$/i.test(sanitizedData.project_code)) {
+        throw new Error('Project code can only contain letters, numbers, and hyphens');
+      }
+
       if (project) {
-        await updateProject.mutateAsync({ id: project.id, updates: projectData });
+        await updateProject.mutateAsync({ id: project.id, updates: sanitizedData });
       } else {
-        await createProject.mutateAsync(projectData);
+        await createProject.mutateAsync(sanitizedData);
       }
       setOpen(false);
       onSuccess?.();
     } catch (error) {
       console.error('Error saving project:', error);
+      toast.error('Failed to save project. Please check your input.');
     }
   };
 

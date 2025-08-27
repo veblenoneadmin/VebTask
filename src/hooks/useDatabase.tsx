@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/clerk-client';
-import { useAuth } from '@/hooks/useClerkAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
@@ -12,20 +12,17 @@ export function useTasks() {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // Return mock task data for now to avoid RLS errors
-      return [
-        {
-          id: 'mock-task-1',
-          user_id: user.id,
-          task_name: 'Welcome to VebTask!',
-          description: 'This is a sample task to get you started.',
-          status: 'todo',
-          priority: 'medium',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          micro_tasks: []
-        }
-      ];
+      const { data, error } = await supabase
+        .from('macro_tasks')
+        .select(`
+          *,
+          micro_tasks (*)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!user?.id,
   });
@@ -39,17 +36,14 @@ export function useProfile() {
     queryFn: async () => {
       if (!user?.id) return null;
       
-      // Return mock profile data for now to avoid RLS errors
-      return {
-        id: 'mock-profile-id',
-        user_id: user.id,
-        email: user.email,
-        first_name: user.user_metadata?.first_name || 'User',
-        last_name: user.user_metadata?.last_name || '',
-        role: 'staff',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
     },
     enabled: !!user?.id,
   });
@@ -307,17 +301,10 @@ export function useUserAnalytics() {
     queryKey: ['user_analytics', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
-      // Return mock analytics data for now to avoid RLS errors
-      return {
-        id: 'mock-analytics',
-        user_id: user.id,
-        date: new Date().toISOString().split('T')[0],
-        total_work_hours: 2.5,
-        tasks_completed: 3,
-        focus_time_minutes: 150,
-        productivity_score: 85
-      };
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase.from('user_analytics').select('*').eq('user_id', user.id).eq('date', today).single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || { total_work_hours: 0, tasks_completed: 0, focus_time_minutes: 0, productivity_score: 0 };
     },
     enabled: !!user?.id,
   });
@@ -448,15 +435,34 @@ export function useDeleteBrainDump() {
 
 export function useAllUsers() {
   const { user } = useAuth();
+  const { data: currentProfile } = useProfile();
+  
   return useQuery({
     queryKey: ['all_users', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      
+      // Only allow admins to fetch all users
+      if (currentProfile?.role !== 'admin') {
+        throw new Error('Unauthorized: Admin access required');
+      }
+      
+      // Log sensitive data access
+      await supabase.rpc('log_sensitive_data_access', {
+        table_name: 'profiles',
+        record_id: user.id,
+        action: 'admin_user_list_access'
+      });
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && currentProfile?.role === 'admin',
   });
 }
 

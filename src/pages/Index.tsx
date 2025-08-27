@@ -2,7 +2,7 @@ import React from 'react';
 import StaffWorkspace from '@/components/Workspace/StaffWorkspace';
 import UnifiedDashboard from '@/components/Dashboard/UnifiedDashboard';
 import ClientPortal from '@/components/Client/ClientPortal';
-import { useAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useDatabase';
 
 const Index = () => {
