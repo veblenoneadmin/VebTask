@@ -9,6 +9,9 @@ const connectionString = process.env.DATABASE_URL ||
 export const auth = betterAuth({
   database: Database(connectionString),
   baseURL: process.env.VITE_APP_URL || import.meta.env.VITE_APP_URL || "http://localhost:5173",
+  advanced: {
+    generateId: () => crypto.randomUUID(),
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Instant registration like you requested

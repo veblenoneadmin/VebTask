@@ -16,8 +16,9 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Expose the port
-EXPOSE 4173
+# Expose the port (Railway will set PORT env var dynamically)
+EXPOSE 3001
 
-# Start the application with proper port handling
-CMD sh -c "npm run preview -- --host 0.0.0.0 --port ${PORT:-4173}"
+# Start the auth server (which will serve API routes)
+# The frontend will be built and can be served statically or via proxy
+CMD ["node", "server.js"]
