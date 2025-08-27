@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+// TODO: Replace with better-auth database operations
 import { toast } from '@/hooks/use-toast';
-import { useAuth } from './useAuth';
+import { useAuth } from './useBetterAuth';
 
 export const useCalendarIntegration = () => {
   const { user } = useAuth();
@@ -19,39 +19,21 @@ export const useCalendarIntegration = () => {
       dueDate?: string; 
       estimatedHours?: number; 
     }) => {
-      if (!user || !dueDate) return;
-
-      const startTime = new Date(dueDate);
-      const endTime = new Date(startTime);
-      endTime.setHours(endTime.getHours() + (estimatedHours || 1));
-
-      const { data, error } = await supabase
-        .from('calendar_events')
-        .insert({
-          user_id: user.id,
-          title: `Work on: ${title}`,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          macro_task_id: taskId,
-          time_block_type: 'focused_work',
-          color: '#3b82f6'
-        });
-
-      if (error) throw error;
-      return data;
+      // TODO: Implement with better-auth database operations
+      console.log('Calendar integration not yet implemented with better-auth');
+      return null;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
       toast({
-        title: "Task Added to Calendar",
-        description: "Your task has been automatically scheduled.",
+        title: "Calendar Integration",
+        description: "Calendar features will be implemented soon.",
       });
     },
     onError: (error) => {
       console.error('Calendar integration error:', error);
       toast({
         title: "Calendar Error",
-        description: "Could not add task to calendar.",
+        description: "Calendar features temporarily unavailable.",
         variant: "destructive",
       });
     }
@@ -65,35 +47,14 @@ export const useCalendarIntegration = () => {
       content: string; 
       extractedTimes: Array<{ time: string; context: string }>;
     }) => {
-      if (!user || !extractedTimes.length) return;
-
-      const events = extractedTimes.map(({ time, context }) => {
-        const startTime = new Date(time);
-        const endTime = new Date(startTime);
-        endTime.setHours(endTime.getHours() + 1); // Default 1 hour duration
-
-        return {
-          user_id: user.id,
-          title: `Brain Dump: ${context.substring(0, 50)}...`,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          time_block_type: 'meeting' as const,
-          color: '#10b981'
-        };
-      });
-
-      const { data, error } = await supabase
-        .from('calendar_events')
-        .insert(events);
-
-      if (error) throw error;
-      return data;
+      // TODO: Implement with better-auth database operations
+      console.log('Brain dump calendar integration not yet implemented');
+      return null;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
       toast({
-        title: "Times Added to Calendar",
-        description: `${variables.extractedTimes.length} events from your brain dump have been scheduled.`,
+        title: "Calendar Integration",
+        description: "Brain dump calendar features will be implemented soon.",
       });
     }
   });
