@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { sanitizeInput } from '@/lib/security';
 import { globalRateLimiter } from '@/lib/rate-limiter';
-import { useBrainDumps, useCreateBrainDump } // TODO: Replace with better-auth database operations;
+// TODO: Replace with better-auth database operations
 import { useCalendarIntegration } from '@/hooks/useCalendarIntegration';
 import { extractTimesFromText } from '@/utils/timeExtraction';
 import { 

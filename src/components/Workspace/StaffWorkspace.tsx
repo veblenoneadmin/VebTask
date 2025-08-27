@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import BrainDumpInterface from '@/components/BrainDump/BrainDumpInterface';
 import CalendarInterface from '@/components/Calendar/CalendarInterface';
+// TODO: Replace with better-auth database operations
+/*
 import { 
   useTasks, 
   useUpdateTask, 
@@ -29,7 +31,8 @@ import {
   useClientRequests,
   useUserPresence,
   useUpdateUserPresence
-} // TODO: Replace with better-auth database operations;
+} from '@/hooks/useDatabase';
+*/
 import { useAuth } from '@/hooks/useBetterAuth';
 import { toast } from '@/hooks/use-toast';
 
