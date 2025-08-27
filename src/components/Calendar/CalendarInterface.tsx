@@ -17,7 +17,7 @@ import {
   Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCalendarEvents } // TODO: Replace with better-auth database operations;
+import { useCalendarEvents // TODO: Replace with better-auth database operations
 import EventDialog from './EventDialog';
 
 const CalendarInterface: React.FC = () => {
