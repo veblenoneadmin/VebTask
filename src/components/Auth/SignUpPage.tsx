@@ -61,7 +61,12 @@ const SignUpPage = () => {
     
     try {
       await signUp(sanitizedEmail, password, sanitizedFirstName, sanitizedLastName);
-      toast.success('Account created! Please check your email to verify.');
+      // Navigate to login page after successful signup
+      navigate('/login', { 
+        state: { 
+          message: 'Account created successfully! You can now sign in.' 
+        } 
+      });
     } catch (error) {
       logger.security.authFailure(sanitizedEmail, 'Sign up failed');
       toast.error('Unable to create account. Please try again.');

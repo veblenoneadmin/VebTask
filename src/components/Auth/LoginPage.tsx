@@ -25,11 +25,9 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
-  const [lastEmailUsed, setLastEmailUsed] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, resendConfirmation } = useAuth();
+  const { signIn } = useAuth();
 
   // Show success message if coming from password reset
   useEffect(() => {
@@ -66,29 +64,12 @@ const LoginPage: React.FC = () => {
     } catch (error: any) {
       logger.security.authFailure(sanitizedEmail, 'Login failed');
       
-      // Check if it's an email confirmation issue
-      if (error.message && error.message.includes('Email not confirmed')) {
-        setLastEmailUsed(sanitizedEmail);
-        setShowResendConfirmation(true);
-        toast.error('Please confirm your email address before signing in.');
-      } else {
-        toast.error('Invalid email or password');
-      }
+      toast.error('Invalid email or password');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResendConfirmation = async () => {
-    if (!lastEmailUsed) return;
-    
-    try {
-      await resendConfirmation(lastEmailUsed);
-      setShowResendConfirmation(false);
-    } catch (error) {
-      // Error already handled in resendConfirmation function
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
@@ -194,25 +175,6 @@ const LoginPage: React.FC = () => {
           </Button>
         </form>
 
-        {/* Resend Confirmation */}
-        {showResendConfirmation && (
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="text-center space-y-2">
-              <p className="text-sm text-yellow-800">
-                Account not confirmed? Check your email (including spam folder).
-              </p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleResendConfirmation}
-                className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
-              >
-                Resend Confirmation Email
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Sign Up Link */}
         <div className="text-center mt-6 space-y-2">
           <p className="text-sm text-muted-foreground">
@@ -220,9 +182,6 @@ const LoginPage: React.FC = () => {
             <Link to="/signup" className="text-primary hover:text-primary-glow transition-colors font-medium">
               Sign up for free
             </Link>
-          </p>
-          <p className="text-xs text-muted-foreground/70">
-            New user registration requires admin approval
           </p>
         </div>
 

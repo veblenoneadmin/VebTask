@@ -176,18 +176,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       confirmation_sent_at: data.user?.confirmation_sent_at
     });
 
-    // Check if user needs email confirmation
-    if (data.user && !data.user.email_confirmed_at) {
-      if (data.user.confirmation_sent_at) {
-        toast.success('Account created! Check your email (including spam folder) to confirm your account.');
-      } else {
-        toast.error('Account created but confirmation email failed to send. Contact support.');
-        console.error('No confirmation_sent_at timestamp - email likely failed');
-      }
-    } else if (data.user && data.user.email_confirmed_at) {
-      toast.success('Account created and confirmed! You can now sign in.');
+    // Since email confirmation is disabled, account is ready immediately
+    if (data.user) {
+      toast.success('Account created successfully! You can now sign in.');
     } else {
-      toast.success('Check your email to confirm your account!');
+      toast.success('Account created! You can now sign in.');
     }
   };
 
