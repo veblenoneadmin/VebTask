@@ -27,11 +27,22 @@ app.use((req, res, next) => {
 
 // Handle all auth routes with proper error handling
 app.all('/api/auth/*', async (req, res) => {
+  console.log(`Auth request: ${req.method} ${req.url}`);
+  console.log('Request body:', req.body);
+  console.log('Request headers:', req.headers);
+  
   try {
-    return await auth.handler(req, res);
+    const result = await auth.handler(req, res);
+    console.log('Auth handler completed successfully');
+    return result;
   } catch (error) {
     console.error('Auth handler error:', error);
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

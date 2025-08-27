@@ -6,11 +6,16 @@ const connectionString = process.env.DATABASE_URL ||
   import.meta.env.VITE_DATABASE_URL || 
   "mysql://root:password@localhost:3306/vebtask";
 
+console.log('Auth config - baseURL:', process.env.VITE_APP_URL || import.meta.env.VITE_APP_URL || "http://localhost:5173");
+console.log('Auth config - database connection string configured:', !!connectionString);
+
 export const auth = betterAuth({
   database: Database(connectionString),
   baseURL: process.env.VITE_APP_URL || import.meta.env.VITE_APP_URL || "http://localhost:5173",
   advanced: {
-    generateId: () => crypto.randomUUID(),
+    generateId: () => {
+      return Math.random().toString(36).substring(2) + Date.now().toString(36);
+    },
   },
   emailAndPassword: {
     enabled: true,

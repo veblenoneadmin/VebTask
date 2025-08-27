@@ -19,6 +19,5 @@ RUN npm run build
 # Expose the port (Railway will set PORT env var dynamically)
 EXPOSE 3001
 
-# Start the auth server (which will serve API routes)
-# The frontend will be built and can be served statically or via proxy
-CMD ["node", "server.js"]
+# Initialize database and start the server
+CMD ["sh", "-c", "node init-db.js && node server.js"]
