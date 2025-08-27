@@ -68,7 +68,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const syncUserWithSupabase = async (user: any) => {
     try {
-      // Check if profile exists (try with text user_id first)
+      // For now, we'll skip profile creation to avoid RLS issues
+      // In a full production setup, you'd configure proper Clerk-Supabase JWT integration
+      console.log('Skipping profile sync for now - user:', user.id);
+      
+      // Commented out until proper Clerk-Supabase RLS integration is set up
+      /*
+      // Check if profile exists
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('*')
@@ -80,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase
           .from('profiles')
           .insert({
-            user_id: user.id, // Clerk user ID (string format)
+            user_id: user.id,
             email: user.email,
             first_name: user.user_metadata.first_name,
             last_name: user.user_metadata.last_name,
@@ -90,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('Error creating profile:', error);
         }
       }
+      */
     } catch (error) {
       console.error('Error syncing user with Supabase:', error);
     }

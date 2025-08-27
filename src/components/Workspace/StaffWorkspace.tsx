@@ -30,7 +30,7 @@ import {
   useUserPresence,
   useUpdateUserPresence
 } from '@/hooks/useDatabase';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useClerkAuth';
 import { toast } from '@/hooks/use-toast';
 
 const StaffWorkspace: React.FC = () => {

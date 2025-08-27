@@ -5,7 +5,8 @@
       "Bash(npm run preview:*)",
       "Bash(railway login:*)",
       "Bash(railway init:*)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

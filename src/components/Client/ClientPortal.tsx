@@ -27,7 +27,7 @@ import {
   useCreateClientRequest,
   useClientRequests 
 } from '@/hooks/useDatabase';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useClerkAuth';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 

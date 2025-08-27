@@ -21,7 +21,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useClerkAuth';
 import UserManagement from '@/components/Admin/UserManagement';
 
 const SettingsPage: React.FC = () => {
