@@ -11,7 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
   signOut: () => Promise<void>;
-  
+  resendConfirmation: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -135,6 +135,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const sanitizedFirstName = firstName?.replace(/[<>]/g, '').trim() || '';
     const sanitizedLastName = lastName?.replace(/[<>]/g, '').trim() || '';
 
+    console.log('Attempting signup with:', { 
+      email: email.toLowerCase().trim(), 
+      redirectTo: `${window.location.origin}/dashboard` 
+    });
+
     const { data, error } = await supabase.auth.signUp({
       email: email.toLowerCase().trim(),
       password,
@@ -147,15 +152,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
 
+    console.log('Signup response:', { data, error });
+
     if (error) {
       console.error('Signup error:', error);
-      toast.error(error.message);
+      
+      // Handle specific Supabase errors
+      if (error.message.includes('User already registered')) {
+        toast.error('An account with this email already exists. Try signing in instead.');
+      } else if (error.message.includes('Email rate limit exceeded')) {
+        toast.error('Email service temporarily unavailable. Please try again in a few minutes.');
+      } else {
+        toast.error(`Account creation failed: ${error.message}`);
+      }
       throw error;
     }
 
+    // Enhanced debugging for email confirmation
+    console.log('User created:', {
+      id: data.user?.id,
+      email: data.user?.email,
+      email_confirmed_at: data.user?.email_confirmed_at,
+      confirmation_sent_at: data.user?.confirmation_sent_at
+    });
+
     // Check if user needs email confirmation
     if (data.user && !data.user.email_confirmed_at) {
-      toast.success('Account created! Check your email to confirm your account before signing in.');
+      if (data.user.confirmation_sent_at) {
+        toast.success('Account created! Check your email (including spam folder) to confirm your account.');
+      } else {
+        toast.error('Account created but confirmation email failed to send. Contact support.');
+        console.error('No confirmation_sent_at timestamp - email likely failed');
+      }
     } else if (data.user && data.user.email_confirmed_at) {
       toast.success('Account created and confirmed! You can now sign in.');
     } else {
@@ -174,6 +202,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast.success('Signed out successfully');
   };
 
+  const resendConfirmation = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email.toLowerCase().trim(),
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+
+    if (error) {
+      console.error('Resend confirmation error:', error);
+      toast.error(`Failed to resend confirmation: ${error.message}`);
+      throw error;
+    }
+
+    toast.success('Confirmation email sent! Check your inbox and spam folder.');
+  };
 
   const value = {
     user,
@@ -182,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
-    
+    resendConfirmation,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
