@@ -123,16 +123,16 @@ const ClientPortal: React.FC = () => {
     }
   };
 
-  // Mock retainer data - this would come from retainer_blocks table
-  const mockRetainer = {
-    hoursPurchased: 40,
-    hoursUsed: 24.5,
-    hourlyRate: 150,
-    outOfScopeCost: 2400
+  // TODO: Replace with actual retainer data from retainer_blocks table
+  const retainerData = {
+    hoursPurchased: 0,
+    hoursUsed: 0,
+    hourlyRate: 0,
+    outOfScopeCost: 0
   };
 
-  const retainerPercentage = (mockRetainer.hoursUsed / mockRetainer.hoursPurchased) * 100;
-  const remainingHours = mockRetainer.hoursPurchased - mockRetainer.hoursUsed;
+  const retainerPercentage = retainerData.hoursPurchased > 0 ? (retainerData.hoursUsed / retainerData.hoursPurchased) * 100 : 0;
+  const remainingHours = Math.max(0, retainerData.hoursPurchased - retainerData.hoursUsed);
 
   return (
     <div className="min-h-screen bg-background">
@@ -174,11 +174,11 @@ const ClientPortal: React.FC = () => {
                     />
                   </div>
                   <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>{mockRetainer.hoursUsed}h used</span>
+                    <span>{retainerData.hoursUsed}h used</span>
                     <span>{remainingHours}h remaining</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Of {mockRetainer.hoursPurchased} hours purchased
+                    Of {retainerData.hoursPurchased} hours purchased
                   </p>
                 </div>
               </CardContent>
@@ -193,10 +193,10 @@ const ClientPortal: React.FC = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Out of Scope</p>
                     <p className="text-2xl font-bold text-foreground">
-                      ${mockRetainer.outOfScopeCost.toLocaleString()}
+                      ${retainerData.outOfScopeCost.toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      At ${mockRetainer.hourlyRate}/hour
+                      At ${retainerData.hourlyRate}/hour
                     </p>
                   </div>
                 </div>
@@ -212,7 +212,7 @@ const ClientPortal: React.FC = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Current Rate</p>
                     <p className="text-2xl font-bold text-foreground">
-                      ${mockRetainer.hourlyRate}
+                      ${retainerData.hourlyRate}
                     </p>
                     <p className="text-xs text-muted-foreground">per hour</p>
                   </div>

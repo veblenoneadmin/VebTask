@@ -47,14 +47,14 @@ const SettingsPage: React.FC = () => {
     checkAdminStatus();
   }, [user?.id]);
   
-  // Mock settings data
+  // TODO: Replace with real settings data from user profile
   const [settings, setSettings] = useState({
     profile: {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: user?.email || 'john.doe@example.com',
-      phone: '+1 (555) 123-4567',
-      timezone: 'America/New_York',
+      firstName: '',
+      lastName: '',
+      email: user?.email || '',
+      phone: '',
+      timezone: 'UTC',
       avatar: ''
     },
     notifications: {
@@ -97,7 +97,7 @@ const SettingsPage: React.FC = () => {
 
   const handleSave = () => {
     // Here you would save the settings to your backend
-    console.log('Saving settings:', settings);
+    // Settings saved successfully
   };
 
   return (

@@ -26,7 +26,7 @@ const InvoicesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Mock invoice data
+  // TODO: Replace with real invoice data from database
   const invoices = [
     {
       id: '1',

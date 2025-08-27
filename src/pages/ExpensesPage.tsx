@@ -27,7 +27,7 @@ const ExpensesPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Mock expense data
+  // TODO: Replace with real expense data from database
   const expenses = [
     {
       id: '1',

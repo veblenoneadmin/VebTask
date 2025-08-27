@@ -183,16 +183,6 @@ const LoginPage: React.FC = () => {
           </Link>
         </p>
 
-        {/* Demo Access */}
-        <div className="mt-6 p-4 bg-info/10 border border-info/20 rounded-lg">
-          <div className="flex items-center space-x-2 mb-2">
-            <Sparkles className="h-4 w-4 text-info" />
-            <span className="text-sm font-medium text-info">Demo Access</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Use demo@vebtask.com / demo123 to explore the full system
-          </p>
-        </div>
       </Card>
     </div>
   );

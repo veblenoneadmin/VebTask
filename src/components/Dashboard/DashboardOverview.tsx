@@ -68,40 +68,8 @@ const DashboardOverview: React.FC = () => {
     }
   ];
 
-  const recentActivity = [
-    {
-      id: 1,
-      action: "Completed task: Website Redesign Review",
-      time: "2 minutes ago",
-      duration: "45 min",
-      project: "Client Portal",
-      billable: true
-    },
-    {
-      id: 2,
-      action: "Started break",
-      time: "47 minutes ago",
-      duration: "15 min",
-      project: null,
-      billable: false
-    },
-    {
-      id: 3,
-      action: "Processed brain dump: Daily Planning",
-      time: "1 hour ago",
-      duration: "8 min",
-      project: "Personal",
-      billable: false
-    },
-    {
-      id: 4,
-      action: "Completed task: API Integration Testing",
-      time: "2 hours ago",
-      duration: "1h 23min",
-      project: "E-commerce Platform",
-      billable: true
-    }
-  ];
+  // TODO: Replace with real recent activity from database
+  const recentActivity: any[] = [];
 
   return (
     <div className="space-y-8">

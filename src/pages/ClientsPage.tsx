@@ -25,7 +25,7 @@ const ClientsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Mock client data
+  // TODO: Replace with real client data from database
   const clients = [
     {
       id: '1',

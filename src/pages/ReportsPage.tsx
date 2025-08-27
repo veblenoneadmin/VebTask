@@ -24,7 +24,7 @@ const ReportsPage: React.FC = () => {
   const [selectedDateTo, setSelectedDateTo] = useState<Date>();
   const [selectedReport, setSelectedReport] = useState('overview');
 
-  // Mock report data
+  // TODO: Replace with real report data from database
   const reportData = {
     overview: {
       totalRevenue: 234500,
@@ -264,7 +264,7 @@ const ReportsPage: React.FC = () => {
           <Card className="glass p-12 text-center">
             <BarChart3 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Report Coming Soon</h3>
-            <p className="text-muted-foreground">This report type is currently being developed.</p>
+            <p className="text-muted-foreground">This report type is not available yet.</p>
           </Card>
         );
       default:
