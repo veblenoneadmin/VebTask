@@ -22,7 +22,7 @@ import InvoicesPage from "./pages/InvoicesPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
-import { AuthProvider } from "./hooks/useAuth";
+import { AuthProvider } from "./hooks/useBetterAuth";
 import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
 
 const queryClient = new QueryClient();

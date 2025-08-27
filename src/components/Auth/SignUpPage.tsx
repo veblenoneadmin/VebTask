@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useBetterAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,8 +16,6 @@ import {
   User
 } from 'lucide-react';
 import veblenLogo from '@/assets/veblen-logo.png';
-import { logger } from '@/lib/logger';
-import { sanitizeInput, validationSchemas } from '@/lib/security';
 
 const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,25 +23,19 @@ const SignUpPage = () => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { signUp, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Enhanced input validation and sanitization
-    const sanitizedEmail = sanitizeInput.email(email);
-    const sanitizedFirstName = sanitizeInput.name(firstName);
-    const sanitizedLastName = sanitizeInput.name(lastName);
+    if (!email || !password || !firstName || !lastName) {
+      toast.error('All fields are required');
+      return;
+    }
     
-    try {
-      validationSchemas.email.parse(sanitizedEmail);
-      validationSchemas.name.parse(sanitizedFirstName);
-      validationSchemas.name.parse(sanitizedLastName);
-      validationSchemas.password.parse(password);
-    } catch (error: any) {
-      toast.error(error.errors?.[0]?.message || 'Please check your input');
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
       return;
     }
     
@@ -57,21 +49,12 @@ const SignUpPage = () => {
       return;
     }
     
-    setIsLoading(true);
-    
     try {
-      await signUp(sanitizedEmail, password, sanitizedFirstName, sanitizedLastName);
-      // Navigate to login page after successful signup
-      navigate('/login', { 
-        state: { 
-          message: 'Account created successfully! You can now sign in.' 
-        } 
-      });
+      await signUp(email.toLowerCase().trim(), password, firstName.trim(), lastName.trim());
+      // Navigate to dashboard after successful signup (instant registration)
+      navigate('/dashboard');
     } catch (error) {
-      logger.security.authFailure(sanitizedEmail, 'Sign up failed');
-      toast.error('Unable to create account. Please try again.');
-    } finally {
-      setIsLoading(false);
+      // Error is already handled in the auth hook
     }
   };
 
@@ -182,9 +165,9 @@ const SignUpPage = () => {
           <Button 
             type="submit" 
             className="w-full bg-gradient-primary hover:shadow-lg text-white font-medium py-3"
-            disabled={isLoading}
+            disabled={loading}
           >
-            {isLoading ? (
+            {loading ? (
               <>
                 <Sparkles className="h-4 w-4 mr-2 animate-spin" />
                 Creating account...

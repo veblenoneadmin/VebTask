@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useBetterAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,18 +16,15 @@ import {
   Sparkles
 } from 'lucide-react';
 import veblenLogo from '@/assets/veblen-logo.png';
-import { logger } from '@/lib/logger';
-import { sanitizeInput, validationSchemas } from '@/lib/security';
 
 const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn } = useAuth();
+  const { signIn, loading } = useAuth();
 
   // Show success message if coming from password reset
   useEffect(() => {
@@ -41,32 +38,21 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Enhanced input validation and sanitization
-    const sanitizedEmail = sanitizeInput.email(email);
-    
-    try {
-      validationSchemas.email.parse(sanitizedEmail);
-    } catch {
-      toast.error('Please enter a valid email address');
+    if (!email || !password) {
+      toast.error('Email and password are required');
       return;
     }
     
-    if (!password || password.length < 6) {
+    if (password.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
     }
     
-    setIsLoading(true);
-    
     try {
-      await signIn(sanitizedEmail, password);
+      await signIn(email.toLowerCase().trim(), password);
       navigate('/dashboard');
     } catch (error: any) {
-      logger.security.authFailure(sanitizedEmail, 'Login failed');
-      
-      toast.error('Invalid email or password');
-    } finally {
-      setIsLoading(false);
+      // Error is already handled in the auth hook
     }
   };
 
@@ -159,9 +145,9 @@ const LoginPage: React.FC = () => {
           <Button 
             type="submit" 
             className="w-full bg-gradient-primary hover:shadow-lg text-white font-medium py-3"
-            disabled={isLoading}
+            disabled={loading}
           >
-            {isLoading ? (
+            {loading ? (
               <>
                 <Sparkles className="h-4 w-4 mr-2 animate-spin" />
                 Signing in...
