@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+// TODO: Replace with better-auth user management
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useBetterAuth';
 import UserManagement from '@/components/Admin/UserManagement';
 
 const SettingsPage: React.FC = () => {
@@ -30,21 +30,10 @@ const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check if user is admin
+  // TODO: Replace with better-auth role checking
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user?.id) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-        
-        setIsAdmin(profile?.role === 'admin');
-      }
-    };
-    
-    checkAdminStatus();
+    // For now, disable admin features
+    setIsAdmin(false);
   }, [user?.id]);
   
   // TODO: Replace with real settings data from user profile

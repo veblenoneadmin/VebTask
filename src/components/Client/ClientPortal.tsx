@@ -21,15 +21,10 @@ import {
   TrendingUp,
   User
 } from 'lucide-react';
-import { 
-  useTasks,
-  useProjects,
-  useCreateClientRequest,
-  useClientRequests 
-} from '@/hooks/useDatabase';
-import { useAuth } from '@/hooks/useAuth';
+// TODO: Replace with better-auth database operations
+import { useAuth } from '@/hooks/useBetterAuth';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+// TODO: Replace with better-auth database operations
 
 const ClientPortal: React.FC = () => {
   const { user } = useAuth();
