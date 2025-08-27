@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { useTasks, useTimeLog, useUserAnalytics, useUpdateTask } from '@/hooks/useDatabase';
+import { useTasks, useTimeLog, useUserAnalytics, useUpdateTask } // TODO: Replace with better-auth database operations;
 import { 
   Play, 
   Pause, 

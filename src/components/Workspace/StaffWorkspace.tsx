@@ -29,8 +29,8 @@ import {
   useClientRequests,
   useUserPresence,
   useUpdateUserPresence
-} from '@/hooks/useDatabase';
-import { useAuth } from '@/hooks/useAuth';
+} // TODO: Replace with better-auth database operations;
+import { useAuth } from '@/hooks/useBetterAuth';
 import { toast } from '@/hooks/use-toast';
 
 const StaffWorkspace: React.FC = () => {

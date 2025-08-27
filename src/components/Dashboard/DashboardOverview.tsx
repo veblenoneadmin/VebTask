@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTasks, useUserAnalytics } from '@/hooks/useDatabase';
-import { useAuth } from '@/hooks/useAuth';
+import { useTasks, useUserAnalytics } // TODO: Replace with better-auth database operations;
+import { useAuth } from '@/hooks/useBetterAuth';
 import { Card } from '@/components/ui/card';
 import { 
   Clock, 

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(copy:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

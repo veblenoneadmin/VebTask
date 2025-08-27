@@ -27,7 +27,7 @@ import {
   useProjects,
   useClientRequests,
   useTimeLogs 
-} from '@/hooks/useDatabase';
+} // TODO: Replace with better-auth database operations;
 
 const AdminCommandCenter: React.FC = () => {
   const [selectedView, setSelectedView] = useState('overview');

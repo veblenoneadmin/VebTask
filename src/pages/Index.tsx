@@ -2,25 +2,24 @@ import React from 'react';
 import StaffWorkspace from '@/components/Workspace/StaffWorkspace';
 import UnifiedDashboard from '@/components/Dashboard/UnifiedDashboard';
 import ClientPortal from '@/components/Client/ClientPortal';
-import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useDatabase';
+import { useAuth } from '@/hooks/useBetterAuth';
+// TODO: Implement profile hook with better-auth
 
 const Index = () => {
-  const { user } = useAuth();
-  const { data: profile, isLoading } = useProfile();
+  const { user, loading } = useAuth();
 
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold gradient-text">Veblen CRM</h1>
+          <h1 className="text-4xl font-bold gradient-text">VebTask</h1>
           <p className="text-muted-foreground">Please sign in to continue</p>
         </div>
       </div>
     );
   }
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -31,18 +30,9 @@ const Index = () => {
     );
   }
 
-  // Route based on user role
-  switch (profile?.role) {
-    case 'admin':
-      return <UnifiedDashboard />;
-    case 'manager':
-    case 'employee':
-      return <UnifiedDashboard />;
-    case 'client':
-      return <ClientPortal />;
-    default:
-      return <UnifiedDashboard />; // Default to unified dashboard
-  }
+  // TODO: Implement role-based routing when profile system is set up
+  // For now, default to unified dashboard for all users
+  return <UnifiedDashboard />;
 };
 
 export default Index;

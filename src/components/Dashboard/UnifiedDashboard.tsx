@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useProfile } from '@/hooks/useDatabase';
+import { useProfile } // TODO: Replace with better-auth database operations;
 import DashboardOverview from './DashboardOverview';
 import AdminCommandCenter from '@/components/Admin/AdminCommandCenter';
 import { Button } from '@/components/ui/button';

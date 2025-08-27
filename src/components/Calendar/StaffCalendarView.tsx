@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCalendarEvents, useAllUsers } from '@/hooks/useDatabase';
+import { useCalendarEvents, useAllUsers } // TODO: Replace with better-auth database operations;
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

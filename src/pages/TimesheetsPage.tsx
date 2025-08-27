@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useTimeLogs, useDeleteTimeLog } from '@/hooks/useDatabase';
+import { useTimeLogs, useDeleteTimeLog } // TODO: Replace with better-auth database operations;
 import TimeLogForm from '@/components/Timesheets/TimeLogForm';
 import { toast } from 'sonner';
 import { 
