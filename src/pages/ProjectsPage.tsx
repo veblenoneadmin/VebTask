@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useProjects, useDeleteProject // TODO: Replace with better-auth database operations
+// TODO: Replace with better-auth database operations
+// import { useProjects, useDeleteProject } from '@/hooks/useDatabase';
 import ProjectForm from '@/components/Projects/ProjectForm';
 import { 
   Plus,

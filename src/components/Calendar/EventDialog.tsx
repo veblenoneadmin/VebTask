@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Calendar, Clock, Plus } from 'lucide-react';
-import { useCreateCalendarEvent, useUpdateCalendarEvent // TODO: Replace with better-auth database operations
+// TODO: Replace with better-auth database operations
 
 interface EventDialogProps {
   trigger?: React.ReactNode;

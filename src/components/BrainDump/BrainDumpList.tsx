@@ -15,7 +15,7 @@ import {
   XCircle,
   Filter
 } from 'lucide-react';
-import { useBrainDumps, useUpdateBrainDump, useDeleteBrainDump // TODO: Replace with better-auth database operations
+// TODO: Replace with better-auth database operations
 import { format } from 'date-fns';
 
 const BrainDumpList: React.FC = () => {

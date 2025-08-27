@@ -22,7 +22,7 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { useAllUsers, useUpdateUserRole, useProfile // TODO: Replace with better-auth database operations
+// TODO: Replace with better-auth database operations
 import { dataMasking, auditSensitiveAccess } from '@/lib/data-masking';
 
 const UserManagement: React.FC = () => {

@@ -22,7 +22,7 @@ import {
   Play
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTasks, useUpdateTask // TODO: Replace with better-auth database operations
+// TODO: Replace with better-auth database operations
 import TaskForm from './TaskForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { logger } from '@/lib/logger';
