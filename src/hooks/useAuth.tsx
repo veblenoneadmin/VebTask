@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const sanitizedFirstName = firstName?.replace(/[<>]/g, '').trim() || '';
     const sanitizedLastName = lastName?.replace(/[<>]/g, '').trim() || '';
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.toLowerCase().trim(),
       password,
       options: {
@@ -148,11 +148,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) {
+      console.error('Signup error:', error);
       toast.error(error.message);
       throw error;
     }
 
-    toast.success('Check your email to confirm your account!');
+    // Check if user needs email confirmation
+    if (data.user && !data.user.email_confirmed_at) {
+      toast.success('Account created! Check your email to confirm your account before signing in.');
+    } else if (data.user && data.user.email_confirmed_at) {
+      toast.success('Account created and confirmed! You can now sign in.');
+    } else {
+      toast.success('Check your email to confirm your account!');
+    }
   };
 
   const signOut = async () => {
