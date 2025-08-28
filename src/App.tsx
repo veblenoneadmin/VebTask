@@ -3,15 +3,16 @@ import { useSession } from './lib/auth-client';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
-import './App.css'
 
 function App() {
   const { data: session, isPending } = useSession();
 
   if (isPending) {
     return (
-      <div className="loading-container">
-        <div className="loading">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="glass p-8 rounded-lg">
+          <div className="text-xl font-medium">Loading...</div>
+        </div>
       </div>
     );
   }
