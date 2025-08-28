@@ -1,24 +1,45 @@
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useSession } from './lib/auth-client';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage'; 
+import Dashboard from './pages/Dashboard';
+import LoadingSpinner from './components/LoadingSpinner';
 
 function App() {
+  const { data: session, isPending } = useSession();
+
+  if (isPending) {
+    return <LoadingSpinner />;
+  }
+
   return (
-    <>
-      <div>
-        <h1>🎉 VebTask</h1>
-        <p>Better-Auth integration working!</p>
-        
-        <div className="card">
-          <h2>🔐 Authentication Status</h2>
-          <p>Auth server running on: <code>/api/auth/*</code></p>
-          <p>Health check: <a href="/api/auth/ok" target="_blank">/api/auth/ok</a></p>
-          <p>Session check: <a href="/api/auth/get-session" target="_blank">/api/auth/get-session</a></p>
-        </div>
-        
-        <p className="read-the-docs">
-          ✅ Fresh better-auth implementation with Express integration
-        </p>
+    <Router>
+      <div className="min-h-screen bg-gray-50">
+        <Routes>
+          {/* Public Routes */}
+          <Route 
+            path="/login" 
+            element={!session ? <LoginPage /> : <Navigate to="/dashboard" />} 
+          />
+          <Route 
+            path="/register" 
+            element={!session ? <RegisterPage /> : <Navigate to="/dashboard" />} 
+          />
+          
+          {/* Protected Routes */}
+          <Route 
+            path="/dashboard" 
+            element={session ? <Dashboard /> : <Navigate to="/login" />} 
+          />
+          
+          {/* Default redirect */}
+          <Route 
+            path="/" 
+            element={<Navigate to={session ? "/dashboard" : "/login"} />} 
+          />
+        </Routes>
       </div>
-    </>
+    </Router>
   )
 }
 
