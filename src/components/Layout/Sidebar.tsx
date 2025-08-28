@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useSession } from '../../lib/auth-client';
+import { useSession, signOut } from '../../lib/auth-client';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -42,8 +42,14 @@ const Sidebar: React.FC = () => {
   const { data: session } = useSession();
 
   const handleSignOut = async () => {
-    // For now, just redirect to login - you can implement proper logout later
-    window.location.href = '/login';
+    try {
+      await signOut();
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Still redirect even if logout fails
+      window.location.href = '/login';
+    }
   };
 
   // Get user initials
@@ -62,8 +68,8 @@ const Sidebar: React.FC = () => {
         {/* Logo */}
         <div className="flex h-16 items-center px-6 border-b border-border">
           <div className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center bg-gradient-primary rounded-lg">
-              <span className="text-white font-bold text-lg">V</span>
+            <div className="flex h-10 w-10 items-center justify-center bg-gradient-primary rounded-lg p-1">
+              <img src="/veblen-logo.png" alt="VebTask Logo" className="w-full h-full object-contain filter invert" />
             </div>
             <div>
               <h1 className="text-lg font-bold gradient-text">VebTask</h1>

@@ -63,8 +63,8 @@ export function Register() {
         {/* Logo & Brand */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-6">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-success flex items-center justify-center shadow-glow animate-pulse-glow">
-              <UserPlus className="h-8 w-8 text-white" />
+            <div className="h-16 w-16 rounded-2xl bg-gradient-success flex items-center justify-center shadow-glow animate-pulse-glow p-2">
+              <img src="/veblen-logo.png" alt="VebTask Logo" className="w-full h-full object-contain filter invert" />
             </div>
           </div>
           <div className="space-y-2">
@@ -93,7 +93,7 @@ export function Register() {
                     First Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <User className="absolute left-3 top-3 h-4 w-4 text-foreground/60" />
                     <Input
                       type="text"
                       id="firstName"
@@ -110,7 +110,7 @@ export function Register() {
                     Last Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <User className="absolute left-3 top-3 h-4 w-4 text-foreground/60" />
                     <Input
                       type="text"
                       id="lastName"
@@ -130,7 +130,7 @@ export function Register() {
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-foreground/60" />
                   <Input
                     type="email"
                     id="email"
@@ -149,7 +149,7 @@ export function Register() {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-foreground/60" />
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     id="password"
@@ -161,7 +161,7 @@ export function Register() {
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-3 top-3 text-foreground/60 hover:text-foreground transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
