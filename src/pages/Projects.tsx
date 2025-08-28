@@ -1,0 +1,487 @@
+import { useState } from 'react';
+import { useSession } from '../lib/auth-client';
+import { Card, CardContent, CardHeader } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { 
+  Building2,
+  Plus,
+  Users,
+  Calendar,
+  DollarSign,
+  Clock,
+  Target,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle2,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  Star,
+  GitBranch,
+  Activity
+} from 'lucide-react';
+import { cn } from '../lib/utils';
+
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  status: 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';
+  priority: 'high' | 'medium' | 'low';
+  client: string;
+  startDate: string;
+  endDate: string;
+  budget: number;
+  spent: number;
+  progress: number;
+  teamMembers: string[];
+  tasks: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    pending: number;
+  };
+  hoursLogged: number;
+  estimatedHours: number;
+  tags: string[];
+  color: string;
+}
+
+const mockProjects: Project[] = [
+  {
+    id: '1',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete UI/UX overhaul for the main e-commerce platform including mobile responsiveness and performance optimization',
+    status: 'active',
+    priority: 'high',
+    client: 'TechCorp Solutions',
+    startDate: '2024-01-01',
+    endDate: '2024-03-15',
+    budget: 45000,
+    spent: 18750,
+    progress: 42,
+    teamMembers: ['john.doe@company.com', 'jane.smith@company.com', 'mike.wilson@company.com'],
+    tasks: { total: 24, completed: 10, inProgress: 6, pending: 8 },
+    hoursLogged: 156,
+    estimatedHours: 320,
+    tags: ['ui/ux', 'frontend', 'mobile', 'performance'],
+    color: 'bg-primary'
+  },
+  {
+    id: '2',
+    name: 'Customer Portal Development',
+    description: 'Build a comprehensive customer self-service portal with account management, billing, and support features',
+    status: 'active',
+    priority: 'medium',
+    client: 'GlobalBank Inc.',
+    startDate: '2024-01-15',
+    endDate: '2024-04-30',
+    budget: 32000,
+    spent: 8500,
+    progress: 28,
+    teamMembers: ['sarah.johnson@company.com', 'alex.chen@company.com'],
+    tasks: { total: 18, completed: 5, inProgress: 4, pending: 9 },
+    hoursLogged: 89,
+    estimatedHours: 280,
+    tags: ['fullstack', 'portal', 'authentication', 'billing'],
+    color: 'bg-success'
+  },
+  {
+    id: '3',
+    name: 'Mobile App MVP',
+    description: 'Develop minimum viable product for iOS and Android mobile application with core features',
+    status: 'planning',
+    priority: 'high',
+    client: 'StartupXYZ',
+    startDate: '2024-02-01',
+    endDate: '2024-05-15',
+    budget: 28000,
+    spent: 2100,
+    progress: 8,
+    teamMembers: ['lisa.rodriguez@company.com', 'tom.brown@company.com'],
+    tasks: { total: 32, completed: 2, inProgress: 3, pending: 27 },
+    hoursLogged: 24,
+    estimatedHours: 400,
+    tags: ['mobile', 'react-native', 'mvp', 'ios', 'android'],
+    color: 'bg-warning'
+  },
+  {
+    id: '4',
+    name: 'Data Analytics Dashboard',
+    description: 'Create comprehensive analytics dashboard with real-time data visualization and reporting capabilities',
+    status: 'completed',
+    priority: 'medium',
+    client: 'DataDriven LLC',
+    startDate: '2023-11-01',
+    endDate: '2024-01-10',
+    budget: 22000,
+    spent: 21500,
+    progress: 100,
+    teamMembers: ['david.kim@company.com'],
+    tasks: { total: 16, completed: 16, inProgress: 0, pending: 0 },
+    hoursLogged: 180,
+    estimatedHours: 175,
+    tags: ['analytics', 'dashboard', 'visualization', 'd3.js'],
+    color: 'bg-info'
+  },
+  {
+    id: '5',
+    name: 'API Integration Project',
+    description: 'Integrate multiple third-party APIs and build unified data layer for legacy system modernization',
+    status: 'on_hold',
+    priority: 'low',
+    client: 'Legacy Systems Corp',
+    startDate: '2024-01-20',
+    endDate: '2024-06-30',
+    budget: 18000,
+    spent: 4200,
+    progress: 15,
+    teamMembers: ['emma.davis@company.com'],
+    tasks: { total: 12, completed: 2, inProgress: 1, pending: 9 },
+    hoursLogged: 35,
+    estimatedHours: 240,
+    tags: ['api', 'integration', 'legacy', 'backend'],
+    color: 'bg-muted'
+  }
+];
+
+export function Projects() {
+  const { data: session } = useSession();
+  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  const filteredProjects = projects.filter(project => {
+    const matchesStatus = filterStatus === 'all' || project.status === filterStatus;
+    const matchesPriority = filterPriority === 'all' || project.priority === filterPriority;
+    return matchesStatus && matchesPriority;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'text-success bg-success/10 border-success/20';
+      case 'completed': return 'text-info bg-info/10 border-info/20';
+      case 'on_hold': return 'text-warning bg-warning/10 border-warning/20';
+      case 'planning': return 'text-primary bg-primary/10 border-primary/20';
+      case 'cancelled': return 'text-error bg-error/10 border-error/20';
+      default: return 'text-muted-foreground bg-muted/10 border-border';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-error';
+      case 'medium': return 'text-warning';
+      case 'low': return 'text-info';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active': return <Activity className="h-4 w-4" />;
+      case 'completed': return <CheckCircle2 className="h-4 w-4" />;
+      case 'on_hold': return <AlertCircle className="h-4 w-4" />;
+      case 'planning': return <Target className="h-4 w-4" />;
+      default: return <Building2 className="h-4 w-4" />;
+    }
+  };
+
+  const projectStats = {
+    total: projects.length,
+    active: projects.filter(p => p.status === 'active').length,
+    completed: projects.filter(p => p.status === 'completed').length,
+    totalBudget: projects.reduce((sum, p) => sum + p.budget, 0),
+    totalSpent: projects.reduce((sum, p) => sum + p.spent, 0),
+    totalHours: projects.reduce((sum, p) => sum + p.hoursLogged, 0)
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold gradient-text">Projects</h1>
+          <p className="text-muted-foreground mt-2">Manage and track your project portfolio</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center bg-surface-elevated rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                "px-3 py-1 rounded text-sm font-medium transition-colors",
+                viewMode === 'grid' ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn(
+                "px-3 py-1 rounded text-sm font-medium transition-colors",
+                viewMode === 'list' ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              List
+            </button>
+          </div>
+          <Button className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow">
+            <Plus className="h-4 w-4 mr-2" />
+            New Project
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="glass shadow-elevation">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow mr-4">
+                <Building2 className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{projectStats.total}</p>
+                <p className="text-sm text-muted-foreground">Total Projects</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass shadow-elevation">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-success flex items-center justify-center shadow-glow mr-4">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{projectStats.active}</p>
+                <p className="text-sm text-muted-foreground">Active Projects</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass shadow-elevation">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-info flex items-center justify-center shadow-glow mr-4">
+                <DollarSign className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">${(projectStats.totalBudget / 1000).toFixed(0)}k</p>
+                <p className="text-sm text-muted-foreground">Total Budget</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass shadow-elevation">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-warning flex items-center justify-center shadow-glow mr-4">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{projectStats.totalHours}</p>
+                <p className="text-sm text-muted-foreground">Hours Logged</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card className="glass shadow-elevation">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 glass-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">All Status</option>
+              <option value="planning">Planning</option>
+              <option value="active">Active</option>
+              <option value="on_hold">On Hold</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+
+            <select
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="px-4 py-2 glass-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">All Priority</option>
+              <option value="high">High Priority</option>
+              <option value="medium">Medium Priority</option>
+              <option value="low">Low Priority</option>
+            </select>
+
+            <div className="ml-auto text-sm text-muted-foreground">
+              Showing {filteredProjects.length} of {projects.length} projects
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Projects Grid/List */}
+      <div className={cn(
+        viewMode === 'grid' 
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          : "space-y-4"
+      )}>
+        {filteredProjects.map((project) => (
+          <Card 
+            key={project.id} 
+            className={cn(
+              "glass shadow-elevation cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1",
+              viewMode === 'list' && "w-full"
+            )}
+            onClick={() => setSelectedProject(project)}
+          >
+            <CardHeader className="pb-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3">
+                  <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shadow-glow", project.color)}>
+                    {getStatusIcon(project.status)}
+                    <span className="sr-only">{project.status}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold truncate">{project.name}</h3>
+                    <p className="text-sm text-muted-foreground">Client: {project.client}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className={cn("text-xs", getStatusColor(project.status))}>
+                    {getStatusIcon(project.status)}
+                    <span className="ml-1 capitalize">{project.status.replace('_', ' ')}</span>
+                  </Badge>
+                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                    <MoreVertical className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
+              
+              {/* Progress Bar */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Progress</span>
+                  <span className="text-sm text-muted-foreground">{project.progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-surface-elevated rounded-full">
+                  <div 
+                    className="h-full bg-gradient-primary rounded-full transition-all duration-300"
+                    style={{ width: `${project.progress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Project Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-2 glass-surface rounded-lg">
+                  <p className="text-lg font-bold">{project.tasks.completed}/{project.tasks.total}</p>
+                  <p className="text-xs text-muted-foreground">Tasks</p>
+                </div>
+                <div className="text-center p-2 glass-surface rounded-lg">
+                  <p className="text-lg font-bold">{project.hoursLogged}h</p>
+                  <p className="text-xs text-muted-foreground">Logged</p>
+                </div>
+              </div>
+
+              {/* Budget Info */}
+              <div className="flex items-center justify-between p-2 glass-surface rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">${project.spent.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">of ${project.budget.toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium">{Math.round((project.spent / project.budget) * 100)}%</p>
+                  <p className="text-xs text-muted-foreground">spent</p>
+                </div>
+              </div>
+
+              {/* Team Members */}
+              <div className="flex items-center space-x-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <div className="flex -space-x-2">
+                  {project.teamMembers.slice(0, 3).map((member, index) => (
+                    <div
+                      key={index}
+                      className="h-6 w-6 rounded-full bg-gradient-primary border-2 border-background flex items-center justify-center"
+                      title={member}
+                    >
+                      <span className="text-xs font-medium text-white">
+                        {member.split('@')[0].charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  ))}
+                  {project.teamMembers.length > 3 && (
+                    <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                      <span className="text-xs text-muted-foreground">+{project.teamMembers.length - 3}</span>
+                    </div>
+                  )}
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {project.teamMembers.length} member{project.teamMembers.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1">
+                {project.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="px-2 py-1 bg-muted/20 text-muted-foreground text-xs rounded">
+                    #{tag}
+                  </span>
+                ))}
+                {project.tags.length > 3 && (
+                  <span className="px-2 py-1 bg-muted/20 text-muted-foreground text-xs rounded">
+                    +{project.tags.length - 3}
+                  </span>
+                )}
+              </div>
+
+              {/* Dates */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
+                <div className="flex items-center space-x-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>Start: {new Date(project.startDate).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <span>Due: {new Date(project.endDate).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredProjects.length === 0 && (
+        <Card className="glass shadow-elevation">
+          <CardContent className="text-center py-12">
+            <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No projects found</h3>
+            <p className="text-muted-foreground mb-4">
+              {filterStatus !== 'all' || filterPriority !== 'all' 
+                ? 'Try adjusting your filters'
+                : 'Create your first project to get started'
+              }
+            </p>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Project
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

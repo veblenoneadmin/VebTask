@@ -6,6 +6,13 @@ import { Dashboard } from './pages/Dashboard';
 import { BrainDump } from './pages/BrainDump';
 import { Timer } from './pages/Timer';
 import { Tasks } from './pages/Tasks';
+import { Calendar } from './pages/Calendar';
+import { Projects } from './pages/Projects';
+import { TimeLogs } from './pages/TimeLogs';
+import { Clients } from './pages/Clients';
+import { Invoices } from './pages/Invoices';
+import { Expenses } from './pages/Expenses';
+import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import MainLayout from './components/Layout/MainLayout';
 
@@ -42,13 +49,13 @@ function App() {
             <Route path="brain-dump" element={<BrainDump />} />
             <Route path="timer" element={<Timer />} />
             <Route path="tasks" element={<Tasks />} />
-            <Route path="calendar" element={<div className="text-center p-8">Calendar - Coming Soon</div>} />
-            <Route path="projects" element={<div className="text-center p-8">Projects - Coming Soon</div>} />
-            <Route path="timesheets" element={<div className="text-center p-8">Time Logs - Coming Soon</div>} />
-            <Route path="clients" element={<div className="text-center p-8">Clients - Coming Soon</div>} />
-            <Route path="invoices" element={<div className="text-center p-8">Invoices - Coming Soon</div>} />
-            <Route path="expenses" element={<div className="text-center p-8">Expenses - Coming Soon</div>} />
-            <Route path="reports" element={<div className="text-center p-8">Reports - Coming Soon</div>} />
+            <Route path="calendar" element={<Calendar />} />
+            <Route path="projects" element={<Projects />} />
+            <Route path="timesheets" element={<TimeLogs />} />
+            <Route path="clients" element={<Clients />} />
+            <Route path="invoices" element={<Invoices />} />
+            <Route path="expenses" element={<Expenses />} />
+            <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route 
