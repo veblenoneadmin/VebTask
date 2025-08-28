@@ -29,7 +29,7 @@ interface Task {
   id: string;
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: 'Urgent' | 'High' | 'Medium' | 'Low';
   estimatedHours: number;
   actualHours: number;
   isBillable: boolean;
@@ -43,7 +43,7 @@ const mockTasks: Task[] = [
     id: '1',
     title: 'Quarterly Report Analysis',
     description: 'Review Q4 financial data and prepare executive summary',
-    priority: 'high',
+    priority: 'High',
     estimatedHours: 4,
     actualHours: 1.5,
     isBillable: true,
@@ -54,7 +54,7 @@ const mockTasks: Task[] = [
     id: '2',
     title: 'Client Meeting Preparation',
     description: 'Prepare presentation materials for tomorrow\'s client meeting',
-    priority: 'medium',
+    priority: 'Medium',
     estimatedHours: 2,
     actualHours: 0.5,
     isBillable: true,
@@ -65,7 +65,7 @@ const mockTasks: Task[] = [
     id: '3',
     title: 'Code Review - Authentication Module',
     description: 'Review pull request for new auth system implementation',
-    priority: 'medium',
+    priority: 'Medium',
     estimatedHours: 1.5,
     actualHours: 0,
     isBillable: false,

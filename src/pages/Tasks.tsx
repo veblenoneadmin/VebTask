@@ -23,7 +23,7 @@ interface Task {
   id: string;
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: 'Urgent' | 'High' | 'Medium' | 'Low';
   status: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
   estimatedHours: number;
   actualHours: number;
@@ -43,7 +43,7 @@ const mockTasks: Task[] = [
     id: '1',
     title: 'Quarterly Financial Report',
     description: 'Complete Q4 financial analysis and prepare executive summary for board meeting',
-    priority: 'high',
+    priority: 'High',
     status: 'in_progress',
     estimatedHours: 8,
     actualHours: 3.5,
@@ -52,7 +52,7 @@ const mockTasks: Task[] = [
     project: 'Finance Review',
     isBillable: true,
     hourlyRate: 95,
-    tags: ['finance', 'reporting', 'urgent'],
+    tags: ['Finance', 'Reporting', 'Urgent'],
     createdAt: '2024-01-10',
     updatedAt: '2024-01-12'
   },
@@ -60,7 +60,7 @@ const mockTasks: Task[] = [
     id: '2',
     title: 'Client Presentation Prep',
     description: 'Design slides and prepare demo for tomorrow\'s client pitch meeting',
-    priority: 'high',
+    priority: 'High',
     status: 'not_started',
     estimatedHours: 4,
     actualHours: 0,
@@ -69,7 +69,7 @@ const mockTasks: Task[] = [
     project: 'Sales Pipeline',
     isBillable: true,
     hourlyRate: 85,
-    tags: ['sales', 'presentation', 'client'],
+    tags: ['Sales', 'Presentation', 'Client'],
     createdAt: '2024-01-11',
     updatedAt: '2024-01-11'
   },
@@ -77,14 +77,14 @@ const mockTasks: Task[] = [
     id: '3',
     title: 'Code Review - Auth Module',
     description: 'Review pull request for new authentication system implementation',
-    priority: 'medium',
+    priority: 'Medium',
     status: 'in_progress',
     estimatedHours: 2,
     actualHours: 1,
     dueDate: '2024-01-16',
     project: 'Development',
     isBillable: false,
-    tags: ['development', 'security', 'review'],
+    tags: ['Development', 'Security', 'Review'],
     createdAt: '2024-01-09',
     updatedAt: '2024-01-12'
   },
@@ -92,14 +92,14 @@ const mockTasks: Task[] = [
     id: '4',
     title: 'Team Meeting Notes',
     description: 'Document key decisions from weekly team sync and action items',
-    priority: 'low',
+    priority: 'Low',
     status: 'completed',
     estimatedHours: 0.5,
     actualHours: 0.5,
     dueDate: '2024-01-12',
     project: 'Operations',
     isBillable: false,
-    tags: ['meeting', 'documentation'],
+    tags: ['Meeting', 'Documentation'],
     createdAt: '2024-01-12',
     updatedAt: '2024-01-12'
   },
@@ -107,7 +107,7 @@ const mockTasks: Task[] = [
     id: '5',
     title: 'Website Performance Optimization',
     description: 'Analyze and improve website loading speeds and user experience metrics',
-    priority: 'medium',
+    priority: 'Medium',
     status: 'on_hold',
     estimatedHours: 6,
     actualHours: 2,
@@ -115,7 +115,7 @@ const mockTasks: Task[] = [
     project: 'Web Development',
     isBillable: true,
     hourlyRate: 75,
-    tags: ['performance', 'optimization', 'web'],
+    tags: ['Performance', 'Optimization', 'Web'],
     createdAt: '2024-01-08',
     updatedAt: '2024-01-10'
   }
@@ -146,9 +146,10 @@ export function Tasks() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-error bg-error/10 border-error/20';
-      case 'medium': return 'text-warning bg-warning/10 border-warning/20';
-      case 'low': return 'text-info bg-info/10 border-info/20';
+      case 'Urgent': return 'text-error bg-error/10 border-error/20';
+      case 'High': return 'text-error bg-error/10 border-error/20';
+      case 'Medium': return 'text-warning bg-warning/10 border-warning/20';
+      case 'Low': return 'text-info bg-info/10 border-info/20';
       default: return 'text-muted-foreground bg-muted/10 border-border';
     }
   };

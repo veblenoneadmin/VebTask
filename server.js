@@ -49,8 +49,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Mount express json middleware BEFORE auth routes for request logging
-app.use(express.json());
+// Mount express json middleware BEFORE auth routes for request logging  
+app.use(express.json({ limit: '10mb' }));
+
+// Add multer for file uploads (for audio files)
+import multer from 'multer';
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 } // 25MB limit for audio files
+});
 
 // Test route
 app.get('/test', (req, res) => {
@@ -88,6 +95,61 @@ app.all('/api/auth/*', async (req, res, next) => {
         path: req.path 
       });
     }
+  }
+});
+
+// OpenAI Whisper API endpoint for voice transcription
+app.post('/api/ai/transcribe', upload.single('audio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Audio file is required' });
+    }
+
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    console.log('🎤 Transcribing audio with OpenAI Whisper...');
+
+    // Create FormData for OpenAI Whisper API
+    const FormData = (await import('form-data')).default;
+    const formData = new FormData();
+    formData.append('file', req.file.buffer, {
+      filename: 'audio.webm',
+      contentType: req.file.mimetype
+    });
+    formData.append('model', 'whisper-1');
+    formData.append('language', 'en');
+    formData.append('response_format', 'json');
+
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        ...formData.getHeaders()
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`OpenAI Whisper API error: ${response.status} ${response.statusText}`, error);
+      return res.status(500).json({ error: 'Transcription failed' });
+    }
+
+    const data = await response.json();
+    
+    console.log('✅ Audio transcribed successfully');
+    return res.status(200).json({ 
+      transcription: data.text,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Transcription error:', error);
+    return res.status(500).json({ error: 'Transcription failed' });
   }
 });
 
@@ -174,33 +236,62 @@ app.post('/api/ai/process-brain-dump', async (req, res) => {
 
 // AI helper functions
 function getAISystemPrompt() {
-  return `You are an AI assistant specialized in analyzing brain dumps and extracting actionable tasks. 
+  return `You are an expert AI assistant specialized in analyzing brain dumps and extracting actionable tasks from both typed text and voice-transcribed content.
 
-Your job is to:
-1. Parse unstructured text/thoughts into organized, actionable tasks
-2. Assign appropriate priorities (urgent, high, medium, low)
-3. Estimate time requirements in hours
-4. Categorize tasks by type (development, design, testing, etc.)
-5. Extract relevant tags and keywords
-6. Break complex tasks into micro-tasks when appropriate
+CORE RESPONSIBILITIES:
+1. Parse unstructured thoughts into clear, actionable tasks with proper grammar and formatting
+2. Assign realistic priorities based on context and urgency indicators  
+3. Provide accurate time estimates based on task complexity
+4. Categorize tasks into relevant professional categories
+5. Extract meaningful tags that enhance organization and searchability
+6. Break down complex tasks into manageable micro-tasks when beneficial
+7. Use proper capitalization and professional language throughout
 
-Return a JSON object with this structure:
+PRIORITY ASSIGNMENT LOGIC:
+- "Urgent": Critical issues, emergencies, immediate deadlines, blocking other work
+- "High": Important deliverables, upcoming deadlines, key stakeholder requests  
+- "Medium": Standard work items, planned features, regular maintenance
+- "Low": Nice-to-have features, optimization tasks, long-term improvements
+
+CATEGORY DEFINITIONS:
+- "Development": Code writing, programming, technical implementation
+- "Design": UI/UX design, wireframes, mockups, visual assets
+- "Testing": QA testing, debugging, code review, validation
+- "Research": Investigation, analysis, learning, competitive research  
+- "Documentation": Writing docs, technical specs, user guides
+- "Meeting": Calls, discussions, presentations, planning sessions
+- "Deployment": Release management, CI/CD, infrastructure, monitoring
+- "General": Administrative tasks, planning, organization
+
+TAG GUIDELINES:
+- Use Title Case for all tags (e.g., "Frontend", "API Integration", "User Experience")
+- Keep tags concise but descriptive (2-3 words max)
+- Focus on technology, feature area, or skill type
+- Avoid redundant tags that duplicate the category
+
+FORMATTING REQUIREMENTS:
+- All task titles must be properly capitalized and professional
+- Descriptions should be clear, specific, and actionable
+- Micro-tasks should be concrete steps, not vague suggestions
+- Use consistent terminology and avoid abbreviations
+
+Return a JSON object with this exact structure:
 {
-  "originalContent": "...",
+  "originalContent": "preserved original input",
   "extractedTasks": [{
-    "id": "unique-id",
-    "title": "Clear task title (max 50 chars)",
-    "description": "Detailed description",
-    "priority": "urgent|high|medium|low",
+    "id": "task-[timestamp]-[random]",
+    "title": "Professional Task Title (max 60 chars)",
+    "description": "Clear, detailed description of what needs to be done and why",
+    "priority": "Urgent|High|Medium|Low", 
     "estimatedHours": 2.5,
-    "category": "development|design|testing|research|documentation|meeting|deployment|general",
-    "tags": ["tag1", "tag2"],
-    "microTasks": ["subtask 1", "subtask 2"]
+    "category": "Development|Design|Testing|Research|Documentation|Meeting|Deployment|General",
+    "tags": ["Title Case Tag", "Another Tag"],
+    "microTasks": ["Specific actionable step 1", "Specific actionable step 2"]
   }],
-  "summary": "Brief summary of identified tasks"
+  "summary": "Professional summary highlighting key tasks and total estimated time"
 }
 
-Be practical and actionable in your task extraction. Return ONLY the JSON object, no additional text.`;
+CRITICAL: Return ONLY the JSON object. No additional text, explanations, or formatting.`;
 }
 
 function simulateAIProcessing(content) {
@@ -262,22 +353,28 @@ function isTaskLike(text) {
 }
 
 function determinePriority(text) {
-  const urgentWords = ['urgent', 'asap', 'immediately', 'critical', 'emergency'];
-  const highWords = ['important', 'priority', 'soon', 'deadline'];
+  const urgentWords = ['urgent', 'asap', 'immediately', 'critical', 'emergency', 'blocking'];
+  const highWords = ['important', 'priority', 'soon', 'deadline', 'milestone'];
+  const lowWords = ['low priority', 'when time', 'eventually', 'nice to have', 'optional'];
   
   const lowerText = text.toLowerCase();
   
-  if (urgentWords.some(word => lowerText.includes(word))) return 'urgent';
-  if (highWords.some(word => lowerText.includes(word))) return 'high';
-  if (lowerText.includes('low priority') || lowerText.includes('when time')) return 'low';
+  if (urgentWords.some(word => lowerText.includes(word))) return 'Urgent';
+  if (highWords.some(word => lowerText.includes(word))) return 'High';
+  if (lowWords.some(word => lowerText.includes(word))) return 'Low';
   
-  return 'medium';
+  return 'Medium';
 }
 
 function extractSimpleTitle(text) {
   const cleaned = text.replace(/[^\w\s]/g, ' ').trim();
   const words = cleaned.split(/\s+/).slice(0, 6);
-  return words.join(' ').substring(0, 50);
+  const title = words.join(' ').substring(0, 50);
+  
+  // Proper title case formatting
+  return title.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 function generateSimpleId() {

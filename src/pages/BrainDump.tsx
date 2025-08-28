@@ -21,13 +21,11 @@ interface ProcessedTask {
   id: string;
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: 'Urgent' | 'High' | 'Medium' | 'Low';
   estimatedHours: number;
   category: string;
-  microTasks: {
-    title: string;
-    estimatedMinutes: number;
-  }[];
+  tags: string[];
+  microTasks: string[];
 }
 
 export function BrainDump() {
@@ -38,6 +36,9 @@ export function BrainDump() {
   const [processedTasks, setProcessedTasks] = useState<ProcessedTask[]>([]);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [recognition, setRecognition] = useState<any>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [useWhisper, setUseWhisper] = useState(true);
   const [error, setError] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { data: session } = useSession();
@@ -110,19 +111,92 @@ export function BrainDump() {
     }
   }, []);
 
-  const handleVoiceToggle = () => {
-    if (!recognition) {
-      setError('Voice recognition not supported in this browser');
-      return;
-    }
-    
+  const handleVoiceToggle = async () => {
     if (isRecording) {
-      recognition.stop();
+      // Stop recording
+      if (useWhisper && mediaRecorder) {
+        mediaRecorder.stop();
+      } else if (recognition) {
+        recognition.stop();
+      }
       setIsRecording(false);
     } else {
-      recognition.start();
-      setIsRecording(true);
+      // Start recording
       setError('');
+      
+      if (useWhisper) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const recorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm'
+          });
+          
+          const chunks: Blob[] = [];
+          
+          recorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              chunks.push(event.data);
+            }
+          };
+          
+          recorder.onstop = async () => {
+            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+            await transcribeWithWhisper(audioBlob);
+            
+            // Stop all tracks
+            stream.getTracks().forEach(track => track.stop());
+          };
+          
+          recorder.start();
+          setMediaRecorder(recorder);
+          setAudioChunks(chunks);
+          setIsRecording(true);
+          
+        } catch (err) {
+          setError('Microphone access denied or not available');
+          console.error('Media access error:', err);
+        }
+      } else {
+        // Fallback to Web Speech API
+        if (!recognition) {
+          setError('Voice recognition not supported in this browser');
+          return;
+        }
+        recognition.start();
+        setIsRecording(true);
+      }
+    }
+  };
+
+  const transcribeWithWhisper = async (audioBlob: Blob) => {
+    try {
+      setIsProcessing(true);
+      
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      
+      const response = await fetch('/api/ai/transcribe', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Transcription failed');
+      }
+      
+      const data = await response.json();
+      
+      // Add transcribed text to content
+      setContent(prev => {
+        const newContent = prev + (prev.endsWith(' ') || !prev ? '' : ' ') + data.transcription;
+        return newContent;
+      });
+      
+    } catch (err) {
+      setError('Transcription failed. Please try again.');
+      console.error('Whisper transcription error:', err);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -160,10 +234,8 @@ export function BrainDump() {
         priority: task.priority,
         estimatedHours: task.estimatedHours,
         category: task.category,
-        microTasks: task.microTasks?.map((microTask: any) => ({
-          title: typeof microTask === 'string' ? microTask : microTask.title,
-          estimatedMinutes: typeof microTask === 'string' ? 30 : microTask.estimatedMinutes || 30
-        })) || []
+        tags: task.tags || [],
+        microTasks: task.microTasks || []
       }));
       
       setProcessedTasks(formattedTasks);
@@ -185,18 +257,20 @@ export function BrainDump() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-error';
-      case 'medium': return 'text-warning';
-      case 'low': return 'text-info';
+      case 'Urgent': return 'text-error';
+      case 'High': return 'text-error';
+      case 'Medium': return 'text-warning';
+      case 'Low': return 'text-info';
       default: return 'text-muted-foreground';
     }
   };
 
   const getPriorityBg = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-error/10 border-error/20';
-      case 'medium': return 'bg-warning/10 border-warning/20';
-      case 'low': return 'bg-info/10 border-info/20';
+      case 'Urgent': return 'bg-error/10 border-error/20';
+      case 'High': return 'bg-error/10 border-error/20';
+      case 'Medium': return 'bg-warning/10 border-warning/20';
+      case 'Low': return 'bg-info/10 border-info/20';
       default: return 'bg-muted/10 border-border';
     }
   };
@@ -234,15 +308,27 @@ export function BrainDump() {
                     <p className="text-sm text-muted-foreground">Dump everything on your mind</p>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleVoiceToggle}
-                  className={isRecording ? 'timer-active' : 'glass-surface'}
-                >
-                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  {isRecording ? 'Stop' : 'Voice'}
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                    <input 
+                      type="checkbox" 
+                      checked={useWhisper} 
+                      onChange={(e) => setUseWhisper(e.target.checked)}
+                      className="w-3 h-3"
+                    />
+                    <span>OpenAI Whisper</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleVoiceToggle}
+                    className={isRecording ? 'timer-active' : 'glass-surface'}
+                    disabled={isProcessing}
+                  >
+                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    {isRecording ? 'Stop' : (isProcessing ? 'Processing...' : 'Voice')}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -370,10 +456,23 @@ Examples:
                         </h4>
                         <div className="space-y-2">
                           {task.microTasks.map((microTask, microIndex) => (
-                            <div key={microIndex} className="flex items-center justify-between p-2 glass-surface rounded">
-                              <span className="text-sm text-foreground">{microTask.title}</span>
-                              <span className="text-xs text-muted-foreground">{microTask.estimatedMinutes}min</span>
+                            <div key={microIndex} className="flex items-center p-2 glass-surface rounded">
+                              <CheckCircle2 className="h-3 w-3 text-muted-foreground mr-2" />
+                              <span className="text-sm text-foreground">{microTask}</span>
                             </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tags */}
+                    {task.tags && task.tags.length > 0 && (
+                      <div className="mt-4">
+                        <div className="flex flex-wrap gap-2">
+                          {task.tags.map((tag, tagIndex) => (
+                            <span key={tagIndex} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                              {tag}
+                            </span>
                           ))}
                         </div>
                       </div>
