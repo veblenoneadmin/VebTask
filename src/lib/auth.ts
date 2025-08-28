@@ -71,10 +71,12 @@ export const auth = betterAuth({
               </div>
             `,
           });
+          console.log(`Email sent successfully to ${email}`);
         } catch (error) {
-          console.error('Failed to send email:', error);
-          // For development, just log the OTP
+          console.error('Email sending failed:', error);
+          // For development, just log the OTP instead of failing
           console.log(`DEV MODE - OTP for ${email}: ${otp}`);
+          // Don't throw error to prevent 500 response
         }
       },
       otpLength: 6,
@@ -82,7 +84,8 @@ export const auth = betterAuth({
     }),
   ],
   emailAndPassword: {
-    enabled: false, // Disable password auth in favor of OTP
+    enabled: true, // Enable this for OTP to work properly
+    requireEmailVerification: false,
   },
   user: {
     additionalFields: {
