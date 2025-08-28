@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Project } from '../hooks/useTasks';
-import { X, Save, FolderOpen } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 
 interface ProjectModalProps {
   isOpen: boolean;

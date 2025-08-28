@@ -3,42 +3,63 @@ import { generateId } from './utils';
 
 // Mock OpenRouter API - in production, replace with actual API calls
 export class AIService {
-  private static apiKey = process.env.VITE_OPENROUTER_API_KEY;
+  private static apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
   private static baseURL = 'https://openrouter.ai/api/v1';
 
   static async processBrainDump(content: string): Promise<ProcessedBrainDump> {
     try {
-      // For now, simulate AI processing with intelligent parsing
-      // In production, this would call OpenRouter/GPT API
+      // Use OpenRouter API for real AI processing
+      if (this.apiKey) {
+        return await this.callOpenRouterAPI(content);
+      }
+      // Fallback to simulation if no API key
       return this.simulateAIProcessing(content);
       
-      /* Production code would look like:
-      const response = await fetch(`${this.baseURL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'openai/gpt-3.5-turbo',
-          messages: [{
-            role: 'system',
-            content: this.getSystemPrompt()
-          }, {
-            role: 'user', 
-            content: content
-          }],
-          temperature: 0.3,
-          max_tokens: 2000
-        })
-      });
-
-      const data = await response.json();
-      return JSON.parse(data.choices[0].message.content);
-      */
     } catch (error) {
       console.error('AI processing error:', error);
       throw new Error('Failed to process brain dump with AI');
+    }
+  }
+
+  private static async callOpenRouterAPI(content: string): Promise<ProcessedBrainDump> {
+    const response = await fetch(`${this.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-5-nano',
+        messages: [{
+          role: 'system',
+          content: this.getSystemPrompt()
+        }, {
+          role: 'user', 
+          content: content
+        }],
+        temperature: 0.3,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const aiResponse = data.choices[0].message.content;
+    
+    try {
+      const parsed = JSON.parse(aiResponse);
+      return {
+        ...parsed,
+        processingTimestamp: new Date().toISOString(),
+        aiModel: 'gpt-5-nano'
+      };
+    } catch (parseError) {
+      // If AI response isn't valid JSON, fall back to simulation
+      console.warn('AI response not valid JSON, falling back to simulation');
+      return this.simulateAIProcessing(content);
     }
   }
 
@@ -47,7 +68,7 @@ export class AIService {
     const lines = content.split('\n').filter(line => line.trim());
     const tasks: ExtractedTask[] = [];
     
-    lines.forEach((line, index) => {
+    lines.forEach((line) => {
       const trimmedLine = line.trim();
       if (trimmedLine.length < 5) return; // Skip very short lines
       
@@ -255,12 +276,10 @@ Return a JSON object with this structure:
     "tags": ["tag1", "tag2"],
     "microTasks": ["subtask 1", "subtask 2"]
   }],
-  "summary": "Brief summary of identified tasks",
-  "processingTimestamp": "ISO timestamp",
-  "aiModel": "gpt-3.5-turbo"
+  "summary": "Brief summary of identified tasks"
 }
 
-Be practical and actionable in your task extraction.`;
+Be practical and actionable in your task extraction. Return ONLY the JSON object, no additional text.`;
   }
 }
 

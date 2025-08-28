@@ -21,12 +21,9 @@ import {
   Calendar,
   Edit,
   Trash2,
-  Play,
   Pause,
-  Square,
   Brain,
   Save,
-  Search,
   Users,
   Building2,
   FileText,
@@ -44,7 +41,7 @@ export function Dashboard() {
   const userRole = 'admin'; // admin, manager, employee, client
   
   // Mock client data - in real app this would come from API
-  const [clients, setClients] = useState([
+  const [clients] = useState([
     {
       id: '1',
       name: 'Acme Corporation',
@@ -70,7 +67,7 @@ export function Dashboard() {
   ]);
   
   // Mock invoice data
-  const [invoices, setInvoices] = useState([
+  const [invoices] = useState([
     {
       id: '1',
       invoiceNumber: 'INV-001',
@@ -255,9 +252,9 @@ export function Dashboard() {
           priority: aiTask.priority,
           status: 'todo',
           tags: aiTask.tags,
-          projectId: null,
+          projectId: undefined,
           estimatedTime: Math.round(aiTask.estimatedHours * 60), // Convert to minutes
-          dueDate: null
+          dueDate: undefined
         });
       }, index * 100);
     });
@@ -876,9 +873,9 @@ export function Dashboard() {
                               priority: 'medium',
                               status: 'todo',
                               tags: ['brain-dump'],
-                              projectId: null,
-                              estimatedTime: null,
-                              dueDate: null
+                              projectId: undefined,
+                              estimatedTime: undefined,
+                              dueDate: undefined
                             });
                           }, index * 100);
                         }
@@ -944,7 +941,7 @@ export function Dashboard() {
               <div className="brain-dump-entries">
                 <h3>Recent Entries</h3>
                 <div className="entries-list">
-                  {brainDumpEntries.map((entry) => (
+                  {brainDumpEntries.map((entry: any) => (
                     <div key={entry.id} className={`brain-dump-entry ${entry.aiProcessed ? 'ai-processed' : ''}`}>
                       <div className="entry-header">
                         {entry.aiProcessed && (
@@ -961,7 +958,7 @@ export function Dashboard() {
                         )}
                       </div>
                       <div className="entry-content">
-                        {entry.content.split('\n').map((line, index) => (
+                        {entry.content.split('\n').map((line: string, index: number) => (
                           <p key={index}>{line}</p>
                         ))}
                       </div>
@@ -998,9 +995,9 @@ export function Dashboard() {
                                   priority: 'medium',
                                   status: 'todo',
                                   tags: ['brain-dump'],
-                                  projectId: null,
-                                  estimatedTime: null,
-                                  dueDate: null
+                                  projectId: undefined,
+                                  estimatedTime: undefined,
+                                  dueDate: undefined
                                 });
                               }}
                             >
@@ -1011,7 +1008,7 @@ export function Dashboard() {
                           <button 
                             className="action-btn danger"
                             onClick={() => {
-                              const updatedEntries = brainDumpEntries.filter(e => e.id !== entry.id);
+                              const updatedEntries = brainDumpEntries.filter((e: any) => e.id !== entry.id);
                               setBrainDumpEntries(updatedEntries);
                               localStorage.setItem('brainDumpEntries', JSON.stringify(updatedEntries));
                             }}
@@ -1119,11 +1116,11 @@ export function Dashboard() {
                 <div className="upcoming-tasks">
                   {tasks
                     .filter(task => task.dueDate && task.dueDate >= new Date())
-                    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+                    .sort((a, b) => (a.dueDate?.getTime() || 0) - (b.dueDate?.getTime() || 0))
                     .slice(0, 10)
                     .map(task => {
                       const project = projects.find(p => p.id === task.projectId);
-                      const daysUntilDue = Math.ceil((task.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                      const daysUntilDue = Math.ceil(((task.dueDate?.getTime() || 0) - new Date().getTime()) / (1000 * 60 * 60 * 24));
                       return (
                         <div key={task.id} className="upcoming-task">
                           <div className="task-info">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Task, Project } from '../hooks/useTasks';
-import { X, Save, Calendar, Clock, Tag, AlignLeft, Target } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 
 interface TaskModalProps {
   isOpen: boolean;
