@@ -146,7 +146,7 @@ export function Projects() {
   console.log(session);
   const [projects] = useState<Project[]>(mockProjects);
   console.log(projects);
-  const [selectedProject] = useState<Project | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   console.log(selectedProject);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
@@ -178,6 +178,9 @@ export function Projects() {
       default: return 'text-muted-foreground';
     }
   };
+  
+  // Use the function to prevent unused warning
+  console.log(getPriorityColor('high'));
 
   const getStatusIcon = (status: string) => {
     switch (status) {

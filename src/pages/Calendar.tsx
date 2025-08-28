@@ -101,8 +101,8 @@ export function Calendar() {
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   const [events] = useState<CalendarEvent[]>(mockEvents);
   console.log(events);
-  const [showEventForm] = useState(false);
-  console.log(showEventForm, setShowEventForm);
+  const [showEventForm, setShowEventForm] = useState(false);
+  console.log(showEventForm);
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
