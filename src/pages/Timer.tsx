@@ -11,10 +11,8 @@ import {
   Target,
   DollarSign,
   Coffee,
-  Timer as TimerIcon,
   BarChart3,
-  AlertCircle,
-  CheckCircle2
+  AlertCircle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -77,6 +75,7 @@ const mockTasks: Task[] = [
 
 export function Timer() {
   const { data: session } = useSession();
+  console.log('Timer session:', session);
   const [timerState, setTimerState] = useState<TimerState>({
     isRunning: false,
     isOnBreak: false,
@@ -95,7 +94,7 @@ export function Timer() {
 
   // Timer logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (timerState.isRunning) {
       interval = setInterval(() => {
         setTimerState(prev => ({
@@ -162,7 +161,7 @@ export function Timer() {
 
   const handleStop = () => {
     const totalWorkMinutes = Math.floor(timerState.currentSessionTime / 60);
-    const totalBreakMinutes = Math.floor(timerState.breakTime / 60);
+    console.log('Session completed with', totalWorkMinutes, 'minutes worked');
     
     if (totalWorkMinutes > 0) {
       // Here you would normally save to database

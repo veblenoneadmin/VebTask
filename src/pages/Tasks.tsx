@@ -9,13 +9,10 @@ import {
   Edit2,
   Trash2,
   Clock,
-  Target,
   DollarSign,
-  Filter,
   Search,
   Calendar,
   User,
-  MoreVertical,
   CheckCircle2,
   Circle,
   AlertCircle
@@ -126,12 +123,14 @@ const mockTasks: Task[] = [
 
 export function Tasks() {
   const { data: session } = useSession();
+  console.log('Current session:', session);
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
+  console.log('New task form visible:', showNewTaskForm);
 
   // Filter tasks
   const filteredTasks = tasks.filter(task => {

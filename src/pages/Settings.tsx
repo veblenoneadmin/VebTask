@@ -2,14 +2,11 @@ import { useState } from 'react';
 import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { 
-  Settings as SettingsIcon,
   User,
   Bell,
   Shield,
   Palette,
-  Clock,
   DollarSign,
   Mail,
   Phone,
@@ -46,15 +43,8 @@ export function Settings() {
     marketingEmails: false
   });
 
-  const [preferences, setPreferences] = useState({
-    theme: 'dark',
-    dateFormat: 'MM/dd/yyyy',
-    timeFormat: '12h',
-    firstDayOfWeek: 'Monday',
-    defaultTimer: 25,
-    autoBreak: true,
-    soundEnabled: true
-  });
+  // Preferences will be implemented later
+  console.log('Settings page loaded');
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
