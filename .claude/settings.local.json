@@ -21,7 +21,8 @@
       "Bash(git branch:*)",
       "Bash(npm create:*)",
       "Bash(npm run build:*)",
-      "Bash(PORT=3003 node server.js)"
+      "Bash(PORT=3003 node server.js)",
+      "Read(C:\\Users\\USER'S\\Downloads/**)"
     ],
     "deny": [],
     "ask": [],
