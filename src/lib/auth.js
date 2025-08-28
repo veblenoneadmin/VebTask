@@ -12,7 +12,7 @@ console.log('Auth config - baseURL:', process.env.VITE_APP_URL || process.env.VI
 console.log('Auth config - database connection string configured:', !!connectionString);
 
 // Create nodemailer transporter
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.zoho.com',
   port: process.env.SMTP_PORT || 465,
   secure: true, // true for 465, false for other ports
