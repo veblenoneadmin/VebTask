@@ -562,6 +562,379 @@ button:disabled {
   font-size: 14px;
 }
 
+/* Enhanced Task Items */
+.task-timer {
+  min-width: 120px;
+}
+
+.priority-indicator {
+  width: 4px;
+  height: 20px;
+  border-radius: 2px;
+  margin-right: 8px;
+}
+
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.task-tags {
+  margin-top: 8px;
+}
+
+.tag {
+  background: #f3f4f6;
+  color: #374151;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-right: 4px;
+}
+
+.task-meta {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.due-date {
+  color: #f59e0b !important;
+}
+
+.task-time-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.time-stats {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+/* Project Enhancements */
+.project-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.project-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.project-color-large {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.project-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.project-info h3 {
+  margin: 0 0 8px 0;
+}
+
+.project-info p {
+  margin: 0 0 8px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Timer Component */
+.timer-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.timer-display {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: bold;
+  color: #374151;
+  min-width: 70px;
+  text-align: center;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.timer-btn {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+}
+
+.timer-btn:hover {
+  background: #f9fafb;
+}
+
+.timer-btn.start {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.timer-btn.pause {
+  color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.timer-btn.stop {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #111827;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: #374151;
+}
+
+.modal-form {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* Color Picker */
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.color-option {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.color-option:hover {
+  border-color: #d1d5db;
+}
+
+.color-option.selected {
+  border-color: #374151;
+}
+
+/* Reports Enhancements */
+.priority-chart {
+  space-y: 12px;
+}
+
+.priority-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.priority-info {
+  display: flex;
+  align-items: center;
+  min-width: 80px;
+}
+
+.priority-label {
+  text-transform: capitalize;
+  font-size: 14px;
+  color: #374151;
+}
+
+.priority-bar {
+  flex: 1;
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.priority-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.priority-count {
+  min-width: 20px;
+  text-align: right;
+  font-weight: bold;
+  color: #374151;
+}
+
+.activity-list {
+  space-y: 8px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  font-size: 16px;
+}
+
+.activity-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-task {
+  font-weight: 500;
+  color: #374151;
+}
+
+.activity-project {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.empty-state p {
+  margin-bottom: 20px;
+}
+
+/* Status Badges */
+.status-badge.active {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.archived {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .header-left {
@@ -584,5 +957,30 @@ button:disabled {
   
   .trend-chart {
     height: 80px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    width: 95%;
+  }
+
+  .task-item.detailed {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .task-time-info {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .project-card-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
