@@ -23,7 +23,7 @@ console.log('DB Config:', { ...dbConfig, password: '***' });
 
 export const auth = betterAuth({
   database: createPool(dbConfig),
-  baseURL: process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:5173",
+  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:5173") + "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET || "fallback-secret-key-change-in-production",
   advanced: {
     generateId: () => {

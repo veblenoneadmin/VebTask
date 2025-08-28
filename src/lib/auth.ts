@@ -34,7 +34,7 @@ const dbConfig = {
 
 export const auth = betterAuth({
   database: createPool(dbConfig),
-  baseURL: process.env.VITE_APP_URL || import.meta.env.VITE_APP_URL || "http://localhost:5173",
+  baseURL: (process.env.VITE_APP_URL || import.meta.env.VITE_APP_URL || "http://localhost:5173") + "/api/auth",
   advanced: {
     generateId: () => {
       return Math.random().toString(36).substring(2) + Date.now().toString(36);
