@@ -37,7 +37,8 @@ export function BrainDump() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [recognition, setRecognition] = useState<any>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [audioChunks] = useState<Blob[]>([]);
+  console.log(audioChunks);
   const [useWhisper, setUseWhisper] = useState(true);
   const [error, setError] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -149,7 +150,7 @@ export function BrainDump() {
           
           recorder.start();
           setMediaRecorder(recorder);
-          setAudioChunks(chunks);
+          console.log('Audio chunks:', chunks);
           setIsRecording(true);
           
         } catch (err) {

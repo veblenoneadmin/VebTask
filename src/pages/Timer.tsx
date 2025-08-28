@@ -232,8 +232,8 @@ export function Timer() {
                     <div className="flex items-center space-x-3">
                       <div className={cn(
                         "h-12 w-12 rounded-xl flex items-center justify-center shadow-glow",
-                        currentTask.priority === 'high' ? 'bg-gradient-error' :
-                        currentTask.priority === 'medium' ? 'bg-gradient-warning' :
+                        currentTask.priority === 'High' || currentTask.priority === 'Urgent' ? 'bg-gradient-error' :
+                        currentTask.priority === 'Medium' ? 'bg-gradient-warning' :
                         'bg-gradient-primary'
                       )}>
                         <Target className="h-6 w-6 text-white" />
