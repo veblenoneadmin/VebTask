@@ -5,6 +5,7 @@ import { useTasks } from '../hooks/useTasks';
 import { TaskModal } from '../components/TaskModal';
 import { ProjectModal } from '../components/ProjectModal';
 import { Timer } from '../components/Timer';
+import { AIService, type ProcessedBrainDump } from '../lib/ai-service';
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -25,12 +26,70 @@ import {
   Square,
   Brain,
   Save,
-  Search
+  Search,
+  Users,
+  Building2,
+  FileText,
+  DollarSign,
+  Settings,
+  Shield,
+  X
 } from 'lucide-react';
 
 export function Dashboard() {
   const { data: session, isPending } = useSession();
   const [activeView, setActiveView] = useState('overview');
+  
+  // Mock user role - in real app this would come from session/database
+  const userRole = 'admin'; // admin, manager, employee, client
+  
+  // Mock client data - in real app this would come from API
+  const [clients, setClients] = useState([
+    {
+      id: '1',
+      name: 'Acme Corporation',
+      email: 'contact@acme.com',
+      company: 'Acme Corp',
+      contactPerson: 'John Smith',
+      status: 'active',
+      projects: 3,
+      totalBilled: 25000,
+      lastActivity: new Date('2024-01-15')
+    },
+    {
+      id: '2', 
+      name: 'Tech Innovations LLC',
+      email: 'hello@techinnovations.com',
+      company: 'Tech Innovations',
+      contactPerson: 'Sarah Johnson',
+      status: 'active',
+      projects: 1,
+      totalBilled: 12000,
+      lastActivity: new Date('2024-01-10')
+    }
+  ]);
+  
+  // Mock invoice data
+  const [invoices, setInvoices] = useState([
+    {
+      id: '1',
+      invoiceNumber: 'INV-001',
+      clientName: 'Acme Corporation',
+      amount: 5000,
+      status: 'paid',
+      dueDate: new Date('2024-01-20'),
+      issueDate: new Date('2024-01-05')
+    },
+    {
+      id: '2',
+      invoiceNumber: 'INV-002', 
+      clientName: 'Tech Innovations LLC',
+      amount: 3500,
+      status: 'pending',
+      dueDate: new Date('2024-02-01'),
+      issueDate: new Date('2024-01-15')
+    }
+  ]);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(undefined);
@@ -42,6 +101,8 @@ export function Dashboard() {
     const saved = localStorage.getItem('brainDumpEntries');
     return saved ? JSON.parse(saved) : [];
   });
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [lastProcessedDump, setLastProcessedDump] = useState<ProcessedBrainDump | null>(null);
 
   const {
     tasks,
@@ -144,6 +205,64 @@ export function Dashboard() {
     setSelectedProject(undefined);
   };
 
+  const handleAIProcessing = async () => {
+    if (!brainDumpText.trim()) return;
+    
+    setAiProcessing(true);
+    try {
+      const processed = await AIService.processBrainDump(brainDumpText);
+      setLastProcessedDump(processed);
+      
+      // Save the brain dump entry with AI processing results
+      const newEntry = {
+        id: Date.now().toString(),
+        content: brainDumpText,
+        timestamp: new Date(),
+        aiProcessed: true,
+        processedData: processed
+      };
+      
+      const updatedEntries = [newEntry, ...brainDumpEntries];
+      setBrainDumpEntries(updatedEntries);
+      localStorage.setItem('brainDumpEntries', JSON.stringify(updatedEntries));
+      setBrainDumpText('');
+    } catch (error) {
+      console.error('AI processing failed:', error);
+      // Fallback to regular save
+      const newEntry = {
+        id: Date.now().toString(),
+        content: brainDumpText,
+        timestamp: new Date(),
+        aiProcessed: false,
+        error: 'AI processing failed'
+      };
+      
+      const updatedEntries = [newEntry, ...brainDumpEntries];
+      setBrainDumpEntries(updatedEntries);
+      localStorage.setItem('brainDumpEntries', JSON.stringify(updatedEntries));
+      setBrainDumpText('');
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
+  const createTasksFromAI = (extractedTasks: any[]) => {
+    extractedTasks.forEach((aiTask, index) => {
+      setTimeout(() => {
+        addTask({
+          title: aiTask.title,
+          description: aiTask.description,
+          priority: aiTask.priority,
+          status: 'todo',
+          tags: aiTask.tags,
+          projectId: null,
+          estimatedTime: Math.round(aiTask.estimatedHours * 60), // Convert to minutes
+          dueDate: null
+        });
+      }, index * 100);
+    });
+  };
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -195,6 +314,33 @@ export function Dashboard() {
               <Calendar size={18} />
               Calendar
             </button>
+            {(userRole === 'admin' || userRole === 'manager') && (
+              <>
+                <button 
+                  className={activeView === 'clients' ? 'nav-tab active' : 'nav-tab'}
+                  onClick={() => setActiveView('clients')}
+                >
+                  <Users size={18} />
+                  Clients
+                </button>
+                <button 
+                  className={activeView === 'invoices' ? 'nav-tab active' : 'nav-tab'}
+                  onClick={() => setActiveView('invoices')}
+                >
+                  <FileText size={18} />
+                  Invoices
+                </button>
+              </>
+            )}
+            {userRole === 'admin' && (
+              <button 
+                className={activeView === 'admin' ? 'nav-tab active' : 'nav-tab'}
+                onClick={() => setActiveView('admin')}
+              >
+                <Shield size={18} />
+                Admin
+              </button>
+            )}
           </nav>
         </div>
         <div className="user-info">
@@ -675,19 +821,36 @@ export function Dashboard() {
                 <textarea
                   value={brainDumpText}
                   onChange={(e) => setBrainDumpText(e.target.value)}
-                  placeholder="What's on your mind? Capture your thoughts, ideas, tasks, or anything that comes to mind..."
+                  placeholder="What's on your mind? Capture your thoughts, ideas, tasks, or anything that comes to mind... Our AI will help organize and prioritize your thoughts!"
                   className="brain-dump-textarea"
                 />
                 <div className="brain-dump-actions">
                   <button 
-                    className="primary-btn"
+                    className="primary-btn ai-btn"
+                    onClick={handleAIProcessing}
+                    disabled={!brainDumpText.trim() || aiProcessing}
+                  >
+                    {aiProcessing ? (
+                      <>
+                        <div className="ai-processing-spinner" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Brain size={16} />
+                        AI Process
+                      </>
+                    )}
+                  </button>
+                  <button 
+                    className="secondary-btn"
                     onClick={() => {
                       if (brainDumpText.trim()) {
                         const newEntry = {
                           id: Date.now().toString(),
                           content: brainDumpText,
                           timestamp: new Date(),
-                          tags: []
+                          aiProcessed: false
                         };
                         const updatedEntries = [newEntry, ...brainDumpEntries];
                         setBrainDumpEntries(updatedEntries);
@@ -695,10 +858,10 @@ export function Dashboard() {
                         setBrainDumpText('');
                       }
                     }}
-                    disabled={!brainDumpText.trim()}
+                    disabled={!brainDumpText.trim() || aiProcessing}
                   >
                     <Save size={16} />
-                    Save Entry
+                    Quick Save
                   </button>
                   <button 
                     className="secondary-btn"
@@ -722,47 +885,129 @@ export function Dashboard() {
                       });
                       setBrainDumpText('');
                     }}
-                    disabled={!brainDumpText.trim()}
+                    disabled={!brainDumpText.trim() || aiProcessing}
                   >
                     <Plus size={16} />
-                    Convert to Tasks
+                    Manual Tasks
                   </button>
                 </div>
+                
+                {/* AI Processing Results */}
+                {lastProcessedDump && (
+                  <div className="ai-results">
+                    <div className="ai-results-header">
+                      <Brain size={18} />
+                      <h4>AI Analysis Results</h4>
+                    </div>
+                    <div className="ai-summary">
+                      <p>{lastProcessedDump.summary}</p>
+                    </div>
+                    <div className="ai-tasks">
+                      <h5>Extracted Tasks ({lastProcessedDump.extractedTasks.length})</h5>
+                      <div className="ai-task-list">
+                        {lastProcessedDump.extractedTasks.map(task => (
+                          <div key={task.id} className="ai-task-item">
+                            <div className="ai-task-header">
+                              <h6>{task.title}</h6>
+                              <div className="ai-task-meta">
+                                <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
+                                <span className="time-estimate">{task.estimatedHours}h</span>
+                                <span className="category-badge">{task.category}</span>
+                              </div>
+                            </div>
+                            <p className="ai-task-description">{task.description}</p>
+                            {task.tags.length > 0 && (
+                              <div className="ai-task-tags">
+                                {task.tags.map(tag => (
+                                  <span key={tag} className="ai-tag">{tag}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button 
+                        className="primary-btn"
+                        onClick={() => {
+                          createTasksFromAI(lastProcessedDump.extractedTasks);
+                          setLastProcessedDump(null);
+                        }}
+                      >
+                        <Plus size={16} />
+                        Create All Tasks
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="brain-dump-entries">
                 <h3>Recent Entries</h3>
                 <div className="entries-list">
                   {brainDumpEntries.map((entry) => (
-                    <div key={entry.id} className="brain-dump-entry">
+                    <div key={entry.id} className={`brain-dump-entry ${entry.aiProcessed ? 'ai-processed' : ''}`}>
+                      <div className="entry-header">
+                        {entry.aiProcessed && (
+                          <div className="ai-badge">
+                            <Brain size={12} />
+                            AI Processed
+                          </div>
+                        )}
+                        {entry.error && (
+                          <div className="error-badge">
+                            <X size={12} />
+                            Processing Failed
+                          </div>
+                        )}
+                      </div>
                       <div className="entry-content">
                         {entry.content.split('\n').map((line, index) => (
                           <p key={index}>{line}</p>
                         ))}
                       </div>
+                      {entry.processedData && (
+                        <div className="entry-ai-summary">
+                          <p><strong>AI Summary:</strong> {entry.processedData.summary}</p>
+                          <div className="ai-extracted-count">
+                            {entry.processedData.extractedTasks.length} tasks extracted
+                          </div>
+                        </div>
+                      )}
                       <div className="entry-meta">
                         <span className="entry-timestamp">
                           {new Date(entry.timestamp).toLocaleString()}
                         </span>
                         <div className="entry-actions">
-                          <button 
-                            className="action-btn"
-                            onClick={() => {
-                              addTask({
-                                title: entry.content.split('\n')[0].substring(0, 50),
-                                description: entry.content,
-                                priority: 'medium',
-                                status: 'todo',
-                                tags: ['brain-dump'],
-                                projectId: null,
-                                estimatedTime: null,
-                                dueDate: null
-                              });
-                            }}
-                          >
-                            <Plus size={12} />
-                            Make Task
-                          </button>
+                          {entry.processedData ? (
+                            <button 
+                              className="action-btn ai-action"
+                              onClick={() => {
+                                createTasksFromAI(entry.processedData.extractedTasks);
+                              }}
+                            >
+                              <Brain size={12} />
+                              Create AI Tasks
+                            </button>
+                          ) : (
+                            <button 
+                              className="action-btn"
+                              onClick={() => {
+                                addTask({
+                                  title: entry.content.split('\n')[0].substring(0, 50),
+                                  description: entry.content,
+                                  priority: 'medium',
+                                  status: 'todo',
+                                  tags: ['brain-dump'],
+                                  projectId: null,
+                                  estimatedTime: null,
+                                  dueDate: null
+                                });
+                              }}
+                            >
+                              <Plus size={12} />
+                              Make Task
+                            </button>
+                          )}
                           <button 
                             className="action-btn danger"
                             onClick={() => {
@@ -904,6 +1149,283 @@ export function Dashboard() {
                       <p>No upcoming tasks with due dates. Add some deadlines to see them here!</p>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeView === 'clients' && (userRole === 'admin' || userRole === 'manager') && (
+          <div className="clients-view">
+            <div className="view-header">
+              <h2>Client Management</h2>
+              <button className="primary-btn">
+                <Plus size={16} />
+                Add Client
+              </button>
+            </div>
+            
+            <div className="clients-stats">
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <Users size={24} />
+                </div>
+                <div className="stat-info">
+                  <h3>{clients.length}</h3>
+                  <p>Active Clients</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <DollarSign size={24} />
+                </div>
+                <div className="stat-info">
+                  <h3>${clients.reduce((sum, c) => sum + c.totalBilled, 0).toLocaleString()}</h3>
+                  <p>Total Revenue</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <Building2 size={24} />
+                </div>
+                <div className="stat-info">
+                  <h3>{clients.reduce((sum, c) => sum + c.projects, 0)}</h3>
+                  <p>Active Projects</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="clients-table">
+              <div className="table-header">
+                <div className="table-cell">Client</div>
+                <div className="table-cell">Contact</div>
+                <div className="table-cell">Projects</div>
+                <div className="table-cell">Revenue</div>
+                <div className="table-cell">Status</div>
+                <div className="table-cell">Actions</div>
+              </div>
+              {clients.map(client => (
+                <div key={client.id} className="table-row">
+                  <div className="table-cell">
+                    <div className="client-info">
+                      <div className="client-avatar">
+                        <Building2 size={20} />
+                      </div>
+                      <div>
+                        <h4>{client.name}</h4>
+                        <p>{client.company}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="table-cell">
+                    <div>
+                      <p>{client.contactPerson}</p>
+                      <span className="email">{client.email}</span>
+                    </div>
+                  </div>
+                  <div className="table-cell">
+                    <span className="project-count">{client.projects} active</span>
+                  </div>
+                  <div className="table-cell">
+                    <span className="revenue">${client.totalBilled.toLocaleString()}</span>
+                  </div>
+                  <div className="table-cell">
+                    <span className={`status-badge ${client.status}`}>
+                      {client.status}
+                    </span>
+                  </div>
+                  <div className="table-cell">
+                    <div className="action-buttons">
+                      <button className="action-btn">
+                        <Edit size={14} />
+                      </button>
+                      <button className="action-btn">
+                        <FileText size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeView === 'invoices' && (userRole === 'admin' || userRole === 'manager') && (
+          <div className="invoices-view">
+            <div className="view-header">
+              <h2>Invoice Management</h2>
+              <button className="primary-btn">
+                <Plus size={16} />
+                Create Invoice
+              </button>
+            </div>
+
+            <div className="invoices-stats">
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FileText size={24} />
+                </div>
+                <div className="stat-info">
+                  <h3>{invoices.length}</h3>
+                  <p>Total Invoices</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <DollarSign size={24} />
+                </div>
+                <div className="stat-info">
+                  <h3>${invoices.reduce((sum, inv) => sum + inv.amount, 0).toLocaleString()}</h3>
+                  <p>Total Amount</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon pending">
+                  <Clock size={24} />
+                </div>
+                <div className="stat-info">
+                  <h3>{invoices.filter(inv => inv.status === 'pending').length}</h3>
+                  <p>Pending Payment</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="invoices-table">
+              <div className="table-header">
+                <div className="table-cell">Invoice #</div>
+                <div className="table-cell">Client</div>
+                <div className="table-cell">Amount</div>
+                <div className="table-cell">Due Date</div>
+                <div className="table-cell">Status</div>
+                <div className="table-cell">Actions</div>
+              </div>
+              {invoices.map(invoice => (
+                <div key={invoice.id} className="table-row">
+                  <div className="table-cell">
+                    <span className="invoice-number">{invoice.invoiceNumber}</span>
+                  </div>
+                  <div className="table-cell">
+                    <span>{invoice.clientName}</span>
+                  </div>
+                  <div className="table-cell">
+                    <span className="amount">${invoice.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="table-cell">
+                    <span className={`due-date ${new Date() > invoice.dueDate ? 'overdue' : ''}`}>
+                      {invoice.dueDate.toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="table-cell">
+                    <span className={`status-badge ${invoice.status}`}>
+                      {invoice.status}
+                    </span>
+                  </div>
+                  <div className="table-cell">
+                    <div className="action-buttons">
+                      <button className="action-btn">
+                        <Edit size={14} />
+                      </button>
+                      <button className="action-btn">
+                        <FileText size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeView === 'admin' && userRole === 'admin' && (
+          <div className="admin-view">
+            <div className="view-header">
+              <h2>Administrative Dashboard</h2>
+              <div className="admin-actions">
+                <button className="secondary-btn">
+                  <Settings size={16} />
+                  System Settings
+                </button>
+                <button className="primary-btn">
+                  <Users size={16} />
+                  Manage Users
+                </button>
+              </div>
+            </div>
+
+            <div className="admin-stats">
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <Users size={24} />
+                </div>
+                <div className="stat-info">
+                  <h3>12</h3>
+                  <p>Total Users</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <Shield size={24} />
+                </div>
+                <div className="stat-info">
+                  <h3>3</h3>
+                  <p>Security Events</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <Activity size={24} />
+                </div>
+                <div className="stat-info">
+                  <h3>98%</h3>
+                  <p>System Health</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-panels">
+              <div className="admin-panel">
+                <h3>Recent Security Events</h3>
+                <div className="security-events">
+                  <div className="security-event">
+                    <div className="event-icon login-success">
+                      <CheckSquare size={16} />
+                    </div>
+                    <div className="event-details">
+                      <p>Successful login</p>
+                      <span>tony@opusautomations.com • 2 minutes ago</span>
+                    </div>
+                  </div>
+                  <div className="security-event">
+                    <div className="event-icon login-failed">
+                      <X size={16} />
+                    </div>
+                    <div className="event-details">
+                      <p>Failed login attempt</p>
+                      <span>unknown@email.com • 1 hour ago</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="admin-panel">
+                <h3>System Analytics</h3>
+                <div className="analytics-grid">
+                  <div className="analytics-item">
+                    <span className="analytics-label">Active Sessions</span>
+                    <span className="analytics-value">8</span>
+                  </div>
+                  <div className="analytics-item">
+                    <span className="analytics-label">Database Size</span>
+                    <span className="analytics-value">2.4 GB</span>
+                  </div>
+                  <div className="analytics-item">
+                    <span className="analytics-label">API Requests</span>
+                    <span className="analytics-value">1,247</span>
+                  </div>
+                  <div className="analytics-item">
+                    <span className="analytics-label">Uptime</span>
+                    <span className="analytics-value">99.9%</span>
+                  </div>
                 </div>
               </div>
             </div>

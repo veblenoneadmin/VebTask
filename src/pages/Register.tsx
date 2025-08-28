@@ -7,24 +7,17 @@ import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
@@ -33,10 +26,11 @@ export function Register() {
     }
 
     try {
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
       const result = await signUp.email({
         email,
         password,
-        name,
+        name: fullName,
       });
 
       if (result.error) {
@@ -77,18 +71,35 @@ export function Register() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="input-group">
-            <label htmlFor="name">Full Name</label>
-            <div className="input-wrapper">
-              <User className="input-icon" size={20} />
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your full name"
-                required
-              />
+          <div className="form-row">
+            <div className="input-group">
+              <label htmlFor="firstName">First Name</label>
+              <div className="input-wrapper">
+                <User className="input-icon" size={20} />
+                <input
+                  type="text"
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Tony"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label htmlFor="lastName">Last Name</label>
+              <div className="input-wrapper">
+                <User className="input-icon" size={20} />
+                <input
+                  type="text"
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Herrera"
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -101,7 +112,7 @@ export function Register() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder="tony@opusautomations.com"
                 required
               />
             </div>
@@ -116,7 +127,7 @@ export function Register() {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password"
+                placeholder="••••••••••"
                 required
               />
               <button
@@ -129,28 +140,6 @@ export function Register() {
             </div>
             <div className="password-requirements">
               Password must be at least 6 characters with uppercase, lowercase, and numbers
-            </div>
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <div className="input-wrapper">
-              <Lock className="input-icon" size={20} />
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your password"
-                required
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
             </div>
           </div>
 
