@@ -1,9 +1,5 @@
-import React from 'react';
-import StaffWorkspace from '@/components/Workspace/StaffWorkspace';
 import UnifiedDashboard from '@/components/Dashboard/UnifiedDashboard';
-import ClientPortal from '@/components/Client/ClientPortal';
 import { useAuth } from '@/hooks/useBetterAuth';
-// TODO: Implement profile hook with better-auth
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -30,8 +26,6 @@ const Index = () => {
     );
   }
 
-  // TODO: Implement role-based routing when profile system is set up
-  // For now, default to unified dashboard for all users
   return <UnifiedDashboard />;
 };
 

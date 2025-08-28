@@ -1,20 +1,15 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useBetterAuth';
-// TODO: Replace with better-auth database operations
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
-  LayoutDashboard, 
   CheckSquare, 
   Clock, 
   Calendar, 
   Brain,
   Settings, 
   LogOut,
-  ChevronLeft,
-  ChevronRight,
   BarChart3,
   Timer,
   Building2,
@@ -22,8 +17,6 @@ import {
   FileText,
   DollarSign
 } from 'lucide-react';
-import veblenLogo from '@/assets/veblen-logo.png';
-import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 
 // Navigation based on user roles
@@ -65,13 +58,12 @@ const getNavigationForRole = (role: string) => {
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { data: profile } = useProfile();
 
   const handleSignOut = async () => {
     try {
       await signOut();
     } catch (error) {
-      logger.error('Sign out failed');
+      console.error('Sign out failed', error);
       // Still try to redirect user on sign out error
       window.location.href = '/login';
     }
@@ -93,8 +85,8 @@ const Sidebar: React.FC = () => {
         {/* Logo */}
         <div className="flex h-16 items-center px-6 border-b border-border">
           <div className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center">
-              <img src={veblenLogo} alt="VebTask Logo" className="h-10 w-10 object-contain" />
+            <div className="flex h-10 w-10 items-center justify-center text-2xl">
+              🎉
             </div>
             <div>
               <h1 className="text-lg font-bold gradient-text">VebTask</h1>
@@ -105,7 +97,7 @@ const Sidebar: React.FC = () => {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {getNavigationForRole(profile?.role || 'employee').map((item) => {
+          {getNavigationForRole('employee').map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
             
@@ -136,7 +128,6 @@ const Sidebar: React.FC = () => {
         <div className="p-4 border-t border-border">
           <div className="flex items-center space-x-3 p-3 rounded-lg bg-surface-elevated">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={profile?.avatar_url} />
               <AvatarFallback className="bg-gradient-primary text-white font-medium">
                 {user?.email ? getInitials(user.email) : 'U'}
               </AvatarFallback>
@@ -144,25 +135,20 @@ const Sidebar: React.FC = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
                 <p className="text-sm font-medium text-foreground truncate">
-                  {profile?.first_name && profile?.last_name 
-                    ? `${profile.first_name} ${profile.last_name}`
-                    : user?.email?.split('@')[0] || 'User'
-                  }
+                  {user?.email?.split('@')[0] || 'User'}
                 </p>
                 <Badge variant="outline" className="text-xs capitalize">
-                  {profile?.role || 'employee'}
+                  employee
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={handleSignOut}
-              className="h-8 w-8 p-0 hover:bg-error/10 hover:text-error"
+              className="h-8 w-8 p-0 rounded-lg hover:bg-error/10 hover:text-error text-muted-foreground hover:text-error transition-colors flex items-center justify-center"
             >
               <LogOut className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
       </div>
