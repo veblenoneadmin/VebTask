@@ -1,5 +1,5 @@
 import { createAuthClient } from "better-auth/react";
-import { emailOTPClient } from "better-auth/plugins/client";
+import { emailOTPClient } from "better-auth/client/plugins";
 
 const baseURL = import.meta.env.VITE_APP_URL || window.location.origin;
 
