@@ -27,7 +27,9 @@
     "ask": [],
     "additionalDirectories": [
       "C:\\Users\\USER'S\\Desktop",
-      "C:\\"
+      "C:\\",
+      "C:\\Users\\USER''''S\\Desktop\\VebTask\\src\\lib",
+      "C:\\Users\\USER''''S\\Desktop\\VebTask\\api\\ai"
     ]
   }
 }

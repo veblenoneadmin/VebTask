@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useSession, signOut } from '../lib/auth-client';
 import { Navigate } from 'react-router-dom';
 import { useTasks } from '../hooks/useTasks';
 import { TaskModal } from '../components/TaskModal';
 import { ProjectModal } from '../components/ProjectModal';
 import { Timer } from '../components/Timer';
-import { AIService, type ProcessedBrainDump } from '../lib/ai-service';
+import { AIProxyService as AIService, type ProcessedBrainDump } from '../lib/ai-proxy';
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -30,12 +31,17 @@ import {
   DollarSign,
   Settings,
   Shield,
-  X
+  X,
+  Mic,
+  MicOff,
+  Menu
 } from 'lucide-react';
 
 export function Dashboard() {
   const { data: session, isPending } = useSession();
   const [activeView, setActiveView] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   // Mock user role - in real app this would come from session/database
   const userRole = 'admin'; // admin, manager, employee, client
@@ -100,6 +106,58 @@ export function Dashboard() {
   });
   const [aiProcessing, setAiProcessing] = useState(false);
   const [lastProcessedDump, setLastProcessedDump] = useState<ProcessedBrainDump | null>(null);
+  
+  // Speech recognition hook
+  const {
+    isListening,
+    isSupported: speechSupported,
+    transcript,
+    interimTranscript,
+    error: speechError,
+    startListening,
+    stopListening,
+    resetTranscript
+  } = useSpeechRecognition({
+    continuous: true,
+    interimResults: true,
+    lang: 'en-US'
+  });
+
+  // Handle speech recognition transcript updates
+  React.useEffect(() => {
+    if (transcript) {
+      setBrainDumpText(prev => {
+        const newText = prev + transcript;
+        resetTranscript();
+        return newText;
+      });
+    }
+  }, [transcript, resetTranscript]);
+
+  // Handle voice recording toggle
+  const handleVoiceToggle = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      if (speechSupported) {
+        startListening();
+      } else {
+        alert('Speech recognition is not supported in your browser. Please try Chrome, Edge, or Safari.');
+      }
+    }
+  };
+
+  // Handle mobile detection
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 480);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const {
     tasks,
@@ -262,51 +320,79 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
+      {/* Mobile Menu Button */}
+      {isMobile && (
+        <button 
+          className="mobile-menu-btn"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <Menu size={20} />
+        </button>
+      )}
+      
       <header className="dashboard-header">
         <div className="header-left">
           <div className="dashboard-brand">
             <div className="dashboard-icon">V</div>
             <h1>VebTask</h1>
           </div>
-          <nav className="nav-tabs">
+          <nav className={`nav-tabs main-nav ${sidebarOpen ? 'mobile-nav-open' : ''}`}>
             <button 
               className={activeView === 'overview' ? 'nav-tab active' : 'nav-tab'}
-              onClick={() => setActiveView('overview')}
+              onClick={() => {
+                setActiveView('overview');
+                setSidebarOpen(false);
+              }}
             >
               <LayoutDashboard size={18} />
               Overview
             </button>
             <button 
               className={activeView === 'tasks' ? 'nav-tab active' : 'nav-tab'}
-              onClick={() => setActiveView('tasks')}
+              onClick={() => {
+                setActiveView('tasks');
+                setSidebarOpen(false);
+              }}
             >
               <CheckSquare size={18} />
               Tasks
             </button>
             <button 
               className={activeView === 'projects' ? 'nav-tab active' : 'nav-tab'}
-              onClick={() => setActiveView('projects')}
+              onClick={() => {
+                setActiveView('projects');
+                setSidebarOpen(false);
+              }}
             >
               <FolderOpen size={18} />
               Projects
             </button>
             <button 
               className={activeView === 'reports' ? 'nav-tab active' : 'nav-tab'}
-              onClick={() => setActiveView('reports')}
+              onClick={() => {
+                setActiveView('reports');
+                setSidebarOpen(false);
+              }}
             >
               <BarChart3 size={18} />
               Reports
             </button>
             <button 
               className={activeView === 'brain-dump' ? 'nav-tab active' : 'nav-tab'}
-              onClick={() => setActiveView('brain-dump')}
+              onClick={() => {
+                setActiveView('brain-dump');
+                setSidebarOpen(false);
+              }}
             >
               <Brain size={18} />
               Brain Dump
             </button>
             <button 
               className={activeView === 'calendar' ? 'nav-tab active' : 'nav-tab'}
-              onClick={() => setActiveView('calendar')}
+              onClick={() => {
+                setActiveView('calendar');
+                setSidebarOpen(false);
+              }}
             >
               <Calendar size={18} />
               Calendar
@@ -315,14 +401,20 @@ export function Dashboard() {
               <>
                 <button 
                   className={activeView === 'clients' ? 'nav-tab active' : 'nav-tab'}
-                  onClick={() => setActiveView('clients')}
+                  onClick={() => {
+                    setActiveView('clients');
+                    setSidebarOpen(false);
+                  }}
                 >
                   <Users size={18} />
                   Clients
                 </button>
                 <button 
                   className={activeView === 'invoices' ? 'nav-tab active' : 'nav-tab'}
-                  onClick={() => setActiveView('invoices')}
+                  onClick={() => {
+                    setActiveView('invoices');
+                    setSidebarOpen(false);
+                  }}
                 >
                   <FileText size={18} />
                   Invoices
@@ -332,7 +424,10 @@ export function Dashboard() {
             {userRole === 'admin' && (
               <button 
                 className={activeView === 'admin' ? 'nav-tab active' : 'nav-tab'}
-                onClick={() => setActiveView('admin')}
+                onClick={() => {
+                  setActiveView('admin');
+                  setSidebarOpen(false);
+                }}
               >
                 <Shield size={18} />
                 Admin
@@ -815,12 +910,32 @@ export function Dashboard() {
             </div>
             <div className="brain-dump-container">
               <div className="brain-dump-input">
-                <textarea
-                  value={brainDumpText}
-                  onChange={(e) => setBrainDumpText(e.target.value)}
-                  placeholder="What's on your mind? Capture your thoughts, ideas, tasks, or anything that comes to mind... Our AI will help organize and prioritize your thoughts!"
-                  className="brain-dump-textarea"
-                />
+                <div className="textarea-container">
+                  <textarea
+                    value={brainDumpText + (interimTranscript ? ` ${interimTranscript}` : '')}
+                    onChange={(e) => setBrainDumpText(e.target.value)}
+                    placeholder="What's on your mind? Capture your thoughts, ideas, tasks, or anything that comes to mind... Our AI will help organize and prioritize your thoughts! Click the microphone to speak."
+                    className={`brain-dump-textarea ${isListening ? 'listening' : ''}`}
+                  />
+                  <button
+                    className={`voice-btn ${isListening ? 'listening' : ''} ${!speechSupported ? 'disabled' : ''}`}
+                    onClick={handleVoiceToggle}
+                    disabled={!speechSupported}
+                    title={isListening ? 'Stop recording' : 'Start voice recording'}
+                  >
+                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                  </button>
+                </div>
+                {speechError && (
+                  <div className="speech-error">
+                    {speechError}
+                  </div>
+                )}
+                {isListening && (
+                  <div className="speech-status">
+                    🎤 Listening... Speak clearly and I'll transcribe your thoughts.
+                  </div>
+                )}
                 <div className="brain-dump-actions">
                   <button 
                     className="primary-btn ai-btn"

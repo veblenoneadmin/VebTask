@@ -86,6 +86,199 @@ app.all('/api/auth/*', async (req, res, next) => {
   }
 });
 
+// AI Processing API endpoint (secure server-side OpenRouter proxy)
+app.post('/api/ai/process-brain-dump', async (req, res) => {
+  try {
+    const { content, timestamp } = req.body;
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+    const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+    // If no API key, fallback to simulation
+    if (!OPENROUTER_API_KEY) {
+      console.warn('OpenRouter API key not found, using simulation fallback');
+      const result = simulateAIProcessing(content);
+      return res.status(200).json(result);
+    }
+
+    console.log('🤖 Processing brain dump with GPT-5 Nano...');
+
+    // Call OpenRouter API securely from server
+    const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-5-nano',
+        messages: [{
+          role: 'system',
+          content: getAISystemPrompt()
+        }, {
+          role: 'user', 
+          content: content
+        }],
+        temperature: 0.3,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      console.error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+      // Fallback to simulation on API error
+      const result = simulateAIProcessing(content);
+      return res.status(200).json(result);
+    }
+
+    const data = await response.json();
+    const aiResponse = data.choices[0].message.content;
+    
+    try {
+      const parsed = JSON.parse(aiResponse);
+      const result = {
+        ...parsed,
+        processingTimestamp: new Date().toISOString(),
+        aiModel: 'gpt-5-nano'
+      };
+      
+      console.log('✅ Brain dump processed successfully with AI');
+      return res.status(200).json(result);
+    } catch (parseError) {
+      console.warn('AI response not valid JSON, falling back to simulation');
+      const result = simulateAIProcessing(content);
+      return res.status(200).json(result);
+    }
+
+  } catch (error) {
+    console.error('❌ AI processing error:', error);
+    
+    // Always provide fallback simulation on error
+    try {
+      const result = simulateAIProcessing(req.body.content || '');
+      return res.status(200).json(result);
+    } catch (fallbackError) {
+      return res.status(500).json({ error: 'AI processing failed' });
+    }
+  }
+});
+
+// AI helper functions
+function getAISystemPrompt() {
+  return `You are an AI assistant specialized in analyzing brain dumps and extracting actionable tasks. 
+
+Your job is to:
+1. Parse unstructured text/thoughts into organized, actionable tasks
+2. Assign appropriate priorities (urgent, high, medium, low)
+3. Estimate time requirements in hours
+4. Categorize tasks by type (development, design, testing, etc.)
+5. Extract relevant tags and keywords
+6. Break complex tasks into micro-tasks when appropriate
+
+Return a JSON object with this structure:
+{
+  "originalContent": "...",
+  "extractedTasks": [{
+    "id": "unique-id",
+    "title": "Clear task title (max 50 chars)",
+    "description": "Detailed description",
+    "priority": "urgent|high|medium|low",
+    "estimatedHours": 2.5,
+    "category": "development|design|testing|research|documentation|meeting|deployment|general",
+    "tags": ["tag1", "tag2"],
+    "microTasks": ["subtask 1", "subtask 2"]
+  }],
+  "summary": "Brief summary of identified tasks"
+}
+
+Be practical and actionable in your task extraction. Return ONLY the JSON object, no additional text.`;
+}
+
+function simulateAIProcessing(content) {
+  const lines = content.split('\n').filter(line => line.trim());
+  const tasks = [];
+  
+  lines.forEach((line) => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.length < 5) return;
+    
+    if (isTaskLike(trimmedLine)) {
+      const priority = determinePriority(trimmedLine);
+      const estimatedTime = Math.random() * 4 + 1;
+      
+      tasks.push({
+        id: generateSimpleId(),
+        title: extractSimpleTitle(trimmedLine),
+        description: trimmedLine,
+        priority,
+        estimatedHours: Math.round(estimatedTime * 10) / 10,
+        category: 'general',
+        tags: [],
+        microTasks: []
+      });
+    }
+  });
+
+  if (tasks.length === 0) {
+    tasks.push({
+      id: generateSimpleId(),
+      title: extractSimpleTitle(content.substring(0, 50)),
+      description: content,
+      priority: 'medium',
+      estimatedHours: 2,
+      category: 'general',
+      tags: [],
+      microTasks: []
+    });
+  }
+
+  return {
+    originalContent: content,
+    extractedTasks: tasks,
+    summary: `Identified ${tasks.length} actionable tasks. Estimated total time: ${Math.round(tasks.reduce((sum, task) => sum + task.estimatedHours, 0) * 10) / 10} hours.`,
+    processingTimestamp: new Date().toISOString(),
+    aiModel: 'simulation-fallback'
+  };
+}
+
+function isTaskLike(text) {
+  const taskIndicators = [
+    'need to', 'have to', 'should', 'must', 'create', 'build', 'implement',
+    'fix', 'update', 'review', 'test', 'deploy', 'setup', 'configure',
+    'design', 'research', 'analyze', 'write', 'document', 'plan'
+  ];
+  
+  const lowerText = text.toLowerCase();
+  return taskIndicators.some(indicator => lowerText.includes(indicator));
+}
+
+function determinePriority(text) {
+  const urgentWords = ['urgent', 'asap', 'immediately', 'critical', 'emergency'];
+  const highWords = ['important', 'priority', 'soon', 'deadline'];
+  
+  const lowerText = text.toLowerCase();
+  
+  if (urgentWords.some(word => lowerText.includes(word))) return 'urgent';
+  if (highWords.some(word => lowerText.includes(word))) return 'high';
+  if (lowerText.includes('low priority') || lowerText.includes('when time')) return 'low';
+  
+  return 'medium';
+}
+
+function extractSimpleTitle(text) {
+  const cleaned = text.replace(/[^\w\s]/g, ' ').trim();
+  const words = cleaned.split(/\s+/).slice(0, 6);
+  return words.join(' ').substring(0, 50);
+}
+
+function generateSimpleId() {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 

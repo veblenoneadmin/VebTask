@@ -1,78 +1,50 @@
-// AI service for brain dump processing using OpenRouter/GPT
+// Secure server-side proxy for AI processing
 import { generateId } from './utils';
 
-// Mock OpenRouter API - in production, replace with actual API calls
-export class AIService {
-  private static apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-  private static baseURL = 'https://openrouter.ai/api/v1';
+export class AIProxyService {
+  private static baseURL = '/api/ai'; // Server endpoint instead of direct OpenRouter
 
   static async processBrainDump(content: string): Promise<ProcessedBrainDump> {
     try {
-      // Use OpenRouter API for real AI processing
-      if (this.apiKey) {
-        return await this.callOpenRouterAPI(content);
+      // Call our secure server endpoint instead of OpenRouter directly
+      const response = await fetch(`${this.baseURL}/process-brain-dump`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: content.trim(),
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI processing failed: ${response.statusText}`);
       }
-      // Fallback to simulation if no API key
-      return this.simulateAIProcessing(content);
+
+      const result = await response.json();
       
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      return result;
     } catch (error) {
       console.error('AI processing error:', error);
-      throw new Error('Failed to process brain dump with AI');
-    }
-  }
-
-  private static async callOpenRouterAPI(content: string): Promise<ProcessedBrainDump> {
-    const response = await fetch(`${this.baseURL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'openai/gpt-5-nano',
-        messages: [{
-          role: 'system',
-          content: this.getSystemPrompt()
-        }, {
-          role: 'user', 
-          content: content
-        }],
-        temperature: 0.3,
-        max_tokens: 2000
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
-    
-    try {
-      const parsed = JSON.parse(aiResponse);
-      return {
-        ...parsed,
-        processingTimestamp: new Date().toISOString(),
-        aiModel: 'gpt-5-nano'
-      };
-    } catch (parseError) {
-      // If AI response isn't valid JSON, fall back to simulation
-      console.warn('AI response not valid JSON, falling back to simulation');
+      // Fallback to client-side simulation if server is unavailable
       return this.simulateAIProcessing(content);
     }
   }
 
+  // Keep simulation as fallback
   private static simulateAIProcessing(content: string): ProcessedBrainDump {
-    // Intelligent parsing logic that mimics AI processing
     const lines = content.split('\n').filter(line => line.trim());
     const tasks: ExtractedTask[] = [];
     
     lines.forEach((line) => {
       const trimmedLine = line.trim();
-      if (trimmedLine.length < 5) return; // Skip very short lines
+      if (trimmedLine.length < 5) return;
       
-      // Detect task-like content
       if (this.isTaskLike(trimmedLine)) {
         const priority = this.determinePriority(trimmedLine);
         const estimatedTime = this.estimateTime(trimmedLine);
@@ -91,7 +63,6 @@ export class AIService {
       }
     });
 
-    // If no tasks detected, create one from the entire content
     if (tasks.length === 0) {
       tasks.push({
         id: generateId(),
@@ -110,7 +81,7 @@ export class AIService {
       extractedTasks: tasks,
       summary: this.generateSummary(tasks),
       processingTimestamp: new Date().toISOString(),
-      aiModel: 'gpt-3.5-turbo-simulated'
+      aiModel: 'simulation-fallback'
     };
   }
 
@@ -152,19 +123,18 @@ export class AIService {
       }
     }
     
-    // Estimate based on complexity indicators
     const complexWords = ['integration', 'system', 'architecture', 'database', 'api'];
     const simpleWords = ['update', 'fix', 'change', 'add'];
     
     const lowerText = text.toLowerCase();
     
     if (complexWords.some(word => lowerText.includes(word))) {
-      return Math.random() * 6 + 4; // 4-10 hours
+      return Math.random() * 6 + 4;
     } else if (simpleWords.some(word => lowerText.includes(word))) {
-      return Math.random() * 2 + 0.5; // 0.5-2.5 hours  
+      return Math.random() * 2 + 0.5;
     }
     
-    return Math.random() * 4 + 1; // 1-5 hours default
+    return Math.random() * 4 + 1;
   }
 
   private static categorizeTask(text: string): string {
@@ -190,9 +160,8 @@ export class AIService {
   }
 
   private static extractTitle(text: string): string {
-    // Extract meaningful title from text
     const cleaned = text.replace(/[^\w\s]/g, ' ').trim();
-    const words = cleaned.split(/\s+/).slice(0, 6); // First 6 words
+    const words = cleaned.split(/\s+/).slice(0, 6);
     return words.join(' ').substring(0, 50);
   }
 
@@ -200,13 +169,11 @@ export class AIService {
     const tags = [];
     const lowerText = text.toLowerCase();
     
-    // Extract technology tags
     const techTags = ['react', 'node', 'python', 'api', 'database', 'frontend', 'backend'];
     techTags.forEach(tag => {
       if (lowerText.includes(tag)) tags.push(tag);
     });
     
-    // Extract priority tags
     if (lowerText.includes('urgent')) tags.push('urgent');
     if (lowerText.includes('client')) tags.push('client');
     
@@ -214,7 +181,6 @@ export class AIService {
   }
 
   private static generateMicroTasks(text: string): string[] {
-    // Generate suggested micro-tasks based on the main task
     const microTasks = [];
     const lowerText = text.toLowerCase();
     
@@ -251,39 +217,9 @@ export class AIService {
            `Estimated total time: ${Math.round(totalHours * 10) / 10} hours. ` +
            `Priority breakdown: ${urgentCount} urgent, ${highCount} high priority tasks.`;
   }
-
-  private static getSystemPrompt(): string {
-    return `You are an AI assistant specialized in analyzing brain dumps and extracting actionable tasks. 
-
-Your job is to:
-1. Parse unstructured text/thoughts into organized, actionable tasks
-2. Assign appropriate priorities (urgent, high, medium, low)
-3. Estimate time requirements in hours
-4. Categorize tasks by type (development, design, testing, etc.)
-5. Extract relevant tags and keywords
-6. Break complex tasks into micro-tasks when appropriate
-
-Return a JSON object with this structure:
-{
-  "originalContent": "...",
-  "extractedTasks": [{
-    "id": "unique-id",
-    "title": "Clear task title (max 50 chars)",
-    "description": "Detailed description",
-    "priority": "urgent|high|medium|low",
-    "estimatedHours": 2.5,
-    "category": "development|design|testing|research|documentation|meeting|deployment|general",
-    "tags": ["tag1", "tag2"],
-    "microTasks": ["subtask 1", "subtask 2"]
-  }],
-  "summary": "Brief summary of identified tasks"
 }
 
-Be practical and actionable in your task extraction. Return ONLY the JSON object, no additional text.`;
-  }
-}
-
-// TypeScript interfaces
+// TypeScript interfaces (reuse from original)
 export interface ExtractedTask {
   id: string;
   title: string;
