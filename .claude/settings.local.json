@@ -19,7 +19,8 @@
       "Bash(AUTH_PORT=3002 node server.js)",
       "Bash(npm ci:*)",
       "Bash(git branch:*)",
-      "Bash(npm create:*)"
+      "Bash(npm create:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": [],
