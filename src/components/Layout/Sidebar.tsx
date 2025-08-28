@@ -4,7 +4,7 @@ import { useBetterAuth } from '@/hooks/useBetterAuth';
 // TODO: Replace with better-auth database operations
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   CheckSquare, 
   Clock, 
@@ -62,7 +62,6 @@ const getNavigationForRole = (role: string) => {
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useBetterAuth();
-  const profile: any = null; // TODO: Implement profile system with better-auth
 
   const handleSignOut = async () => {
     try {
