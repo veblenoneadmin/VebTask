@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
@@ -41,6 +41,7 @@ export function BrainDump() {
   const [error, setError] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { data: session } = useSession();
+  console.log('Session:', session); // Keep session for future use
 
   // Auto-resize textarea
   useEffect(() => {
