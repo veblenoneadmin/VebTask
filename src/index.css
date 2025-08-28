@@ -162,6 +162,44 @@
     background-size: 200% 200%;
     animation: gradient-shift 3s ease infinite;
   }
+
+  /* Gradient Background Utilities */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .bg-gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+
+  .bg-gradient-glass {
+    background: var(--gradient-glass);
+  }
+
+  .bg-gradient-success {
+    background: var(--gradient-success);
+  }
+
+  .bg-gradient-warning {
+    background: var(--gradient-warning);
+  }
+
+  .bg-gradient-error {
+    background: var(--gradient-error);
+  }
+
+  /* Shadow utilities */
+  .shadow-glass {
+    box-shadow: var(--shadow-glass);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-elevation {
+    box-shadow: var(--shadow-elevation);
+  }
 }
 
 /* Scrollbar Styling */
