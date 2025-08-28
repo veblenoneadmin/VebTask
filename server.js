@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -107,7 +108,7 @@ app.post('/api/ai/transcribe', upload.single('audio'), async (req, res) => {
       return res.status(400).json({ error: 'Audio file is required' });
     }
 
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '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';
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     
     if (!OPENAI_API_KEY) {
       return res.status(500).json({ error: 'OpenAI API key not configured' });
