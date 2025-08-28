@@ -23,7 +23,9 @@
       "Bash(npm run build:*)",
       "Bash(PORT=3003 node server.js)",
       "Bash(npx tailwindcss init:*)",
-      "Bash(PORT=3004 node server.js)"
+      "Bash(PORT=3004 node server.js)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@mysql.railway.internal:3306/railway\" AUTH_PORT=3001 node server.js)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": [],
