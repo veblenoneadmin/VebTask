@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "./components/Layout/MainLayout";
-import LoginPage from "./components/Auth/LoginPage";
+import OTPLoginPage from "./components/Auth/OTPLoginPage";
 import SignUpPage from "./components/Auth/SignUpPage";
 import ForgotPasswordPage from "./components/Auth/ForgotPasswordPage";
 import ResetPasswordPage from "./components/Auth/ResetPasswordPage";
@@ -35,7 +35,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={<OTPLoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
