@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { auth } from './src/lib/auth.js';
+import { auth } from './src/lib/auth-minimal.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,22 +27,33 @@ app.use((req, res, next) => {
 
 // Handle all auth routes with proper error handling
 app.all('/api/auth/*', async (req, res) => {
-  console.log(`Auth request: ${req.method} ${req.url}`);
-  console.log('Request body:', req.body);
-  console.log('Request headers:', req.headers);
+  console.log(`\n=== Auth Request ===`);
+  console.log(`${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Body:', JSON.stringify(req.body, null, 2));
+  console.log('===================\n');
   
   try {
     const result = await auth.handler(req, res);
-    console.log('Auth handler completed successfully');
+    console.log('✅ Auth handler completed successfully');
     return result;
   } catch (error) {
-    console.error('Auth handler error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
-      error: 'Internal server error', 
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    console.error('\n❌ AUTH HANDLER ERROR:');
+    console.error('Error message:', error.message);
+    console.error('Error name:', error.name);
+    console.error('Error code:', error.code);
+    console.error('Full error:', error);
+    console.error('Stack trace:', error.stack);
+    console.error('===================\n');
+    
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Internal server error', 
+        details: error.message,
+        code: error.code,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
   }
 });
 
