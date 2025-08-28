@@ -1,64 +1,102 @@
-import { createConnection } from 'mysql2/promise';
-import fs from 'fs';
-import path from 'path';
+import { createPool } from 'mysql2/promise';
 
 const connectionString = process.env.DATABASE_URL || 
   process.env.VITE_DATABASE_URL || 
   "mysql://root:password@localhost:3306/vebtask";
 
-console.log('Database connection string configured:', !!connectionString);
+console.log('🔗 Connecting to database...');
 
-// Parse MySQL URL into connection options
+// Parse MySQL URL
 const url = new URL(connectionString);
 const dbConfig = {
   host: url.hostname,
   port: url.port ? parseInt(url.port) : 3306,
   user: url.username,
   password: url.password,
-  database: url.pathname.substring(1), // Remove leading slash
-  multipleStatements: true
+  database: url.pathname.substring(1),
 };
 
-console.log('DB Config:', { ...dbConfig, password: '***' });
+console.log('📋 Database Config:', { ...dbConfig, password: '***' });
 
-async function initializeDatabase() {
-  let connection;
-  
+const pool = createPool(dbConfig);
+
+async function initDatabase() {
   try {
-    // First connect without specifying database
-    const baseConfig = { ...dbConfig };
-    delete baseConfig.database;
+    // Create user table for better-auth
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS user (
+        id VARCHAR(36) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        emailVerified BOOLEAN DEFAULT FALSE,
+        name VARCHAR(255),
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Created user table');
+
+    // Create session table for better-auth
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS session (
+        id VARCHAR(255) PRIMARY KEY,
+        expiresAt TIMESTAMP NOT NULL,
+        token VARCHAR(255) UNIQUE NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        ipAddress VARCHAR(45),
+        userAgent TEXT,
+        userId VARCHAR(36) NOT NULL,
+        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE
+      )
+    `);
+    console.log('✅ Created session table');
+
+    // Create account table for better-auth
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS account (
+        id VARCHAR(36) PRIMARY KEY,
+        accountId VARCHAR(255) NOT NULL,
+        providerId VARCHAR(255) NOT NULL,
+        userId VARCHAR(36) NOT NULL,
+        accessToken TEXT,
+        refreshToken TEXT,
+        idToken TEXT,
+        accessTokenExpiresAt TIMESTAMP,
+        refreshTokenExpiresAt TIMESTAMP,
+        scope TEXT,
+        password VARCHAR(255),
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE
+      )
+    `);
+    console.log('✅ Created account table');
+
+    // Create verification table for better-auth
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS verification (
+        id VARCHAR(36) PRIMARY KEY,
+        identifier VARCHAR(255) NOT NULL,
+        value VARCHAR(255) NOT NULL,
+        expiresAt TIMESTAMP NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Created verification table');
+
+    console.log('🎉 Database initialization completed successfully!');
     
-    connection = await createConnection(baseConfig);
-    console.log('Connected to MySQL server');
-    
-    // Read SQL file
-    const sqlPath = path.join(process.cwd(), 'database-init.sql');
-    const sql = fs.readFileSync(sqlPath, 'utf8');
-    
-    console.log('Executing database initialization...');
-    const [results] = await connection.execute(sql);
-    console.log('✅ Database initialization completed successfully!');
-    console.log('Results:', results);
-    
+    // Test the connection
+    const [rows] = await pool.execute('SELECT COUNT(*) as count FROM user');
+    console.log(`📊 Current user count: ${rows[0].count}`);
+
   } catch (error) {
-    console.error('❌ Database initialization failed:');
-    console.error('Error:', error.message);
-    console.error('Code:', error.code);
-    
-    if (error.code === 'ER_ACCESS_DENIED_ERROR') {
-      console.error('Access denied - check your database credentials');
-    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-      console.error('Cannot connect to database server - check host and port');
-    }
-    
-    process.exit(1);
+    console.error('❌ Database initialization error:', error);
+    throw error;
   } finally {
-    if (connection) {
-      await connection.end();
-      console.log('Database connection closed');
-    }
+    await pool.end();
   }
 }
 
-initializeDatabase();
+initDatabase().catch(console.error);

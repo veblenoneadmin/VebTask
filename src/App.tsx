@@ -1,25 +1,47 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useSession } from './lib/auth-client';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { Dashboard } from './pages/Dashboard';
 import './App.css'
 
 function App() {
-  return (
-    <>
-      <div>
-        <h1>🎉 VebTask</h1>
-        <p>Better-Auth integration working!</p>
-        
-        <div className="card">
-          <h2>🔐 Authentication Status</h2>
-          <p>Auth server running on: <code>/api/auth/*</code></p>
-          <p>Health check: <a href="/api/auth/ok" target="_blank">/api/auth/ok</a></p>
-          <p>Session check: <a href="/api/auth/get-session" target="_blank">/api/auth/get-session</a></p>
-        </div>
-        
-        <p className="read-the-docs">
-          ✅ Fresh better-auth implementation with Express integration
-        </p>
+  const { data: session, isPending } = useSession();
+
+  if (isPending) {
+    return (
+      <div className="loading-container">
+        <div className="loading">Loading...</div>
       </div>
-    </>
-  )
+    );
+  }
+
+  return (
+    <Router>
+      <div className="app">
+        <Routes>
+          <Route 
+            path="/login" 
+            element={session ? <Navigate to="/dashboard" replace /> : <Login />} 
+          />
+          <Route 
+            path="/register" 
+            element={session ? <Navigate to="/dashboard" replace /> : <Register />} 
+          />
+          <Route 
+            path="/dashboard" 
+            element={<Dashboard />} 
+          />
+          <Route 
+            path="/" 
+            element={
+              session ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+            } 
+          />
+        </Routes>
+      </div>
+    </Router>
+  );
 }
 
 export default App
