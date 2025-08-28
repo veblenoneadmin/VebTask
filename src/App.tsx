@@ -1,37 +1,24 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useSession } from './lib/auth-client';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import Index from './pages/Index';
-import LoadingSpinner from './components/LoadingSpinner';
+import './App.css'
 
 function App() {
-  const { data: session, isPending } = useSession();
-
-  if (isPending) {
-    return <LoadingSpinner />;
-  }
-
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route 
-          path="/login" 
-          element={!session ? <LoginPage /> : <Navigate to="/" />} 
-        />
-        <Route 
-          path="/register" 
-          element={!session ? <RegisterPage /> : <Navigate to="/" />} 
-        />
+    <>
+      <div>
+        <h1>🎉 VebTask</h1>
+        <p>Better-Auth integration working!</p>
         
-        {/* Protected Routes */}
-        <Route 
-          path="/*" 
-          element={session ? <Index /> : <Navigate to="/login" />} 
-        />
-      </Routes>
-    </Router>
+        <div className="card">
+          <h2>🔐 Authentication Status</h2>
+          <p>Auth server running on: <code>/api/auth/*</code></p>
+          <p>Health check: <a href="/api/auth/ok" target="_blank">/api/auth/ok</a></p>
+          <p>Session check: <a href="/api/auth/get-session" target="_blank">/api/auth/get-session</a></p>
+        </div>
+        
+        <p className="read-the-docs">
+          ✅ Fresh better-auth implementation with Express integration
+        </p>
+      </div>
+    </>
   )
 }
 
