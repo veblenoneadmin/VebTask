@@ -2582,10 +2582,17 @@ textarea {
   }
 }
 
-/* Desktop-only styles */
+/* Desktop-only styles - Reset mobile overrides */
 @media (min-width: 481px) {
   .mobile-menu-btn {
     display: none !important;
+  }
+  
+  .dashboard-content {
+    padding: 30px !important;
+    margin: 0 auto !important;
+    margin-left: 0 !important;
+    max-width: 1400px !important;
   }
   
   .main-nav {
@@ -2630,5 +2637,86 @@ textarea {
     height: 16px !important;
     margin-bottom: 0 !important;
     margin-right: 8px !important;
+  }
+  
+  /* Reset mobile brain dump styles */
+  .brain-dump-container {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 30px !important;
+    margin-top: 20px !important;
+  }
+  
+  .brain-dump-input {
+    padding: 25px !important;
+  }
+  
+  .brain-dump-textarea {
+    min-height: 200px !important;
+    font-size: 16px !important;
+    padding: 15px !important;
+    padding-right: 55px !important;
+  }
+  
+  .brain-dump-actions {
+    flex-direction: row !important;
+    gap: 10px !important;
+  }
+  
+  .primary-btn, .secondary-btn {
+    width: auto !important;
+    padding: 10px 15px !important;
+    font-size: 16px !important;
+  }
+  
+  .brain-dump-entries {
+    padding: 25px !important;
+    max-height: 70vh !important;
+  }
+  
+  /* Reset mobile view header */
+  .view-header {
+    text-align: left !important;
+    padding: 0 !important;
+  }
+  
+  .view-header h2 {
+    font-size: 28px !important;
+  }
+  
+  .view-header p {
+    font-size: 16px !important;
+  }
+  
+  /* Reset mobile task styles */
+  .tasks-overview {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 20px !important;
+  }
+  
+  .overview-card {
+    padding: 20px !important;
+  }
+  
+  .task-card {
+    padding: 20px !important;
+  }
+  
+  /* Reset mobile form styles */
+  input, textarea, select {
+    font-size: 16px !important;
+    padding: 12px 15px !important;
+  }
+  
+  /* Reset mobile modal styles */
+  .modal-content {
+    width: 500px !important;
+    max-width: 90vw !important;
+    max-height: 90vh !important;
+    margin: 50px auto !important;
+  }
+  
+  .modal-actions {
+    flex-direction: row !important;
+    gap: 15px !important;
   }
 }
