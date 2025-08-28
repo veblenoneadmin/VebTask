@@ -8,7 +8,7 @@ const connectionString = process.env.DATABASE_URL ||
   process.env.VITE_DATABASE_URL || 
   "mysql://root:password@localhost:3306/vebtask";
 
-console.log('Auth config - baseURL:', process.env.VITE_APP_URL || process.env.VITE_APP_URL || "http://localhost:5173");
+console.log('Auth config - baseURL:', process.env.VITE_APP_URL || "http://localhost:3001");
 console.log('Auth config - database connection string configured:', !!connectionString);
 
 // Temporarily comment out transporter to isolate issues
@@ -34,7 +34,7 @@ const dbConfig = {
 
 export const auth = betterAuth({
   database: createPool(dbConfig),
-  baseURL: (process.env.VITE_APP_URL || process.env.VITE_APP_URL || "http://localhost:5173") + "/api/auth",
+  baseURL: (process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth",
   advanced: {
     generateId: () => {
       return Math.random().toString(36).substring(2) + Date.now().toString(36);

@@ -6,7 +6,7 @@ const connectionString = process.env.DATABASE_URL ||
   process.env.VITE_DATABASE_URL || 
   "mysql://root:password@localhost:3306/vebtask";
 
-console.log('Minimal Auth config - baseURL:', process.env.VITE_APP_URL || process.env.VITE_APP_URL || "http://localhost:5173");
+console.log('Minimal Auth config - baseURL:', process.env.VITE_APP_URL || "http://localhost:3001");
 console.log('Minimal Auth config - database connection string configured:', !!connectionString);
 
 // Parse MySQL URL into connection options
@@ -23,7 +23,7 @@ console.log('DB Config:', { ...dbConfig, password: '***' });
 
 export const auth = betterAuth({
   database: createPool(dbConfig),
-  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:5173") + "/api/auth",
+  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET || "fallback-secret-key-change-in-production",
   advanced: {
     generateId: () => {

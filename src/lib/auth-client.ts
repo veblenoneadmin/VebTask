@@ -1,7 +1,8 @@
 import { createAuthClient } from "better-auth/react";
 import { emailOTPClient } from "better-auth/client/plugins";
 
-const baseURL = import.meta.env.VITE_APP_URL || window.location.origin;
+const baseURL = import.meta.env.VITE_APP_URL || 
+  (window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin);
 
 export const authClient = createAuthClient({
   baseURL: baseURL + "/api/auth",
