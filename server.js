@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -53,14 +52,6 @@ app.use((req, res, next) => {
 // Mount express json middleware BEFORE auth routes for request logging  
 app.use(express.json({ limit: '10mb' }));
 
-// Add multer for file uploads (for audio files)
-import multer from 'multer';
-import FormData from 'form-data';
-
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024 } // 25MB limit for audio files
-});
 
 // Test route
 app.get('/test', (req, res) => {
@@ -98,69 +89,6 @@ app.all('/api/auth/*', async (req, res, next) => {
         path: req.path 
       });
     }
-  }
-});
-
-// OpenAI Whisper API endpoint for voice transcription
-app.post('/api/ai/transcribe', upload.single('audio'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Audio file is required' });
-    }
-
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    
-    if (!OPENAI_API_KEY) {
-      return res.status(500).json({ error: 'OpenAI API key not configured' });
-    }
-
-    console.log('🎤 Transcribing audio with OpenAI Whisper...');
-
-    // Create FormData for OpenAI Whisper API
-    const formData = new FormData();
-    formData.append('file', req.file.buffer, {
-      filename: 'audio.webm',
-      contentType: req.file.mimetype
-    });
-    formData.append('model', 'whisper-1');
-    formData.append('language', 'en');
-    formData.append('response_format', 'json');
-
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        ...formData.getHeaders()
-      },
-      body: formData
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error(`OpenAI Whisper API error: ${response.status} ${response.statusText}`, error);
-      return res.status(500).json({ error: 'Transcription failed' });
-    }
-
-    const data = await response.json();
-    
-    console.log('✅ Audio transcribed successfully');
-    return res.status(200).json({ 
-      transcription: data.text,
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    console.error('❌ Transcription error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      fileSize: req.file ? req.file.size : 'no file',
-      mimeType: req.file ? req.file.mimetype : 'no mime type'
-    });
-    return res.status(500).json({ 
-      error: 'Transcription failed', 
-      details: error.message 
-    });
   }
 });
 

@@ -36,10 +36,6 @@ export function BrainDump() {
   const [processedTasks, setProcessedTasks] = useState<ProcessedTask[]>([]);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [recognition, setRecognition] = useState<any>(null);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks] = useState<Blob[]>([]);
-  console.log(audioChunks);
-  const [useWhisper, setUseWhisper] = useState(true);
   const [error, setError] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { data: session } = useSession();
@@ -112,92 +108,19 @@ export function BrainDump() {
     }
   }, []);
 
-  const handleVoiceToggle = async () => {
+  const handleVoiceToggle = () => {
+    if (!recognition) {
+      setError('Voice recognition not supported in this browser');
+      return;
+    }
+    
     if (isRecording) {
-      // Stop recording
-      if (useWhisper && mediaRecorder) {
-        mediaRecorder.stop();
-      } else if (recognition) {
-        recognition.stop();
-      }
+      recognition.stop();
       setIsRecording(false);
     } else {
-      // Start recording
+      recognition.start();
+      setIsRecording(true);
       setError('');
-      
-      if (useWhisper) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const recorder = new MediaRecorder(stream, {
-            mimeType: 'audio/webm'
-          });
-          
-          const chunks: Blob[] = [];
-          
-          recorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-              chunks.push(event.data);
-            }
-          };
-          
-          recorder.onstop = async () => {
-            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-            await transcribeWithWhisper(audioBlob);
-            
-            // Stop all tracks
-            stream.getTracks().forEach(track => track.stop());
-          };
-          
-          recorder.start();
-          setMediaRecorder(recorder);
-          console.log('Audio chunks:', chunks);
-          setIsRecording(true);
-          
-        } catch (err) {
-          setError('Microphone access denied or not available');
-          console.error('Media access error:', err);
-        }
-      } else {
-        // Fallback to Web Speech API
-        if (!recognition) {
-          setError('Voice recognition not supported in this browser');
-          return;
-        }
-        recognition.start();
-        setIsRecording(true);
-      }
-    }
-  };
-
-  const transcribeWithWhisper = async (audioBlob: Blob) => {
-    try {
-      setIsProcessing(true);
-      
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
-      
-      const response = await fetch('/api/ai/transcribe', {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        throw new Error('Transcription failed');
-      }
-      
-      const data = await response.json();
-      
-      // Add transcribed text to content
-      setContent(prev => {
-        const newContent = prev + (prev.endsWith(' ') || !prev ? '' : ' ') + data.transcription;
-        return newContent;
-      });
-      
-    } catch (err) {
-      setError('Transcription failed. Please try again.');
-      console.error('Whisper transcription error:', err);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -309,27 +232,15 @@ export function BrainDump() {
                     <p className="text-sm text-muted-foreground">Dump everything on your mind</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                    <input 
-                      type="checkbox" 
-                      checked={useWhisper} 
-                      onChange={(e) => setUseWhisper(e.target.checked)}
-                      className="w-3 h-3"
-                    />
-                    <span>OpenAI Whisper</span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleVoiceToggle}
-                    className={isRecording ? 'timer-active' : 'glass-surface'}
-                    disabled={isProcessing}
-                  >
-                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                    {isRecording ? 'Stop' : (isProcessing ? 'Processing...' : 'Voice')}
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleVoiceToggle}
+                  className={isRecording ? 'timer-active' : 'glass-surface'}
+                >
+                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  {isRecording ? 'Stop' : 'Voice'}
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
