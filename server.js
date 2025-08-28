@@ -44,23 +44,147 @@ app.use((req, res, next) => {
   next();
 });
 
+// Mount express json middleware BEFORE auth routes for request logging
+app.use(express.json());
+
 // Test route
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working!' });
 });
 
-// Auth routes using proper Express adapter
-app.all('/api/auth/*', toNodeHandler(auth));
+// Add logging middleware for auth routes
+app.use('/api/auth/*', (req, res, next) => {
+  console.log(`🔐 Auth ${req.method} ${req.path}`, {
+    body: req.method === 'POST' ? req.body : undefined,
+    headers: {
+      'content-type': req.headers['content-type'],
+      'origin': req.headers.origin,
+      'user-agent': req.headers['user-agent']?.substring(0, 50) + '...'
+    }
+  });
+  next();
+});
 
-// Mount express json middleware AFTER Better Auth handler
-app.use(express.json());
+// Auth routes using proper Express adapter with error handling
+app.all('/api/auth/*', async (req, res, next) => {
+  try {
+    await toNodeHandler(auth)(req, res, next);
+  } catch (error) {
+    console.error('❌ Auth handler error:', {
+      path: req.path,
+      method: req.method,
+      error: error.message,
+      stack: error.stack
+    });
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Authentication error', 
+        message: error.message,
+        path: req.path 
+      });
+    }
+  }
+});
 
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // Health check endpoint for Railway
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', auth: 'better-auth working' });
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    const { createPool } = await import('mysql2/promise');
+    const connectionString = process.env.DATABASE_URL || process.env.VITE_DATABASE_URL;
+    
+    if (connectionString) {
+      const url = new URL(connectionString);
+      const pool = createPool({
+        host: url.hostname,
+        port: url.port ? parseInt(url.port) : 3306,
+        user: url.username,
+        password: url.password,
+        database: url.pathname.substring(1),
+        acquireTimeout: 10000
+      });
+      
+      const [rows] = await pool.execute('SELECT 1 as test');
+      await pool.end();
+      
+      res.json({ 
+        status: 'ok', 
+        auth: 'better-auth working',
+        database: 'connected',
+        tables_check: 'run /api/check-db for details'
+      });
+    } else {
+      res.json({ 
+        status: 'ok', 
+        auth: 'better-auth working',
+        database: 'no connection string'
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'error', 
+      auth: 'better-auth working',
+      database: 'connection failed',
+      error: error.message
+    });
+  }
+});
+
+// Database check endpoint
+app.get('/api/check-db', async (req, res) => {
+  try {
+    const { createPool } = await import('mysql2/promise');
+    const connectionString = process.env.DATABASE_URL || process.env.VITE_DATABASE_URL;
+    
+    if (!connectionString) {
+      return res.json({ error: 'No database connection string' });
+    }
+    
+    const url = new URL(connectionString);
+    const pool = createPool({
+      host: url.hostname,
+      port: url.port ? parseInt(url.port) : 3306,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.substring(1)
+    });
+    
+    // Check if tables exist
+    const [tables] = await pool.execute("SHOW TABLES");
+    const tableNames = tables.map(row => Object.values(row)[0]);
+    
+    const checks = {};
+    for (const tableName of ['user', 'account', 'session', 'verification']) {
+      if (tableNames.includes(tableName)) {
+        const [columns] = await pool.execute(`DESCRIBE ${tableName}`);
+        const [count] = await pool.execute(`SELECT COUNT(*) as count FROM ${tableName}`);
+        checks[tableName] = {
+          exists: true,
+          columns: columns.map(col => col.Field),
+          count: count[0].count
+        };
+      } else {
+        checks[tableName] = { exists: false };
+      }
+    }
+    
+    await pool.end();
+    
+    res.json({
+      database: 'connected',
+      tables: checks,
+      allTables: tableNames
+    });
+    
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Database check failed',
+      message: error.message
+    });
+  }
 });
 
 // Database initialization endpoint (for production)
