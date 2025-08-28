@@ -26,7 +26,9 @@
       "Bash(rd /s /q \"C:\\Users\\USER''S\\Desktop\\VebTask\\REFERENCE FOR UI\")",
       "Bash(npm run dev:*)",
       "Bash(npm start)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(PORT=3002 node server.js)",
+      "Bash(docker:*)"
     ],
     "deny": [],
     "ask": [],

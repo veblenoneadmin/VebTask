@@ -68,9 +68,7 @@ const Sidebar: React.FC = () => {
         {/* Logo */}
         <div className="flex h-16 items-center px-6 border-b border-border">
           <div className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center bg-gradient-primary rounded-lg p-1">
-              <img src="/veblen-logo.png" alt="VebTask Logo" className="w-full h-full object-contain filter invert" />
-            </div>
+            <img src="/veblen-logo.png" alt="VebTask Logo" className="h-10 w-10 object-contain rounded-lg" />
             <div>
               <h1 className="text-lg font-bold gradient-text">VebTask</h1>
               <p className="text-xs text-muted-foreground">AI-Powered Task Management</p>
