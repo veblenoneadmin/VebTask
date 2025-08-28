@@ -16,7 +16,8 @@
       "Bash(node:*)",
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@mysql.railway.internal:3306/railway\" node init-database.js)",
       "Bash(taskkill:*)",
-      "Bash(AUTH_PORT=3002 node server.js)"
+      "Bash(AUTH_PORT=3002 node server.js)",
+      "Bash(npm ci:*)"
     ],
     "deny": [],
     "ask": []
