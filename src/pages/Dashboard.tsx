@@ -5,6 +5,28 @@ import { useTasks } from '../hooks/useTasks';
 import { TaskModal } from '../components/TaskModal';
 import { ProjectModal } from '../components/ProjectModal';
 import { Timer } from '../components/Timer';
+import { 
+  LayoutDashboard, 
+  CheckSquare, 
+  FolderOpen, 
+  BarChart3, 
+  LogOut,
+  Plus,
+  User,
+  Clock,
+  Target,
+  TrendingUp,
+  Activity,
+  Calendar,
+  Edit,
+  Trash2,
+  Play,
+  Pause,
+  Square,
+  Brain,
+  Save,
+  Search
+} from 'lucide-react';
 
 export function Dashboard() {
   const { data: session, isPending } = useSession();
@@ -15,6 +37,11 @@ export function Dashboard() {
   const [selectedProject, setSelectedProject] = useState(undefined);
   const [taskFilter, setTaskFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  const [brainDumpText, setBrainDumpText] = useState('');
+  const [brainDumpEntries, setBrainDumpEntries] = useState(() => {
+    const saved = localStorage.getItem('brainDumpEntries');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const {
     tasks,
@@ -79,9 +106,9 @@ export function Dashboard() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': return '✅';
-      case 'in-progress': return '🔄';
-      default: return '⏸️';
+      case 'completed': return <CheckSquare size={16} className="status-icon completed" />;
+      case 'in-progress': return <Activity size={16} className="status-icon in-progress" />;
+      default: return <Pause size={16} className="status-icon pending" />;
     }
   };
 
@@ -121,37 +148,62 @@ export function Dashboard() {
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="header-left">
-          <h1>🎉 VebTask</h1>
+          <div className="dashboard-brand">
+            <div className="dashboard-icon">V</div>
+            <h1>VebTask</h1>
+          </div>
           <nav className="nav-tabs">
             <button 
               className={activeView === 'overview' ? 'nav-tab active' : 'nav-tab'}
               onClick={() => setActiveView('overview')}
             >
+              <LayoutDashboard size={18} />
               Overview
             </button>
             <button 
               className={activeView === 'tasks' ? 'nav-tab active' : 'nav-tab'}
               onClick={() => setActiveView('tasks')}
             >
+              <CheckSquare size={18} />
               Tasks
             </button>
             <button 
               className={activeView === 'projects' ? 'nav-tab active' : 'nav-tab'}
               onClick={() => setActiveView('projects')}
             >
+              <FolderOpen size={18} />
               Projects
             </button>
             <button 
               className={activeView === 'reports' ? 'nav-tab active' : 'nav-tab'}
               onClick={() => setActiveView('reports')}
             >
+              <BarChart3 size={18} />
               Reports
+            </button>
+            <button 
+              className={activeView === 'brain-dump' ? 'nav-tab active' : 'nav-tab'}
+              onClick={() => setActiveView('brain-dump')}
+            >
+              <Brain size={18} />
+              Brain Dump
+            </button>
+            <button 
+              className={activeView === 'calendar' ? 'nav-tab active' : 'nav-tab'}
+              onClick={() => setActiveView('calendar')}
+            >
+              <Calendar size={18} />
+              Calendar
             </button>
           </nav>
         </div>
         <div className="user-info">
-          <span>Welcome, {session.user.name || session.user.email}!</span>
+          <div className="user-profile">
+            <User size={16} />
+            <span>Welcome, {session.user.name || session.user.email}!</span>
+          </div>
           <button onClick={handleSignOut} className="signout-btn">
+            <LogOut size={16} />
             Sign Out
           </button>
         </div>
@@ -162,28 +214,36 @@ export function Dashboard() {
           <div className="overview-view">
             <div className="stats-grid">
               <div className="stat-card">
-                <div className="stat-icon">📊</div>
+                <div className="stat-icon">
+                  <Target size={24} />
+                </div>
                 <div className="stat-info">
                   <h3>{stats.total}</h3>
                   <p>Total Tasks</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">✅</div>
+                <div className="stat-icon">
+                  <CheckSquare size={24} />
+                </div>
                 <div className="stat-info">
                   <h3>{stats.completed}</h3>
                   <p>Completed</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">🚀</div>
+                <div className="stat-icon">
+                  <TrendingUp size={24} />
+                </div>
                 <div className="stat-info">
                   <h3>{stats.inProgress}</h3>
                   <p>In Progress</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">⏰</div>
+                <div className="stat-icon">
+                  <Clock size={24} />
+                </div>
                 <div className="stat-info">
                   <h3>{formatTime(stats.totalTime)}</h3>
                   <p>Total Time</p>
@@ -231,6 +291,7 @@ export function Dashboard() {
                         </div>
                         <div className="task-actions">
                           <button className="action-btn" onClick={() => handleEditTask(task)}>
+                            <Edit size={14} />
                             Edit
                           </button>
                         </div>
@@ -239,6 +300,7 @@ export function Dashboard() {
                   })}
                 </div>
                 <button className="primary-btn" onClick={() => setTaskModalOpen(true)}>
+                  <Plus size={16} />
                   Add New Task
                 </button>
               </div>
@@ -275,6 +337,7 @@ export function Dashboard() {
                   ))}
                 </div>
                 <button className="primary-btn" onClick={() => setProjectModalOpen(true)}>
+                  <Plus size={16} />
                   New Project
                 </button>
               </div>
@@ -287,6 +350,7 @@ export function Dashboard() {
             <div className="view-header">
               <h2>Task Management</h2>
               <button className="primary-btn" onClick={() => setTaskModalOpen(true)}>
+                <Plus size={16} />
                 Add Task
               </button>
             </div>
@@ -371,12 +435,14 @@ export function Dashboard() {
                     </div>
                     <div className="task-actions">
                       <button className="action-btn" onClick={() => handleEditTask(task)}>
+                        <Edit size={14} />
                         Edit
                       </button>
                       <button 
                         className="action-btn danger" 
                         onClick={() => handleDeleteTask(task.id)}
                       >
+                        <Trash2 size={14} />
                         Delete
                       </button>
                     </div>
@@ -387,6 +453,7 @@ export function Dashboard() {
                 <div className="empty-state">
                   <p>No tasks found. Create your first task to get started!</p>
                   <button className="primary-btn" onClick={() => setTaskModalOpen(true)}>
+                    <Plus size={16} />
                     Add Task
                   </button>
                 </div>
@@ -400,6 +467,7 @@ export function Dashboard() {
             <div className="view-header">
               <h2>Project Management</h2>
               <button className="primary-btn" onClick={() => setProjectModalOpen(true)}>
+                <Plus size={16} />
                 New Project
               </button>
             </div>
@@ -476,6 +544,7 @@ export function Dashboard() {
                 <div className="empty-state">
                   <p>No projects yet. Create your first project to organize your tasks!</p>
                   <button className="primary-btn" onClick={() => setProjectModalOpen(true)}>
+                    <Plus size={16} />
                     New Project
                   </button>
                 </div>
@@ -589,6 +658,252 @@ export function Dashboard() {
                         </div>
                       );
                     })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeView === 'brain-dump' && (
+          <div className="brain-dump-view">
+            <div className="view-header">
+              <h2>Brain Dump</h2>
+              <p>Capture your thoughts and ideas instantly</p>
+            </div>
+            <div className="brain-dump-container">
+              <div className="brain-dump-input">
+                <textarea
+                  value={brainDumpText}
+                  onChange={(e) => setBrainDumpText(e.target.value)}
+                  placeholder="What's on your mind? Capture your thoughts, ideas, tasks, or anything that comes to mind..."
+                  className="brain-dump-textarea"
+                />
+                <div className="brain-dump-actions">
+                  <button 
+                    className="primary-btn"
+                    onClick={() => {
+                      if (brainDumpText.trim()) {
+                        const newEntry = {
+                          id: Date.now().toString(),
+                          content: brainDumpText,
+                          timestamp: new Date(),
+                          tags: []
+                        };
+                        const updatedEntries = [newEntry, ...brainDumpEntries];
+                        setBrainDumpEntries(updatedEntries);
+                        localStorage.setItem('brainDumpEntries', JSON.stringify(updatedEntries));
+                        setBrainDumpText('');
+                      }
+                    }}
+                    disabled={!brainDumpText.trim()}
+                  >
+                    <Save size={16} />
+                    Save Entry
+                  </button>
+                  <button 
+                    className="secondary-btn"
+                    onClick={() => {
+                      const lines = brainDumpText.split('\n').filter(line => line.trim());
+                      lines.forEach((line, index) => {
+                        if (line.trim()) {
+                          setTimeout(() => {
+                            addTask({
+                              title: line.trim(),
+                              description: '',
+                              priority: 'medium',
+                              status: 'todo',
+                              tags: ['brain-dump'],
+                              projectId: null,
+                              estimatedTime: null,
+                              dueDate: null
+                            });
+                          }, index * 100);
+                        }
+                      });
+                      setBrainDumpText('');
+                    }}
+                    disabled={!brainDumpText.trim()}
+                  >
+                    <Plus size={16} />
+                    Convert to Tasks
+                  </button>
+                </div>
+              </div>
+              
+              <div className="brain-dump-entries">
+                <h3>Recent Entries</h3>
+                <div className="entries-list">
+                  {brainDumpEntries.map((entry) => (
+                    <div key={entry.id} className="brain-dump-entry">
+                      <div className="entry-content">
+                        {entry.content.split('\n').map((line, index) => (
+                          <p key={index}>{line}</p>
+                        ))}
+                      </div>
+                      <div className="entry-meta">
+                        <span className="entry-timestamp">
+                          {new Date(entry.timestamp).toLocaleString()}
+                        </span>
+                        <div className="entry-actions">
+                          <button 
+                            className="action-btn"
+                            onClick={() => {
+                              addTask({
+                                title: entry.content.split('\n')[0].substring(0, 50),
+                                description: entry.content,
+                                priority: 'medium',
+                                status: 'todo',
+                                tags: ['brain-dump'],
+                                projectId: null,
+                                estimatedTime: null,
+                                dueDate: null
+                              });
+                            }}
+                          >
+                            <Plus size={12} />
+                            Make Task
+                          </button>
+                          <button 
+                            className="action-btn danger"
+                            onClick={() => {
+                              const updatedEntries = brainDumpEntries.filter(e => e.id !== entry.id);
+                              setBrainDumpEntries(updatedEntries);
+                              localStorage.setItem('brainDumpEntries', JSON.stringify(updatedEntries));
+                            }}
+                          >
+                            <Trash2 size={12} />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {brainDumpEntries.length === 0 && (
+                    <div className="empty-state">
+                      <Brain size={48} />
+                      <p>No brain dump entries yet. Start capturing your thoughts above!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeView === 'calendar' && (
+          <div className="calendar-view">
+            <div className="view-header">
+              <h2>Calendar Integration</h2>
+              <p>Manage your tasks with calendar view</p>
+            </div>
+            <div className="calendar-container">
+              <div className="calendar-controls">
+                <button className="secondary-btn">
+                  <Calendar size={16} />
+                  Today
+                </button>
+                <div className="date-navigation">
+                  <button className="nav-btn">‹</button>
+                  <span className="current-month">
+                    {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button className="nav-btn">›</button>
+                </div>
+                <select className="filter-select">
+                  <option>All Tasks</option>
+                  <option>Due Today</option>
+                  <option>This Week</option>
+                  <option>Overdue</option>
+                </select>
+              </div>
+              
+              <div className="calendar-grid">
+                {/* Simple calendar implementation */}
+                <div className="calendar-header">
+                  <div className="day-header">Sun</div>
+                  <div className="day-header">Mon</div>
+                  <div className="day-header">Tue</div>
+                  <div className="day-header">Wed</div>
+                  <div className="day-header">Thu</div>
+                  <div className="day-header">Fri</div>
+                  <div className="day-header">Sat</div>
+                </div>
+                <div className="calendar-days">
+                  {Array.from({ length: 35 }, (_, index) => {
+                    const today = new Date();
+                    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const startDate = new Date(firstDay);
+                    startDate.setDate(startDate.getDate() - firstDay.getDay());
+                    const currentDate = new Date(startDate);
+                    currentDate.setDate(startDate.getDate() + index);
+                    
+                    const tasksForDay = tasks.filter(task => 
+                      task.dueDate && 
+                      task.dueDate.toDateString() === currentDate.toDateString()
+                    );
+                    
+                    const isToday = currentDate.toDateString() === today.toDateString();
+                    const isCurrentMonth = currentDate.getMonth() === today.getMonth();
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`calendar-day ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}`}
+                      >
+                        <div className="day-number">{currentDate.getDate()}</div>
+                        <div className="day-tasks">
+                          {tasksForDay.slice(0, 3).map(task => (
+                            <div 
+                              key={task.id} 
+                              className={`task-dot ${task.priority}`}
+                              title={task.title}
+                            />
+                          ))}
+                          {tasksForDay.length > 3 && (
+                            <div className="task-overflow">+{tasksForDay.length - 3}</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="calendar-sidebar">
+                <h3>Upcoming Tasks</h3>
+                <div className="upcoming-tasks">
+                  {tasks
+                    .filter(task => task.dueDate && task.dueDate >= new Date())
+                    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+                    .slice(0, 10)
+                    .map(task => {
+                      const project = projects.find(p => p.id === task.projectId);
+                      const daysUntilDue = Math.ceil((task.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                      return (
+                        <div key={task.id} className="upcoming-task">
+                          <div className="task-info">
+                            <h4>{task.title}</h4>
+                            <p>{project?.name || 'No Project'}</p>
+                            <span className={`due-indicator ${daysUntilDue <= 1 ? 'urgent' : daysUntilDue <= 7 ? 'soon' : ''}`}>
+                              {daysUntilDue === 0 ? 'Due Today' : 
+                               daysUntilDue === 1 ? 'Due Tomorrow' : 
+                               `Due in ${daysUntilDue} days`}
+                            </span>
+                          </div>
+                          <div className="task-actions">
+                            <button className="action-btn" onClick={() => handleEditTask(task)}>
+                              <Edit size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  {tasks.filter(task => task.dueDate && task.dueDate >= new Date()).length === 0 && (
+                    <div className="empty-state">
+                      <Calendar size={48} />
+                      <p>No upcoming tasks with due dates. Add some deadlines to see them here!</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

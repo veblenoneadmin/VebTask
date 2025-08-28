@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Project } from '../hooks/useTasks';
+import { X, Save, FolderOpen } from 'lucide-react';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -59,7 +60,9 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
       <div className="modal-content">
         <div className="modal-header">
           <h2>{project ? 'Edit Project' : 'Add New Project'}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>
+            <X size={20} />
+          </button>
         </div>
         
         <form onSubmit={handleSubmit} className="modal-form">
@@ -113,6 +116,7 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
               Cancel
             </button>
             <button type="submit" className="primary-btn">
+              <Save size={16} />
               {project ? 'Update Project' : 'Create Project'}
             </button>
           </div>

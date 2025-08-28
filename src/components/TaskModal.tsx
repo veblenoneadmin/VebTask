@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Task, Project } from '../hooks/useTasks';
+import { X, Save, Calendar, Clock, Tag, AlignLeft, Target } from 'lucide-react';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -78,7 +79,9 @@ export function TaskModal({ isOpen, onClose, onSave, onUpdate, task, projects }:
       <div className="modal-content">
         <div className="modal-header">
           <h2>{task ? 'Edit Task' : 'Add New Task'}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>
+            <X size={20} />
+          </button>
         </div>
         
         <form onSubmit={handleSubmit} className="modal-form">
@@ -176,6 +179,7 @@ export function TaskModal({ isOpen, onClose, onSave, onUpdate, task, projects }:
               Cancel
             </button>
             <button type="submit" className="primary-btn">
+              <Save size={16} />
               {task ? 'Update Task' : 'Create Task'}
             </button>
           </div>

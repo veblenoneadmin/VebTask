@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Play, Pause, Square } from 'lucide-react';
 
 interface TimerProps {
   taskId: string;
@@ -51,7 +52,7 @@ export function Timer({ isRunning, onStart, onStop, onPause, getDuration }: Time
             onClick={onStart}
             title="Start Timer"
           >
-            ▶️
+            <Play size={14} />
           </button>
         ) : (
           <>
@@ -60,14 +61,14 @@ export function Timer({ isRunning, onStart, onStop, onPause, getDuration }: Time
               onClick={onPause}
               title="Pause Timer"
             >
-              ⏸️
+              <Pause size={14} />
             </button>
             <button 
               className="timer-btn stop" 
               onClick={onStop}
               title="Stop Timer"
             >
-              ⏹️
+              <Square size={14} />
             </button>
           </>
         )}
