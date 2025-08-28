@@ -22,13 +22,25 @@ const pool = createPool(dbConfig);
 
 async function initDatabase() {
   try {
-    // Create user table for better-auth
+    console.log('🔄 Dropping and recreating tables for fresh schema...');
+    
+    // Drop existing tables in correct order (reverse foreign key dependency)
+    await pool.execute('SET FOREIGN_KEY_CHECKS = 0');
+    await pool.execute('DROP TABLE IF EXISTS verification');
+    await pool.execute('DROP TABLE IF EXISTS session');  
+    await pool.execute('DROP TABLE IF EXISTS account');
+    await pool.execute('DROP TABLE IF EXISTS user');
+    await pool.execute('SET FOREIGN_KEY_CHECKS = 1');
+    console.log('🗑️ Dropped existing tables');
+
+    // Create user table for better-auth with correct schema
     await pool.execute(`
-      CREATE TABLE IF NOT EXISTS user (
+      CREATE TABLE user (
         id VARCHAR(36) PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         emailVerified BOOLEAN DEFAULT FALSE,
         name VARCHAR(255),
+        image VARCHAR(255),
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
@@ -37,7 +49,7 @@ async function initDatabase() {
 
     // Create session table for better-auth
     await pool.execute(`
-      CREATE TABLE IF NOT EXISTS session (
+      CREATE TABLE session (
         id VARCHAR(255) PRIMARY KEY,
         expiresAt TIMESTAMP NOT NULL,
         token VARCHAR(255) UNIQUE NOT NULL,
@@ -51,9 +63,9 @@ async function initDatabase() {
     `);
     console.log('✅ Created session table');
 
-    // Create account table for better-auth
+    // Create account table for better-auth with proper schema
     await pool.execute(`
-      CREATE TABLE IF NOT EXISTS account (
+      CREATE TABLE account (
         id VARCHAR(36) PRIMARY KEY,
         accountId VARCHAR(255) NOT NULL,
         providerId VARCHAR(255) NOT NULL,
@@ -61,20 +73,22 @@ async function initDatabase() {
         accessToken TEXT,
         refreshToken TEXT,
         idToken TEXT,
-        accessTokenExpiresAt TIMESTAMP,
-        refreshTokenExpiresAt TIMESTAMP,
+        accessTokenExpiresAt TIMESTAMP NULL,
+        refreshTokenExpiresAt TIMESTAMP NULL,
         scope TEXT,
         password VARCHAR(255),
+        salt VARCHAR(255),
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE
+        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_provider_account (providerId, accountId)
       )
     `);
     console.log('✅ Created account table');
 
     // Create verification table for better-auth
     await pool.execute(`
-      CREATE TABLE IF NOT EXISTS verification (
+      CREATE TABLE verification (
         id VARCHAR(36) PRIMARY KEY,
         identifier VARCHAR(255) NOT NULL,
         value VARCHAR(255) NOT NULL,
