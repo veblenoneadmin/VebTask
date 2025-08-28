@@ -54,6 +54,8 @@ app.use(express.json({ limit: '10mb' }));
 
 // Add multer for file uploads (for audio files)
 import multer from 'multer';
+import FormData from 'form-data';
+
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 } // 25MB limit for audio files
@@ -114,7 +116,6 @@ app.post('/api/ai/transcribe', upload.single('audio'), async (req, res) => {
     console.log('🎤 Transcribing audio with OpenAI Whisper...');
 
     // Create FormData for OpenAI Whisper API
-    const FormData = (await import('form-data')).default;
     const formData = new FormData();
     formData.append('file', req.file.buffer, {
       filename: 'audio.webm',
@@ -149,7 +150,16 @@ app.post('/api/ai/transcribe', upload.single('audio'), async (req, res) => {
 
   } catch (error) {
     console.error('❌ Transcription error:', error);
-    return res.status(500).json({ error: 'Transcription failed' });
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      fileSize: req.file ? req.file.size : 'no file',
+      mimeType: req.file ? req.file.mimetype : 'no mime type'
+    });
+    return res.status(500).json({ 
+      error: 'Transcription failed', 
+      details: error.message 
+    });
   }
 });
 
