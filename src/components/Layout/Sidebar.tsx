@@ -1,20 +1,17 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useBetterAuth';
+import { useBetterAuth } from '@/hooks/useBetterAuth';
 // TODO: Replace with better-auth database operations
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  LayoutDashboard, 
   CheckSquare, 
   Clock, 
   Calendar, 
   Brain,
   Settings, 
   LogOut,
-  ChevronLeft,
-  ChevronRight,
   BarChart3,
   Timer,
   Building2,
@@ -64,8 +61,8 @@ const getNavigationForRole = (role: string) => {
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const { data: profile } = useProfile();
+  const { user, signOut } = useBetterAuth();
+  const profile = null; // TODO: Implement profile system with better-auth
 
   const handleSignOut = async () => {
     try {
