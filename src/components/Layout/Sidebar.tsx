@@ -62,7 +62,7 @@ const getNavigationForRole = (role: string) => {
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useBetterAuth();
-  const profile = null; // TODO: Implement profile system with better-auth
+  const profile: any = null; // TODO: Implement profile system with better-auth
 
   const handleSignOut = async () => {
     try {
@@ -102,7 +102,7 @@ const Sidebar: React.FC = () => {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {getNavigationForRole(profile?.role || 'employee').map((item) => {
+          {getNavigationForRole('employee').map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
             
@@ -133,7 +133,6 @@ const Sidebar: React.FC = () => {
         <div className="p-4 border-t border-border">
           <div className="flex items-center space-x-3 p-3 rounded-lg bg-surface-elevated">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={profile?.avatar_url} />
               <AvatarFallback className="bg-gradient-primary text-white font-medium">
                 {user?.email ? getInitials(user.email) : 'U'}
               </AvatarFallback>
@@ -141,13 +140,10 @@ const Sidebar: React.FC = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
                 <p className="text-sm font-medium text-foreground truncate">
-                  {profile?.first_name && profile?.last_name 
-                    ? `${profile.first_name} ${profile.last_name}`
-                    : user?.email?.split('@')[0] || 'User'
-                  }
+                  {user?.email?.split('@')[0] || 'User'}
                 </p>
                 <Badge variant="outline" className="text-xs capitalize">
-                  {profile?.role || 'employee'}
+                  employee
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
