@@ -1,6 +1,11 @@
 @tailwind base;
-@tailwind components;
+@tailwind components; 
 @tailwind utilities;
+
+/* Ensure CSS loads properly */
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -9,4 +14,5 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
