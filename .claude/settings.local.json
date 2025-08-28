@@ -20,7 +20,8 @@
       "Bash(npm ci:*)",
       "Bash(git branch:*)",
       "Bash(npm create:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(PORT=3003 node server.js)"
     ],
     "deny": [],
     "ask": [],
