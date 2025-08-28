@@ -11,14 +11,9 @@ import {
   DollarSign,
   Clock,
   Target,
-  TrendingUp,
   AlertCircle,
   CheckCircle2,
   MoreVertical,
-  Edit2,
-  Trash2,
-  Star,
-  GitBranch,
   Activity
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -148,8 +143,11 @@ const mockProjects: Project[] = [
 
 export function Projects() {
   const { data: session } = useSession();
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  console.log(session);
+  const [projects] = useState<Project[]>(mockProjects);
+  console.log(projects);
+  const [selectedProject] = useState<Project | null>(null);
+  console.log(selectedProject);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -172,6 +170,7 @@ export function Projects() {
   };
 
   const getPriorityColor = (priority: string) => {
+    console.log(priority);
     switch (priority) {
       case 'high': return 'text-error';
       case 'medium': return 'text-warning';

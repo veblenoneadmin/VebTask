@@ -11,8 +11,6 @@ import {
   Clock,
   MapPin,
   Users,
-  Edit2,
-  Trash2,
   Coffee
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -97,11 +95,14 @@ const months = [
 
 export function Calendar() {
   const { data: session } = useSession();
+  console.log(session);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
-  const [events, setEvents] = useState<CalendarEvent[]>(mockEvents);
-  const [showEventForm, setShowEventForm] = useState(false);
+  const [events] = useState<CalendarEvent[]>(mockEvents);
+  console.log(events);
+  const [showEventForm] = useState(false);
+  console.log(showEventForm, setShowEventForm);
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();

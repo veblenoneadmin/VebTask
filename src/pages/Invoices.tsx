@@ -5,19 +5,16 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { 
   FileText,
-  DollarSign,
   Calendar,
   Clock,
   Send,
   Download,
   Edit,
-  Trash2,
   Plus,
   Search,
   Filter,
   Eye,
   Building2,
-  User,
   AlertCircle,
   CheckCircle2,
   XCircle,
@@ -168,10 +165,12 @@ const mockInvoices: Invoice[] = [
 
 export function Invoices() {
   const { data: session } = useSession();
-  const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
+  const [invoices] = useState<Invoice[]>(mockInvoices);
+  console.log(invoices);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [selectedInvoice] = useState<Invoice | null>(null);
+  console.log(selectedInvoice);
 
   const filteredInvoices = invoices.filter(invoice => {
     const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||

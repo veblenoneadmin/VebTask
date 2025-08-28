@@ -159,7 +159,8 @@ const expenseCategories = [
 
 export function Expenses() {
   const { data: session } = useSession();
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
+  const [expenses] = useState<Expense[]>(mockExpenses);
+  console.log(expenses);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');

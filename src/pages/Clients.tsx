@@ -5,7 +5,6 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { 
   Building2,
-  User,
   Mail,
   Phone,
   MapPin,
@@ -16,7 +15,6 @@ import {
   Trash2,
   Search,
   Filter,
-  Calendar,
   FileText,
   TrendingUp,
   Users
@@ -138,12 +136,14 @@ const mockClients: Client[] = [
 
 export function Clients() {
   const { data: session } = useSession();
-  const [clients, setClients] = useState<Client[]>(mockClients);
+  const [clients] = useState<Client[]>(mockClients);
+  console.log(clients);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClient] = useState<Client | null>(null);
+  console.log(selectedClient);
 
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

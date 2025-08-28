@@ -7,15 +7,12 @@ import {
   Clock,
   Calendar,
   Play,
-  Pause,
-  Square,
   Filter,
   Download,
   Search,
   DollarSign,
   Target,
   Building2,
-  User,
   TrendingUp,
   BarChart3
 } from 'lucide-react';
@@ -137,7 +134,9 @@ const mockTimeLogs: TimeLog[] = [
 
 export function TimeLogs() {
   const { data: session } = useSession();
-  const [timeLogs, setTimeLogs] = useState<TimeLog[]>(mockTimeLogs);
+  console.log(session);
+  const [timeLogs] = useState<TimeLog[]>(mockTimeLogs);
+  console.log(timeLogs);
   const [selectedDateRange, setSelectedDateRange] = useState<'today' | 'week' | 'month' | 'custom'>('week');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterClient, setFilterClient] = useState<string>('all');
