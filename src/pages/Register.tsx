@@ -2,7 +2,10 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { signUp } from '../lib/auth-client';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, UserPlus } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 
 export function Register() {
   const [email, setEmail] = useState('');
@@ -47,113 +50,180 @@ export function Register() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-background">
-        <div className="auth-grid">
-          {/* Decorative grid background */}
-        </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-success/5 via-background to-primary/5"></div>
+      <div className="absolute inset-0">
+        <div className="absolute top-1/3 left-1/3 w-80 h-80 bg-success/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
       
-      <div className="auth-card">
-        <div className="auth-header">
-          <div className="brand">
-            <div className="brand-icon">V</div>
-            <div className="brand-text">
-              <span className="brand-name">VebTask</span>
-              <span className="brand-tagline">AI-Powered Task Management</span>
+      {/* Main Content */}
+      <div className="w-full max-w-md relative z-10">
+        {/* Logo & Brand */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-6">
+            <div className="h-16 w-16 rounded-2xl bg-gradient-success flex items-center justify-center shadow-glow animate-pulse-glow">
+              <UserPlus className="h-8 w-8 text-white" />
             </div>
           </div>
-          
-          <div className="auth-title">
-            <h1>Create your account</h1>
-            <p>Join thousands of professionals managing tasks smartly</p>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold gradient-text">VebTask</h1>
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              AI-Powered Task Management
+            </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-row">
-            <div className="input-group">
-              <label htmlFor="firstName">First Name</label>
-              <div className="input-wrapper">
-                <User className="input-icon" size={20} />
-                <input
-                  type="text"
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Tony"
-                  required
-                />
+        {/* Register Card */}
+        <Card className="glass shadow-elevation">
+          <CardHeader className="space-y-1 pb-4">
+            <h2 className="text-2xl font-semibold text-center">Create your account ✨</h2>
+            <p className="text-sm text-muted-foreground text-center">
+              Join thousands of productive professionals
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name Inputs */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="firstName" className="text-sm font-medium text-foreground">
+                    First Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      id="firstName"
+                      placeholder="John"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="pl-10 glass-surface"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="lastName" className="text-sm font-medium text-foreground">
+                    Last Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      id="lastName"
+                      placeholder="Doe"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="pl-10 glass-surface"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="input-group">
-              <label htmlFor="lastName">Last Name</label>
-              <div className="input-wrapper">
-                <User className="input-icon" size={20} />
-                <input
-                  type="text"
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Herrera"
-                  required
-                />
+              {/* Email Input */}
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium text-foreground">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    id="email"
+                    placeholder="john@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 glass-surface"
+                    required
+                  />
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="input-group">
-            <label htmlFor="email">Email Address</label>
-            <div className="input-wrapper">
-              <Mail className="input-icon" size={20} />
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tony@opusautomations.com"
-                required
-              />
-            </div>
-          </div>
+              {/* Password Input */}
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium text-foreground">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10 glass-surface"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Password must be at least 6 characters long
+                </p>
+              </div>
 
-          <div className="input-group">
-            <label htmlFor="password">Password</label>
-            <div className="input-wrapper">
-              <Lock className="input-icon" size={20} />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••"
-                required
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-gradient-success hover:bg-gradient-success/90 text-white shadow-glow transition-all duration-300"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
+                {loading ? 'Creating account...' : 'Create Account'}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </form>
+
+            {/* Terms & Privacy */}
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">
+                By creating an account, you agree to our{' '}
+                <a href="#" className="text-primary hover:text-primary/80 transition-colors">
+                  Terms of Service
+                </a>{' '}
+                and{' '}
+                <a href="#" className="text-primary hover:text-primary/80 transition-colors">
+                  Privacy Policy
+                </a>
+              </p>
             </div>
-            <div className="password-requirements">
-              Password must be at least 6 characters with uppercase, lowercase, and numbers
+
+            {/* Sign In Link */}
+            <div className="text-center pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{' '}
+                <Link 
+                  to="/login" 
+                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  Sign in here
+                </Link>
+              </p>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {error && <div className="error-message">{error}</div>}
-
-          <button type="submit" disabled={loading} className="auth-button">
-            {loading ? 'Creating Account...' : 'Create Account'}
-            <ArrowRight className="button-icon" size={20} />
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          <span>Already have an account? </span>
-          <Link to="/login" className="auth-link">Sign in here</Link>
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-xs text-muted-foreground">
+            © 2024 VebTask. Secure authentication powered by better-auth.
+          </p>
         </div>
       </div>
     </div>
