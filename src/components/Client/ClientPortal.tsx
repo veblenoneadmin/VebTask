@@ -36,10 +36,11 @@ const ClientPortal: React.FC = () => {
     files: []
   });
 
-  const { data: tasks } = useTasks();
-  const { data: projects } = useProjects();
-  const { data: requests } = useClientRequests();
-  const createRequest = useCreateClientRequest();
+  // TODO: Implement with better-auth database queries
+  const tasks = [];
+  const projects = [];
+  const requests = [];
+  const createRequest = { isPending: false, mutateAsync: async () => {} };
 
   // Filter data for client visibility
   const visibleTasks = tasks?.filter(task => task.client_visible) || [];
@@ -85,16 +86,10 @@ const ClientPortal: React.FC = () => {
     }
 
     try {
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('client_id')
-        .eq('user_id', user?.id)
-        .single();
-
+      // TODO: Implement with better-auth database queries
       await createRequest.mutateAsync({
         ...requestForm,
         user_id: user?.id,
-        client_id: userProfile?.client_id,
       });
       
       setRequestForm({

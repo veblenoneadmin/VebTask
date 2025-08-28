@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { mysql2Adapter } from "better-auth/adapters/mysql2";
+import { mysql } from "better-auth/adapters/mysql";
 
 // Use Railway's internal MySQL URL for server-side connections
 const connectionString = process.env.DATABASE_URL || 
@@ -10,8 +10,8 @@ console.log('Auth config - baseURL:', process.env.VITE_APP_URL || import.meta.en
 console.log('Auth config - database connection string configured:', !!connectionString);
 
 export const auth = betterAuth({
-  database: mysql2Adapter({
-    connectionString,
+  database: mysql({
+    database: connectionString,
   }),
   baseURL: process.env.VITE_APP_URL || import.meta.env.VITE_APP_URL || "http://localhost:5173",
   advanced: {

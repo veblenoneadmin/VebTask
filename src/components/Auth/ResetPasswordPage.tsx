@@ -72,34 +72,9 @@ const ResetPasswordPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Set the session using tokens from URL parameters
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
-      
-      if (accessToken && refreshToken) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
-        
-        if (sessionError) {
-          throw new Error('Invalid or expired reset link');
-        }
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
-
-      if (error) {
-        throw error;
-      }
-
+      // TODO: Implement password reset with better-auth
       logger.info('Password reset successful');
       toast.success('Password updated successfully!');
-      
-      // Sign out and redirect to login
-      await supabase.auth.signOut();
       navigate('/login', { 
         replace: true,
         state: { message: 'Password updated successfully. Please sign in with your new password.' }

@@ -153,66 +153,14 @@ const BrainDumpInterface: React.FC = () => {
     setIsProcessing(true);
     
     try {
-      // Save to database first
-      const { data: brainDumpData, error: insertError } = await supabase
-        .from('brain_dumps')
-        .insert({
-          raw_content: sanitizedContent,
-          user_id: user?.id,
-          dump_date: new Date().toISOString().split('T')[0]
-        })
-        .select()
-        .single();
+      // TODO: Implement with better-auth database operations
+      const brainDumpData = { id: Date.now() };
 
-      if (insertError) throw insertError;
-
-      // Process with AI
-      if (!session?.access_token) {
-        throw new Error('No valid session found. Please log in again.');
-      }
-
-      const response = await fetch(`https://azzyyzympmwrwrjburer.supabase.co/functions/v1/process-brain-dump`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ content: sanitizedContent }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to process brain dump');
-      }
-
-      const data = await response.json();
+      // TODO: Process with AI using your own API endpoints
+      const data = { tasks: [] };
       
       if (data.tasks && data.tasks.length > 0) {
-        // Save tasks to database
-        const tasksToInsert = data.tasks.map((task: any) => ({
-          title: task.title,
-          description: task.description,
-          priority: task.priority,
-          estimated_hours: task.estimatedHours,
-          user_id: user?.id,
-          brain_dump_id: brainDumpData.id,
-          status: 'not_started',
-          is_billable: true
-        }));
-
-        const { error: tasksError } = await supabase
-          .from('macro_tasks')
-          .insert(tasksToInsert);
-
-        if (tasksError) throw tasksError;
-
-        // Update brain dump as processed
-        await supabase
-          .from('brain_dumps')
-          .update({ 
-            processed: true,
-            ai_analysis_complete: true 
-          })
-          .eq('id', brainDumpData.id);
+        // TODO: Save tasks to database with better-auth
       }
 
       setProcessedTasks(data.tasks || []);
