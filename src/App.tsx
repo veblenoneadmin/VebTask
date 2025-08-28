@@ -3,6 +3,7 @@ import { useSession } from './lib/auth-client';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
+import { BrainDump } from './pages/BrainDump';
 import MainLayout from './components/Layout/MainLayout';
 
 function App() {
@@ -35,7 +36,7 @@ function App() {
             element={session ? <MainLayout /> : <Navigate to="/login" replace />}
           >
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="brain-dump" element={<div className="text-center p-8">Brain Dump - Coming Soon</div>} />
+            <Route path="brain-dump" element={<BrainDump />} />
             <Route path="timer" element={<div className="text-center p-8">Timer - Coming Soon</div>} />
             <Route path="tasks" element={<div className="text-center p-8">Tasks - Coming Soon</div>} />
             <Route path="calendar" element={<div className="text-center p-8">Calendar - Coming Soon</div>} />
