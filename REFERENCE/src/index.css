@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -99,7 +98,6 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   }
 
   /* Glass morphism utility */
@@ -197,45 +195,5 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground));
-  }
-}
-
-@layer utilities {
-  /* Gradient Background Utilities */
-  .bg-gradient-primary {
-    background: var(--gradient-primary);
-  }
-
-  .bg-gradient-secondary {
-    background: var(--gradient-secondary);
-  }
-
-  .bg-gradient-glass {
-    background: var(--gradient-glass);
-  }
-
-  .bg-gradient-success {
-    background: var(--gradient-success);
-  }
-
-  .bg-gradient-warning {
-    background: var(--gradient-warning);
-  }
-
-  .bg-gradient-error {
-    background: var(--gradient-error);
-  }
-
-  /* Shadow utilities */
-  .shadow-glass {
-    box-shadow: var(--shadow-glass);
-  }
-
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  .shadow-elevation {
-    box-shadow: var(--shadow-elevation);
   }
 }
