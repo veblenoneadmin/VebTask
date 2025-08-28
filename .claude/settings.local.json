@@ -10,7 +10,13 @@
       "Bash(git push:*)",
       "WebSearch",
       "WebFetch(domain:www.better-auth.com)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx @better-auth/cli generate:*)",
+      "Bash(mysql:*)",
+      "Bash(node:*)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@mysql.railway.internal:3306/railway\" node init-database.js)",
+      "Bash(taskkill:*)",
+      "Bash(AUTH_PORT=3002 node server.js)"
     ],
     "deny": [],
     "ask": []
