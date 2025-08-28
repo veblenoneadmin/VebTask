@@ -22,7 +22,11 @@
       "Bash(npm create:*)",
       "Bash(npm run build:*)",
       "Bash(PORT=3003 node server.js)",
-      "Read(C:\\Users\\USER'S\\Downloads/**)"
+      "Read(C:\\Users\\USER'S\\Downloads/**)",
+      "Bash(rd /s /q \"C:\\Users\\USER''S\\Desktop\\VebTask\\REFERENCE FOR UI\")",
+      "Bash(npm run dev:*)",
+      "Bash(npm start)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": [],

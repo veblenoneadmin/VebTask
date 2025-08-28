@@ -3,6 +3,7 @@ import { useSession } from './lib/auth-client';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
+import MainLayout from './components/Layout/MainLayout';
 
 function App() {
   const { data: session, isPending } = useSession();
@@ -30,8 +31,27 @@ function App() {
             element={session ? <Navigate to="/dashboard" replace /> : <Register />} 
           />
           <Route 
-            path="/dashboard" 
-            element={<Dashboard />} 
+            path="/*" 
+            element={session ? (
+              <MainLayout>
+                <Routes>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/brain-dump" element={<div className="text-center p-8">Brain Dump - Coming Soon</div>} />
+                  <Route path="/timer" element={<div className="text-center p-8">Timer - Coming Soon</div>} />
+                  <Route path="/tasks" element={<div className="text-center p-8">Tasks - Coming Soon</div>} />
+                  <Route path="/calendar" element={<div className="text-center p-8">Calendar - Coming Soon</div>} />
+                  <Route path="/projects" element={<div className="text-center p-8">Projects - Coming Soon</div>} />
+                  <Route path="/timesheets" element={<div className="text-center p-8">Time Logs - Coming Soon</div>} />
+                  <Route path="/clients" element={<div className="text-center p-8">Clients - Coming Soon</div>} />
+                  <Route path="/invoices" element={<div className="text-center p-8">Invoices - Coming Soon</div>} />
+                  <Route path="/expenses" element={<div className="text-center p-8">Expenses - Coming Soon</div>} />
+                  <Route path="/reports" element={<div className="text-center p-8">Reports - Coming Soon</div>} />
+                  <Route path="/settings" element={<div className="text-center p-8">Settings - Coming Soon</div>} />
+                </Routes>
+              </MainLayout>
+            ) : (
+              <Navigate to="/login" replace />
+            )} 
           />
           <Route 
             path="/" 
