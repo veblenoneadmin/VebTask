@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
-import { mysql } from "better-auth/adapters/mysql";
+import { createPool } from "mysql2/promise";
 
-// Use Railway's internal MySQL URL for server-side connections
+// Parse connection string into components  
 const connectionString = process.env.DATABASE_URL || 
   import.meta.env.VITE_DATABASE_URL || 
   "mysql://root:password@localhost:3306/vebtask";
@@ -9,10 +9,18 @@ const connectionString = process.env.DATABASE_URL ||
 console.log('Auth config - baseURL:', process.env.VITE_APP_URL || import.meta.env.VITE_APP_URL || "http://localhost:5173");
 console.log('Auth config - database connection string configured:', !!connectionString);
 
+// Parse MySQL URL into connection options
+const url = new URL(connectionString);
+const dbConfig = {
+  host: url.hostname,
+  port: url.port ? parseInt(url.port) : 3306,
+  user: url.username,
+  password: url.password,
+  database: url.pathname.substring(1), // Remove leading slash
+};
+
 export const auth = betterAuth({
-  database: mysql({
-    database: connectionString,
-  }),
+  database: createPool(dbConfig),
   baseURL: process.env.VITE_APP_URL || import.meta.env.VITE_APP_URL || "http://localhost:5173",
   advanced: {
     generateId: () => {
