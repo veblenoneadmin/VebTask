@@ -2,7 +2,9 @@ import { createAuthClient } from "better-auth/react";
 
 // Determine the base URL based on environment
 const baseURL = import.meta.env.VITE_APP_URL || 
-  (window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin);
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port === '5173' 
+    ? 'http://localhost:3001' 
+    : window.location.origin);
 
 console.log('Auth client baseURL:', baseURL + '/api/auth');
 
