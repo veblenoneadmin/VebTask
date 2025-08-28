@@ -187,6 +187,69 @@ app.get('/api/check-db', async (req, res) => {
   }
 });
 
+// User cleanup/reset endpoint for debugging
+app.post('/api/reset-user', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email required' });
+    }
+
+    const { createPool } = await import('mysql2/promise');
+    const connectionString = process.env.DATABASE_URL || process.env.VITE_DATABASE_URL;
+    
+    if (!connectionString) {
+      return res.status(500).json({ error: 'No database connection' });
+    }
+    
+    const url = new URL(connectionString);
+    const pool = createPool({
+      host: url.hostname,
+      port: url.port ? parseInt(url.port) : 3306,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.substring(1)
+    });
+
+    // Check if user exists
+    const [users] = await pool.execute('SELECT id, email, name FROM user WHERE email = ?', [email]);
+    
+    if (users.length === 0) {
+      await pool.end();
+      return res.json({ message: 'User not found', email });
+    }
+
+    const user = users[0];
+    
+    // Check account records
+    const [accounts] = await pool.execute('SELECT * FROM account WHERE userId = ?', [user.id]);
+    
+    // Check session records
+    const [sessions] = await pool.execute('SELECT * FROM session WHERE userId = ?', [user.id]);
+
+    // Delete all related records for clean slate
+    await pool.execute('DELETE FROM session WHERE userId = ?', [user.id]);
+    await pool.execute('DELETE FROM account WHERE userId = ?', [user.id]);
+    await pool.execute('DELETE FROM user WHERE id = ?', [user.id]);
+    
+    await pool.end();
+
+    res.json({ 
+      message: 'User and all related records deleted successfully', 
+      email,
+      deletedRecords: {
+        user: 1,
+        accounts: accounts.length,
+        sessions: sessions.length
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ User reset error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Database initialization endpoint (for production)
 app.post('/api/init-db', async (req, res) => {
   try {
