@@ -182,16 +182,27 @@ app.post('/api/ai/process-brain-dump', async (req, res) => {
 
 // AI helper functions
 function getAISystemPrompt() {
-  return `You are an expert AI assistant specialized in analyzing brain dumps and extracting actionable tasks from both typed text and voice-transcribed content.
+  return `You are an expert AI assistant specialized in analyzing brain dumps and creating optimal daily schedules for employees.
 
 CORE RESPONSIBILITIES:
 1. Parse unstructured thoughts into clear, actionable tasks with proper grammar and formatting
 2. Assign realistic priorities based on context and urgency indicators  
-3. Provide accurate time estimates based on task complexity
+3. Provide accurate time estimates based on task complexity and employee productivity patterns
 4. Categorize tasks into relevant professional categories
 5. Extract meaningful tags that enhance organization and searchability
 6. Break down complex tasks into manageable micro-tasks when beneficial
-7. Use proper capitalization and professional language throughout
+7. Create optimal time blocks considering energy levels, task complexity, and deadlines
+8. Suggest ideal scheduling times based on task type and priority
+9. Use proper capitalization and professional language throughout
+
+OPTIMAL SCHEDULING PRINCIPLES:
+- Schedule high-cognitive tasks during peak focus hours (typically 9AM-11AM, 2PM-4PM)
+- Group similar tasks together to minimize context switching
+- Place urgent/important tasks in morning slots when energy is highest
+- Buffer time between meetings and complex tasks
+- Consider task dependencies and logical workflow
+- Account for collaboration requirements and team availability
+- Suggest realistic daily workload (6-7 productive hours)
 
 PRIORITY ASSIGNMENT LOGIC:
 - "Urgent": Critical issues, emergencies, immediate deadlines, blocking other work
@@ -232,9 +243,24 @@ Return a JSON object with this exact structure:
     "estimatedHours": 2.5,
     "category": "Development|Design|Testing|Research|Documentation|Meeting|Deployment|General",
     "tags": ["Title Case Tag", "Another Tag"],
-    "microTasks": ["Specific actionable step 1", "Specific actionable step 2"]
+    "microTasks": ["Specific actionable step 1", "Specific actionable step 2"],
+    "optimalTimeSlot": "9:00 AM - 11:00 AM",
+    "energyLevel": "High|Medium|Low",
+    "focusType": "Deep Work|Collaboration|Administrative",
+    "dependencies": ["Optional dependency task IDs"],
+    "suggestedDay": "Today|Tomorrow|This Week"
   }],
-  "summary": "Professional summary highlighting key tasks and total estimated time"
+  "dailySchedule": {
+    "totalEstimatedHours": 6.5,
+    "workloadAssessment": "Optimal|Heavy|Light",
+    "recommendedOrder": ["task-id-1", "task-id-2", "task-id-3"],
+    "timeBlocks": [{
+      "time": "9:00 AM - 11:00 AM",
+      "taskId": "task-id-1",
+      "rationale": "High-focus morning slot for complex cognitive work"
+    }]
+  },
+  "summary": "Professional summary highlighting key tasks, total time, and scheduling rationale"
 }
 
 CRITICAL: Return ONLY the JSON object. No additional text, explanations, or formatting.`;
@@ -521,6 +547,166 @@ async function getDbPool() {
     });
   }
   return sharedDbPool;
+}
+
+// Save brain dump tasks to database with optimal scheduling
+app.post('/api/brain-dump/save-tasks', async (req, res) => {
+  try {
+    const { extractedTasks, dailySchedule, userId } = req.body;
+
+    if (!extractedTasks || !userId) {
+      return res.status(400).json({ error: 'extractedTasks and userId are required' });
+    }
+
+    const pool = await getDbPool();
+    const savedTasks = [];
+    const savedEvents = [];
+
+    // Begin transaction
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // Save tasks to macro_tasks table
+      for (const task of extractedTasks) {
+        const taskId = task.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Insert into macro_tasks
+        await connection.execute(
+          `INSERT INTO macro_tasks (
+            id, title, description, userId, createdBy, priority, estimatedHours, 
+            status, category, tags, createdAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'not_started', ?, ?, NOW())`,
+          [
+            taskId,
+            task.title,
+            task.description,
+            userId,
+            userId,
+            task.priority,
+            task.estimatedHours,
+            task.category,
+            JSON.stringify({
+              tags: task.tags || [],
+              microTasks: task.microTasks || [],
+              energyLevel: task.energyLevel,
+              focusType: task.focusType,
+              optimalTimeSlot: task.optimalTimeSlot,
+              suggestedDay: task.suggestedDay
+            })
+          ]
+        );
+
+        savedTasks.push({
+          id: taskId,
+          ...task
+        });
+
+        // Create calendar event for optimal time slot if specified
+        if (task.optimalTimeSlot && dailySchedule?.timeBlocks) {
+          const timeBlock = dailySchedule.timeBlocks.find(block => block.taskId === task.id);
+          if (timeBlock) {
+            const eventId = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const today = new Date();
+            const [startTime, endTime] = parseTimeSlot(timeBlock.time);
+            
+            await connection.execute(
+              `INSERT INTO calendar_events (
+                id, userId, title, description, startTime, endTime, type, taskId, 
+                color, createdAt
+              ) VALUES (?, ?, ?, ?, ?, ?, 'task', ?, '#6366f1', NOW())`,
+              [
+                eventId,
+                userId,
+                `🎯 ${task.title}`,
+                `${task.description}\n\nRationale: ${timeBlock.rationale}`,
+                formatDateTime(today, startTime),
+                formatDateTime(today, endTime),
+                taskId
+              ]
+            );
+
+            savedEvents.push({
+              id: eventId,
+              taskId: taskId,
+              timeSlot: timeBlock.time,
+              rationale: timeBlock.rationale
+            });
+          }
+        }
+      }
+
+      // Save brain dump record
+      const brainDumpId = `dump-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      await connection.execute(
+        `INSERT INTO brain_dumps (
+          id, userId, rawContent, processedContent, processingStatus, 
+          aiModel, processedAt, createdAt
+        ) VALUES (?, ?, ?, ?, 'completed', 'ai-scheduler', NOW(), NOW())`,
+        [
+          brainDumpId,
+          userId,
+          req.body.originalContent || '',
+          JSON.stringify({
+            extractedTasks,
+            dailySchedule,
+            savedAt: new Date().toISOString()
+          })
+        ]
+      );
+
+      await connection.commit();
+
+      res.json({
+        success: true,
+        message: 'Tasks and schedule saved successfully',
+        data: {
+          brainDumpId,
+          savedTasks,
+          savedEvents,
+          dailySchedule,
+          totalTasksCreated: savedTasks.length,
+          totalEventsCreated: savedEvents.length
+        }
+      });
+
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+
+  } catch (error) {
+    console.error('❌ Brain dump save error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper functions for calendar event creation
+function parseTimeSlot(timeSlot) {
+  const [start, end] = timeSlot.split(' - ');
+  return [parseTime(start), parseTime(end)];
+}
+
+function parseTime(timeStr) {
+  const [time, period] = timeStr.split(' ');
+  const [hours, minutes] = time.split(':').map(Number);
+  let hour24 = hours;
+  
+  if (period === 'PM' && hours !== 12) {
+    hour24 += 12;
+  } else if (period === 'AM' && hours === 12) {
+    hour24 = 0;
+  }
+  
+  return { hours: hour24, minutes: minutes || 0 };
+}
+
+function formatDateTime(date, time) {
+  const newDate = new Date(date);
+  newDate.setHours(time.hours, time.minutes, 0, 0);
+  return newDate.toISOString().slice(0, 19).replace('T', ' ');
 }
 
 // Time logs API endpoint

@@ -26,6 +26,21 @@ interface ProcessedTask {
   category: string;
   tags: string[];
   microTasks: string[];
+  optimalTimeSlot?: string;
+  energyLevel?: 'High' | 'Medium' | 'Low';
+  focusType?: 'Deep Work' | 'Collaboration' | 'Administrative';
+  suggestedDay?: 'Today' | 'Tomorrow' | 'This Week';
+}
+
+interface DailySchedule {
+  totalEstimatedHours: number;
+  workloadAssessment: 'Optimal' | 'Heavy' | 'Light';
+  recommendedOrder: string[];
+  timeBlocks: {
+    time: string;
+    taskId: string;
+    rationale: string;
+  }[];
 }
 
 export function BrainDump() {
@@ -34,7 +49,9 @@ export function BrainDump() {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedTasks, setProcessedTasks] = useState<ProcessedTask[]>([]);
+  const [dailySchedule, setDailySchedule] = useState<DailySchedule | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
   const [error, setError] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -139,7 +156,14 @@ export function BrainDump() {
         },
         body: JSON.stringify({ 
           content: content.trim(),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          preferences: {
+            workingHours: { start: '9:00 AM', end: '5:00 PM' },
+            focusHours: ['9:00 AM - 11:00 AM', '2:00 PM - 4:00 PM'],
+            breakInterval: 90, // minutes
+            maxTasksPerDay: 6,
+            prioritizeUrgent: true
+          }
         }),
       });
 
@@ -149,6 +173,7 @@ export function BrainDump() {
 
       const data = await response.json();
       const tasks = data.extractedTasks || [];
+      const schedule = data.dailySchedule || null;
       
       // Convert server format to component format
       const formattedTasks: ProcessedTask[] = tasks.map((task: any) => ({
@@ -159,10 +184,15 @@ export function BrainDump() {
         estimatedHours: task.estimatedHours,
         category: task.category,
         tags: task.tags || [],
-        microTasks: task.microTasks || []
+        microTasks: task.microTasks || [],
+        optimalTimeSlot: task.optimalTimeSlot,
+        energyLevel: task.energyLevel,
+        focusType: task.focusType,
+        suggestedDay: task.suggestedDay
       }));
       
       setProcessedTasks(formattedTasks);
+      setDailySchedule(schedule);
       
       if (formattedTasks.length > 0) {
         setError('');
@@ -176,6 +206,48 @@ export function BrainDump() {
       setProcessedTasks([]);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleSaveTasks = async () => {
+    if (!processedTasks.length || !session?.user?.id) return;
+
+    setIsSaving(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/brain-dump/save-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          extractedTasks: processedTasks,
+          dailySchedule: dailySchedule,
+          userId: session.user.id,
+          originalContent: content
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save tasks');
+      }
+
+      await response.json();
+      
+      // Show success and navigate
+      setLastSaved(new Date());
+      
+      // Navigate to tasks page to see the created tasks
+      setTimeout(() => {
+        navigate('/tasks');
+      }, 1000);
+
+    } catch (error) {
+      console.error('Save tasks failed:', error);
+      setError('Failed to save tasks. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -250,12 +322,19 @@ export function BrainDump() {
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Start typing or speaking your thoughts...
 
+The AI will create optimal daily schedules by:
+• Analyzing task complexity and priority
+• Scheduling high-focus work during peak energy hours
+• Grouping similar tasks to reduce context switching
+• Creating realistic time blocks with proper buffers
+• Automatically adding tasks and events to your calendar
+
 Examples:
-• Need to finish the quarterly reports by Friday
-• Call John about the marketing campaign 
-• Review the budget proposal from finance team
-• Schedule team meeting for project planning
-• Research new CRM tools for better productivity"
+• Need to finish the quarterly reports by Friday - complex analysis work
+• Call John about the marketing campaign - urgent follow-up needed
+• Review the budget proposal from finance team - detailed review required
+• Schedule team meeting for project planning - coordination needed
+• Research new CRM tools for better productivity - exploration task"
                 className="w-full min-h-[300px] p-4 glass-surface border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
               />
 
@@ -331,11 +410,21 @@ Examples:
                   </div>
                   <Button 
                     size="sm" 
-                    className="bg-gradient-primary hover:bg-gradient-primary/90 text-white"
-                    onClick={() => navigate('/tasks')}
+                    className="bg-gradient-success hover:bg-gradient-success/90 text-white"
+                    onClick={handleSaveTasks}
+                    disabled={isSaving || !processedTasks.length}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Save Tasks
+                    {isSaving ? (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Save to Tasks & Calendar
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardHeader>
@@ -349,9 +438,41 @@ Examples:
                           <span className={`text-xs font-medium uppercase ${getPriorityColor(task.priority)}`}>
                             {task.priority} Priority
                           </span>
+                          {task.suggestedDay && (
+                            <span className="text-xs bg-info/10 text-info px-2 py-1 rounded">
+                              {task.suggestedDay}
+                            </span>
+                          )}
                         </div>
                         <h3 className="font-semibold text-foreground">{task.title}</h3>
                         <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+                        
+                        {/* Optimal Scheduling Info */}
+                        {task.optimalTimeSlot && (
+                          <div className="mt-2 p-2 bg-primary/10 border border-primary/20 rounded-lg">
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center space-x-2">
+                                <Clock className="h-4 w-4 text-primary" />
+                                <span className="font-medium text-primary">Optimal Time:</span>
+                                <span className="text-foreground">{task.optimalTimeSlot}</span>
+                              </div>
+                              {task.energyLevel && (
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  task.energyLevel === 'High' ? 'bg-success/10 text-success' :
+                                  task.energyLevel === 'Medium' ? 'bg-warning/10 text-warning' :
+                                  'bg-info/10 text-info'
+                                }`}>
+                                  {task.energyLevel} Energy
+                                </span>
+                              )}
+                            </div>
+                            {task.focusType && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Best for: {task.focusType}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground ml-4">
                         <Clock className="h-4 w-4" />
@@ -409,6 +530,81 @@ Examples:
                     </div>
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Daily Schedule Summary */}
+          {dailySchedule && processedTasks.length > 0 && (
+            <Card className="glass shadow-elevation">
+              <CardHeader className="pb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-info flex items-center justify-center shadow-glow">
+                    <Clock className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">Daily Schedule</h2>
+                    <p className="text-sm text-muted-foreground">AI-optimized time blocks</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Schedule Summary */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 glass-surface rounded-lg">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Clock className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Total Time</span>
+                    </div>
+                    <p className="text-lg font-semibold text-foreground">
+                      {dailySchedule.totalEstimatedHours}h
+                    </p>
+                  </div>
+                  <div className="p-3 glass-surface rounded-lg">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Target className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Workload</span>
+                    </div>
+                    <p className={`text-lg font-semibold ${
+                      dailySchedule.workloadAssessment === 'Optimal' ? 'text-success' :
+                      dailySchedule.workloadAssessment === 'Heavy' ? 'text-warning' :
+                      'text-info'
+                    }`}>
+                      {dailySchedule.workloadAssessment}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Time Blocks */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-foreground flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Recommended Schedule
+                  </h4>
+                  {dailySchedule.timeBlocks.map((block, index) => {
+                    const task = processedTasks.find(t => t.id === block.taskId);
+                    return (
+                      <div key={index} className="p-3 glass-surface rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-primary">{block.time}</span>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            task?.priority === 'Urgent' || task?.priority === 'High' ? 'bg-error/10 text-error' :
+                            task?.priority === 'Medium' ? 'bg-warning/10 text-warning' :
+                            'bg-info/10 text-info'
+                          }`}>
+                            {task?.priority} Priority
+                          </span>
+                        </div>
+                        <p className="font-medium text-foreground text-sm">
+                          {task?.title || 'Task'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {block.rationale}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
           )}
