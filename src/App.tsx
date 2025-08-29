@@ -15,6 +15,7 @@ import { Expenses } from './pages/Expenses';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import MainLayout from './components/Layout/MainLayout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
   const { data: session, isPending } = useSession();
@@ -30,9 +31,10 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="app">
-        <Routes>
+    <ErrorBoundary>
+      <Router>
+        <div className="app">
+          <Routes>
           <Route 
             path="/login" 
             element={session ? <Navigate to="/dashboard" replace /> : <Login />} 
@@ -64,9 +66,10 @@ function App() {
               session ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
             } 
           />
-        </Routes>
-      </div>
-    </Router>
+          </Routes>
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

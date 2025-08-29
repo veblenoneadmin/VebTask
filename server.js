@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3001;
 
 console.log('🚀 Starting server...');
 
-// CORS headers
+// CORS headers with environment-aware configuration
 app.use((req, res, next) => {
   const allowedOrigins = [
     'http://localhost:5173',
@@ -21,21 +21,28 @@ app.use((req, res, next) => {
     'http://localhost:5176',
     'http://localhost:5177',
     'http://localhost:3001',
+    'http://localhost:3000',
     'https://vebtask.com',
     'https://www.vebtask.com',
     'https://vebtask-production.up.railway.app'
   ];
   
   const origin = req.headers.origin;
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    // For auth routes, never use wildcard with credentials
-    if (req.path.startsWith('/api/auth')) {
-      res.header('Access-Control-Allow-Origin', 'http://localhost:5175');
+  } else if (isProduction) {
+    // In production, be more restrictive
+    const host = req.get('host');
+    if (host && (host.includes('railway.app') || host.includes('vebtask.com'))) {
+      res.header('Access-Control-Allow-Origin', `https://${host}`);
     } else {
-      res.header('Access-Control-Allow-Origin', 'http://localhost:5175');
+      res.header('Access-Control-Allow-Origin', 'https://vebtask-production.up.railway.app');
     }
+  } else {
+    // In development, allow localhost with current port
+    res.header('Access-Control-Allow-Origin', 'http://localhost:3001');
   }
   
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
@@ -480,6 +487,80 @@ app.post('/api/reset-user', async (req, res) => {
     
   } catch (error) {
     console.error('❌ User reset error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Shared database pool for reuse
+let sharedDbPool = null;
+
+async function getDbPool() {
+  if (!sharedDbPool) {
+    const { createPool } = await import('mysql2/promise');
+    const connectionString = process.env.DATABASE_URL || process.env.VITE_DATABASE_URL;
+    
+    if (!connectionString) {
+      throw new Error('No database connection string available');
+    }
+    
+    const url = new URL(connectionString);
+    sharedDbPool = createPool({
+      host: url.hostname,
+      port: url.port ? parseInt(url.port) : 3306,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.substring(1),
+      // Production optimizations
+      connectionLimit: 10,
+      queueLimit: 0,
+      acquireTimeout: 30000,
+      timeout: 30000,
+      reconnect: true,
+      idleTimeout: 300000,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+  }
+  return sharedDbPool;
+}
+
+// Time logs API endpoint
+app.post('/api/time-logs', async (req, res) => {
+  try {
+    const { taskId, userId, startTime, endTime, duration, type, description, isBillable, hourlyRate, earnings } = req.body;
+
+    if (!userId || !duration) {
+      return res.status(400).json({ error: 'userId and duration are required' });
+    }
+
+    const pool = await getDbPool();
+
+    // Generate UUID for time log
+    const timeLogId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Insert time log
+    await pool.execute(
+      `INSERT INTO time_logs (id, taskId, userId, startTime, endTime, duration, type, description, isBillable, hourlyRate, earnings, createdAt) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [timeLogId, taskId, userId, startTime, endTime, duration, type || 'work', description, isBillable || false, hourlyRate, earnings]
+    );
+
+    res.json({ 
+      success: true, 
+      id: timeLogId,
+      message: 'Time log saved successfully',
+      data: {
+        id: timeLogId,
+        taskId,
+        userId,
+        duration,
+        type,
+        description,
+        earnings
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Time log save error:', error);
     res.status(500).json({ error: error.message });
   }
 });

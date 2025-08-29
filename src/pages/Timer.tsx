@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { logger } from '../lib/logger';
 
 interface TimerState {
   isRunning: boolean;
@@ -75,7 +76,7 @@ const mockTasks: Task[] = [
 
 export function Timer() {
   const { data: session } = useSession();
-  console.log('Timer session:', session);
+  logger.debug('Timer component initialized', { userId: session?.user?.id });
   const [timerState, setTimerState] = useState<TimerState>({
     isRunning: false,
     isOnBreak: false,
@@ -92,20 +93,105 @@ export function Timer() {
   // Get current task
   const currentTask = mockTasks.find(t => t.id === selectedTaskId) || mockTasks[0];
 
-  // Timer logic
+  // Timer logic with persistence
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (timerState.isRunning) {
       interval = setInterval(() => {
-        setTimerState(prev => ({
-          ...prev,
-          currentSessionTime: prev.isOnBreak ? prev.currentSessionTime : prev.currentSessionTime + 1,
-          breakTime: prev.isOnBreak ? prev.breakTime + 1 : prev.breakTime
-        }));
+        setTimerState(prev => {
+          const newState = {
+            ...prev,
+            currentSessionTime: prev.isOnBreak ? prev.currentSessionTime : prev.currentSessionTime + 1,
+            breakTime: prev.isOnBreak ? prev.breakTime + 1 : prev.breakTime
+          };
+          
+          // Save timer state to localStorage every 10 seconds
+          if (newState.currentSessionTime % 10 === 0) {
+            localStorage.setItem('timerState', JSON.stringify({
+              ...newState,
+              selectedTaskId,
+              currentMicroTask,
+              sessionNotes
+            }));
+          }
+          
+          return newState;
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [timerState.isRunning, timerState.isOnBreak]);
+  }, [timerState.isRunning, timerState.isOnBreak, selectedTaskId, currentMicroTask, sessionNotes]);
+
+  // Load timer state on component mount
+  useEffect(() => {
+    const savedState = localStorage.getItem('timerState');
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.isRunning && parsed.startTime) {
+          // Calculate elapsed time since last save
+          const now = new Date();
+          const startTime = new Date(parsed.startTime);
+          const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+          
+          setTimerState({
+            ...parsed,
+            currentSessionTime: parsed.currentSessionTime + elapsedSeconds,
+            startTime: new Date(parsed.startTime),
+            breakStartTime: parsed.breakStartTime ? new Date(parsed.breakStartTime) : null
+          });
+          
+          if (parsed.selectedTaskId) setSelectedTaskId(parsed.selectedTaskId);
+          if (parsed.currentMicroTask) setCurrentMicroTask(parsed.currentMicroTask);
+          if (parsed.sessionNotes) setSessionNotes(parsed.sessionNotes);
+        }
+      } catch (error) {
+        logger.error('Failed to restore timer state', { component: 'Timer', action: 'restore' }, error as Error);
+        localStorage.removeItem('timerState');
+      }
+    }
+  }, []);
+
+  // Handle page visibility changes (tab switching)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && timerState.isRunning) {
+        // Save current state when tab becomes hidden
+        localStorage.setItem('timerState', JSON.stringify({
+          ...timerState,
+          selectedTaskId,
+          currentMicroTask,
+          sessionNotes
+        }));
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [timerState, selectedTaskId, currentMicroTask, sessionNotes]);
+
+  // Handle browser close/refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (timerState.isRunning && timerState.currentSessionTime > 0) {
+        // Save current state
+        localStorage.setItem('timerState', JSON.stringify({
+          ...timerState,
+          selectedTaskId,
+          currentMicroTask,
+          sessionNotes
+        }));
+        
+        // Show warning if user tries to close
+        e.preventDefault();
+        e.returnValue = 'You have an active timer running. Your progress will be saved but the timer will stop.';
+        return 'You have an active timer running. Your progress will be saved but the timer will stop.';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [timerState, selectedTaskId, currentMicroTask, sessionNotes]);
 
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -159,19 +245,61 @@ export function Timer() {
     }));
   };
 
-  const handleStop = () => {
+  const handleStop = async () => {
     const totalWorkMinutes = Math.floor(timerState.currentSessionTime / 60);
-    console.log('Session completed with', totalWorkMinutes, 'minutes worked');
     
-    if (totalWorkMinutes > 0) {
-      // Here you would normally save to database
-      console.log('Session completed:', {
-        taskId: currentTask?.id,
-        workTime: timerState.currentSessionTime,
-        breakTime: timerState.breakTime,
-        microTask: currentMicroTask,
-        notes: sessionNotes
-      });
+    if (totalWorkMinutes > 0 && session?.user?.id) {
+      try {
+        const timeLogData = {
+          taskId: currentTask?.id || null,
+          userId: session.user.id,
+          startTime: timerState.startTime?.toISOString() || new Date().toISOString(),
+          endTime: new Date().toISOString(),
+          duration: timerState.currentSessionTime,
+          type: 'work' as const,
+          description: currentMicroTask || sessionNotes || 'Timer session',
+          isBillable: currentTask?.isBillable || false,
+          hourlyRate: currentTask?.hourlyRate || null,
+          earnings: currentTask?.isBillable && currentTask?.hourlyRate 
+            ? (timerState.currentSessionTime / 3600) * Number(currentTask.hourlyRate)
+            : null
+        };
+
+        // Save to database via API endpoint
+        const response = await fetch('/api/time-logs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(timeLogData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save time log');
+        }
+
+        const savedLog = await response.json();
+        logger.info('Time log saved successfully', { 
+          component: 'Timer', 
+          action: 'save_log', 
+          timeLogId: savedLog.id,
+          taskId: currentTask?.id,
+          duration: timerState.currentSessionTime
+        });
+        
+        // Show success notification
+        // You can add a toast notification here
+        
+      } catch (error) {
+        logger.error('Failed to save time log', { 
+          component: 'Timer', 
+          action: 'save_log',
+          taskId: currentTask?.id,
+          duration: timerState.currentSessionTime
+        }, error as Error);
+        // Show error notification
+        // You can add an error toast here
+      }
     }
 
     // Reset timer state
@@ -186,6 +314,9 @@ export function Timer() {
     
     setCurrentMicroTask('');
     setSessionNotes('');
+    
+    // Clear saved timer state
+    localStorage.removeItem('timerState');
   };
 
   const getTimerStateClass = () => {

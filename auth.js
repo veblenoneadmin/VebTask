@@ -16,10 +16,17 @@ const dbConfig = {
   user: url.username,
   password: url.password,
   database: url.pathname.substring(1),
-  // Add connection timeout and retry settings
+  // Production-optimized connection settings
   acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+  timeout: 30000,
+  reconnect: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  // Connection pool management
+  idleTimeout: 300000, // 5 minutes
+  maxReusableQueryTime: 0,
+  // SSL configuration for production
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 };
 
 console.log('DB Config:', { ...dbConfig, password: '***' });
