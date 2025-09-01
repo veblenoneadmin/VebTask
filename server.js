@@ -284,22 +284,12 @@ app.post('/api/ai/transcribe', async (req, res) => {
     const filename = `audio.${audioFormat}`;
     const contentType = `audio/${audioFormat}`;
     
-    // Select optimal model based on requirements - defaulting to mini for speed & cost
-    let selectedModel = 'gpt-4o-mini-transcribe'; // Default: fast, cheap, and accurate!
-    if (req.body.model) {
-      if (['gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'whisper-1'].includes(req.body.model)) {
-        selectedModel = req.body.model;
-      }
-    } else {
-      // Keep mini as default for most cases - it's 50% cheaper and fast!
-      // Only upgrade to full gpt-4o for special requirements
-      if (req.body.includeLogProbs) { // Log probs available on both GPT-4o models
-        selectedModel = 'gpt-4o-mini-transcribe'; // Mini supports logprobs too!
-      }
-      // Only use full gpt-4o-transcribe for very demanding use cases
-      if (audioBuffer.length > 20 * 1024 * 1024) { // Only for very large files (>20MB)
-        selectedModel = 'gpt-4o-transcribe';
-      }
+    // Use whisper-1 by default for maximum compatibility
+    let selectedModel = 'whisper-1';
+    
+    // Allow explicit model selection if requested
+    if (req.body.model && ['gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'whisper-1'].includes(req.body.model)) {
+      selectedModel = req.body.model;
     }
     
     console.log('🎤 Processing audio with OpenAI transcription...', {
@@ -328,44 +318,37 @@ app.post('/api/ai/transcribe', async (req, res) => {
       model: selectedModel
     });
     
-    // Build transcription parameters based on model capabilities
+    // Build transcription parameters - simplified for whisper-1 focus
     const transcriptionParams = {
       file: audioFile,
-      model: selectedModel
+      model: selectedModel,
+      response_format: 'json'
     };
     
-    // GPT-4o models only support JSON response format
+    // Add language if specified
+    if (req.body.language && req.body.language !== 'auto') {
+      transcriptionParams.language = req.body.language;
+    }
+    
+    // Add prompt for context if provided
+    if (req.body.prompt) {
+      transcriptionParams.prompt = req.body.prompt;
+    }
+    
+    // GPT-4o specific features (if model is available)
     if (selectedModel.includes('gpt-4o')) {
-      transcriptionParams.response_format = 'json';
-      
-      // Add chunking strategy for better accuracy (GPT-4o models only)
       if (req.body.chunkingStrategy) {
         transcriptionParams.chunking_strategy = req.body.chunkingStrategy;
       } else {
-        transcriptionParams.chunking_strategy = 'auto'; // Use voice activity detection
+        transcriptionParams.chunking_strategy = 'auto';
       }
       
-      // Add log probabilities if requested (GPT-4o models only)
       if (req.body.includeLogProbs) {
         transcriptionParams.include = ['logprobs'];
       }
       
-      // Temperature for consistency (GPT-4o models)
       if (req.body.temperature !== undefined) {
         transcriptionParams.temperature = Math.max(0, Math.min(1, req.body.temperature));
-      }
-    } else {
-      // Whisper-1 model supports multiple response formats
-      transcriptionParams.response_format = req.body.responseFormat || 'json';
-      
-      // Add language if specified (all models)
-      if (req.body.language && req.body.language !== 'auto') {
-        transcriptionParams.language = req.body.language;
-      }
-      
-      // Add prompt for context (whisper-1 only)
-      if (req.body.prompt) {
-        transcriptionParams.prompt = req.body.prompt;
       }
     }
     
@@ -432,19 +415,19 @@ app.post('/api/ai/transcribe', async (req, res) => {
       timestamp: new Date().toISOString()
     });
     
-    // Enhanced error handling with specific error types
+    // Simple error handling - let client handle fallback to browser speech recognition
     let errorMessage = 'Transcription failed';
     let statusCode = 500;
     
-    if (error.message?.includes('model') || error.message?.includes('gpt-4o')) {
-      errorMessage = 'Model not available. Falling back to whisper-1.';
-      statusCode = 503;
-    } else if (error.message?.includes('rate limit')) {
+    if (error.message?.includes('rate limit')) {
       errorMessage = 'Rate limit exceeded. Please try again later.';
       statusCode = 429;
     } else if (error.message?.includes('quota')) {
       errorMessage = 'API quota exceeded. Please try again later.';
       statusCode = 429;
+    } else if (error.message?.includes('model') || error.message?.includes('gpt-4o')) {
+      errorMessage = 'Requested model not available. Using whisper-1 as fallback.';
+      statusCode = 503;
     } else if (error.message?.includes('invalid')) {
       errorMessage = 'Invalid audio format or parameters.';
       statusCode = 400;
