@@ -14,7 +14,7 @@ export function Timer({ isRunning, onStart, onStop, onPause, getDuration }: Time
   const [displayTime, setDisplayTime] = useState('00:00:00');
 
   useEffect(() => {
-    let interval: number;
+    let interval: NodeJS.Timeout;
     
     if (isRunning) {
       interval = setInterval(() => {

@@ -44,7 +44,9 @@
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" PORT=3008 node server.js)",
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" node init-database.js)",
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" mysql -h shortline.proxy.rlwy.net -P 48906 -u root -pjgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW railway -e \"ALTER TABLE calendar_events ADD COLUMN status ENUM(''scheduled'', ''in_progress'', ''completed'', ''cancelled'') DEFAULT ''scheduled'';\")",
-      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" node fix-calendar-schema.js)"
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" node fix-calendar-schema.js)",
+      "Bash(xcopy:*)",
+      "Bash(robocopy:*)"
     ],
     "deny": [],
     "ask": [],

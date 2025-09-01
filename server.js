@@ -4,6 +4,12 @@ import { fileURLToPath } from 'url';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './auth.js';
 
+// Import new route modules
+import authRoutes from './src/routes/auth.js';
+import organizationRoutes from './src/routes/organizations.js';
+import memberRoutes from './src/routes/members.js';
+import inviteRoutes from './src/routes/invites.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -98,6 +104,68 @@ app.all('/api/auth/*', async (req, res, next) => {
     }
   }
 });
+
+// ==================== USER AUTHENTICATION MIDDLEWARE ====================
+
+// Middleware to extract user from Better Auth session
+app.use('/api', async (req, res, next) => {
+  try {
+    // Skip auth for public endpoints
+    const publicEndpoints = [
+      '/api/auth/',
+      '/api/invites/accept',
+      '/api/invites/',
+      '/api/ai/',
+      '/test'
+    ];
+
+    const isPublicEndpoint = publicEndpoints.some(endpoint => req.path.startsWith(endpoint));
+    if (isPublicEndpoint) {
+      return next();
+    }
+
+    // Try to get user from Better Auth session
+    const request = {
+      headers: req.headers,
+      method: req.method,
+      url: req.url
+    };
+
+    try {
+      const session = await auth.api.getSession({ headers: req.headers });
+      if (session?.user) {
+        req.user = {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.name,
+          image: session.user.image
+        };
+      }
+    } catch (authError) {
+      // Session might be expired or invalid, continue without user
+      console.log('⚠️  Auth session check failed:', authError.message);
+    }
+
+    next();
+  } catch (error) {
+    console.error('❌ User auth middleware error:', error);
+    next();
+  }
+});
+
+// ==================== NEW API ROUTES ====================
+
+// Organization management routes
+app.use('/api/organizations', organizationRoutes);
+
+// Member management routes (nested under organizations)
+app.use('/api/organizations', memberRoutes);
+
+// Invite system routes
+app.use('/api', inviteRoutes);
+
+// Additional auth routes (password reset, etc.)
+app.use('/api/auth', authRoutes);
 
 // Test endpoint for Whisper API debugging
 app.get('/api/ai/whisper-status', (req, res) => {

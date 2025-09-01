@@ -2,6 +2,7 @@ import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { ClientDashboard } from './ClientDashboard';
 import { 
   Clock, 
   CheckSquare,
@@ -19,6 +20,15 @@ import {
 
 export function Dashboard() {
   const { data: session } = useSession();
+  
+  // TODO: Get user's role from organization membership
+  // For now, check if user email indicates client role
+  const userRole = session?.user?.email?.includes('client') ? 'CLIENT' : 'ADMIN';
+  
+  // If user is a CLIENT, show the client-specific dashboard
+  if (userRole === 'CLIENT') {
+    return <ClientDashboard />;
+  }
 
   const userName = session?.user?.email?.split('@')[0]?.replace(/[^a-zA-Z]/g, '') || 'User';
   const displayName = userName.charAt(0).toUpperCase() + userName.slice(1);
