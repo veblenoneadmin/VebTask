@@ -1268,8 +1268,7 @@ app.get('/api/calendar/events/:userId', async (req, res) => {
       params.push(type);
     }
     
-    query += ' ORDER BY ce.startTime ASC LIMIT ?';
-    params.push(parseInt(limit));
+    query += ` ORDER BY ce.startTime ASC LIMIT ${parseInt(limit) || 100}`;
     
     const [events] = await pool.execute(query, params);
     

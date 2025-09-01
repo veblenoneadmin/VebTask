@@ -4,7 +4,7 @@ import { createAuthClient } from "better-auth/react";
 function getBaseURL() {
   // In development, use the same server as the frontend
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:3001';
+    return window.location.origin;
   }
   
   // In production, use the same origin (since we serve both from the same server)
