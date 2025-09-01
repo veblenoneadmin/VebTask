@@ -11,7 +11,9 @@ console.log('🔐 Better Auth Config:', {
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: "mysql"
+    provider: "mysql",
+    // Custom field mappings for Better Auth compatibility
+    useTrueUUID: true
   }),
   baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET || "test-secret-key-for-debugging",
