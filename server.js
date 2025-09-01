@@ -188,9 +188,14 @@ app.post('/api/ai/whisper-test', async (req, res) => {
     }
     
     // Create a minimal base64 audio data for testing
-    // This is a tiny WAV file header that should be valid enough for OpenAI to process
-    const testAudioData = 'UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; // minimal WAV
+    // Using a more complete minimal WAV file
+    const testAudioData = 'UklGRnoAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoAAAC4uLi4uLi4uLi4'; // Better minimal WAV
     const audioBuffer = Buffer.from(testAudioData, 'base64');
+    
+    console.log('🧪 Test audio buffer:', {
+      length: audioBuffer.length,
+      first8Bytes: Array.from(audioBuffer.slice(0, 8)).map(b => String.fromCharCode(b)).join('')
+    });
     
     console.log('🧪 Creating test FormData...', {
       bufferLength: audioBuffer.length,
@@ -201,15 +206,20 @@ app.post('/api/ai/whisper-test', async (req, res) => {
     const FormData = (await import('form-data')).default;
     const form = new FormData();
     
+    console.log('🧪 Appending file to FormData...');
     form.append('file', audioBuffer, {
       filename: 'test-audio.wav',
       contentType: 'audio/wav',
       knownLength: audioBuffer.length
     });
     
+    console.log('🧪 Appending model and format...');
     form.append('model', 'whisper-1');
     form.append('response_format', 'json');
     form.append('language', 'en');
+    
+    console.log('🧪 FormData headers:', form.getHeaders());
+    console.log('🧪 FormData boundary:', form.getBoundary());
     
     console.log('🧪 Sending test request to OpenAI...');
     
