@@ -8,12 +8,22 @@ export interface TranscriptionResult {
   confidence: number;
   model: string;
   language: string;
+  logprobs?: any[];
+  segments?: any[];
+  processing?: {
+    audioSizeBytes: number;
+    audioFormat: string;
+    chunkingStrategy?: string;
+    processingTime: string;
+  };
 }
 
 export interface TranscriptionError {
   error: string;
   message?: string;
   fallback?: string;
+  retryWithWhisper1?: boolean;
+  type?: string;
 }
 
 /**
@@ -34,77 +44,148 @@ function audioToBase64(audioBlob: Blob): Promise<string> {
 }
 
 /**
- * Transcribe audio using OpenAI Whisper API
+ * Transcribe audio using OpenAI transcription API with GPT-4o models
  * Falls back to browser speech recognition if API unavailable
  */
 export async function transcribeWithWhisper(
   audioBlob: Blob,
   options: {
     language?: string;
+    model?: 'gpt-4o-transcribe' | 'gpt-4o-mini-transcribe' | 'whisper-1' | 'auto';
+    includeLogProbs?: boolean;
+    chunkingStrategy?: 'auto' | object;
+    temperature?: number;
+    responseFormat?: 'json' | 'text' | 'srt' | 'verbose_json' | 'vtt';
+    prompt?: string;
     onFallback?: () => void;
+    maxRetries?: number;
   } = {}
 ): Promise<TranscriptionResult> {
-  try {
-    console.log('🎤 Starting Whisper transcription...', {
-      size: audioBlob.size,
-      type: audioBlob.type
-    });
-    
-    // Check file size on client side too
-    const maxSize = 25 * 1024 * 1024; // 25MB
-    if (audioBlob.size > maxSize) {
-      throw new Error('Audio file too large. Please record shorter segments.');
-    }
-    
-    // Convert audio to base64
-    const audioData = await audioToBase64(audioBlob);
-    
-    // Detect audio format more accurately
-    let audioFormat = 'webm'; // default
-    if (audioBlob.type.includes('wav')) {
-      audioFormat = 'wav';
-    } else if (audioBlob.type.includes('mp4') || audioBlob.type.includes('m4a')) {
-      audioFormat = 'mp4';
-    } else if (audioBlob.type.includes('mpeg') || audioBlob.type.includes('mp3')) {
-      audioFormat = 'mp3';
-    } else if (audioBlob.type.includes('webm')) {
-      audioFormat = 'webm';
-    }
-    
-    console.log('🎤 Audio format detected:', audioFormat);
-    
-    // Send to server for secure API processing
-    const response = await fetch('/api/ai/transcribe', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+  const maxRetries = options.maxRetries || 3;
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log('🎤 Starting transcription...', {
+        attempt: `${attempt}/${maxRetries}`,
+        size: audioBlob.size,
+        type: audioBlob.type,
+        model: options.model || 'auto',
+        includeLogProbs: options.includeLogProbs
+      });
+      
+      // Check file size on client side too
+      const maxSize = 25 * 1024 * 1024; // 25MB
+      if (audioBlob.size > maxSize) {
+        throw new Error('Audio file too large. Please record shorter segments.');
+      }
+      
+      // Convert audio to base64
+      const audioData = await audioToBase64(audioBlob);
+      
+      // Detect audio format more accurately
+      let audioFormat = 'webm'; // default
+      if (audioBlob.type.includes('wav')) {
+        audioFormat = 'wav';
+      } else if (audioBlob.type.includes('mp4') || audioBlob.type.includes('m4a')) {
+        audioFormat = 'mp4';
+      } else if (audioBlob.type.includes('mpeg') || audioBlob.type.includes('mp3')) {
+        audioFormat = 'mp3';
+      } else if (audioBlob.type.includes('webm')) {
+        audioFormat = 'webm';
+      }
+      
+      console.log('🎤 Audio format detected:', audioFormat);
+      
+      // Build request payload with new options
+      const requestPayload: any = {
         audioData,
         audioFormat,
         language: options.language || 'auto'
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Transcription failed');
+      };
+      
+      // Add model selection
+      if (options.model && options.model !== 'auto') {
+        requestPayload.model = options.model;
+      }
+      
+      // Add advanced options for GPT-4o models
+      if (options.includeLogProbs) {
+        requestPayload.includeLogProbs = true;
+      }
+      
+      if (options.chunkingStrategy) {
+        requestPayload.chunkingStrategy = options.chunkingStrategy;
+      }
+      
+      if (options.temperature !== undefined) {
+        requestPayload.temperature = options.temperature;
+      }
+      
+      if (options.responseFormat) {
+        requestPayload.responseFormat = options.responseFormat;
+      }
+      
+      if (options.prompt) {
+        requestPayload.prompt = options.prompt;
+      }
+      
+      // Send to server for secure API processing
+      const response = await fetch('/api/ai/transcribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestPayload)
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        const error = new Error(data.error || 'Transcription failed') as any;
+        error.details = data;
+        error.statusCode = response.status;
+        throw error;
+      }
+      
+      console.log('✅ Transcription successful with', data.model);
+      return data;
+      
+    } catch (error: any) {
+      lastError = error;
+      console.warn(`❌ Transcription attempt ${attempt} failed:`, error.message);
+      
+      // Check if we should retry with whisper-1 on next attempt
+      if (error.details?.retryWithWhisper1 && attempt < maxRetries && options.model !== 'whisper-1') {
+        console.log('🔄 Retrying with whisper-1 model...');
+        options.model = 'whisper-1';
+        options.includeLogProbs = false; // Not supported by whisper-1
+        continue;
+      }
+      
+      // Don't retry on client errors (400s) except rate limits
+      if (error.statusCode >= 400 && error.statusCode < 500 && error.statusCode !== 429) {
+        break;
+      }
+      
+      // Wait before retrying (exponential backoff)
+      if (attempt < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Max 10s delay
+        console.log(`⏳ Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-    
-    console.log('✅ Whisper transcription successful');
-    return data;
-    
-  } catch (error) {
-    console.warn('❌ Whisper transcription failed:', error);
-    
-    // Call fallback handler if provided
-    if (options.onFallback) {
-      options.onFallback();
-    }
-    
-    throw error;
   }
+  
+  // All retries failed
+  console.error('❌ All transcription attempts failed:', lastError);
+  
+  // Call fallback handler if provided
+  if (options.onFallback) {
+    options.onFallback();
+  }
+  
+  throw lastError;
 }
 
 /**

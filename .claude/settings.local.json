@@ -36,7 +36,9 @@
       "Bash(npm test)",
       "WebFetch(domain:platform.openai.com)",
       "Bash(npm run start:*)",
-      "Read(c:\\Users\\USER'S\\Pictures/**)"
+      "Read(c:\\Users\\USER'S\\Pictures/**)",
+      "Read(c:\\Users\\USER'S\\Desktop/**)",
+      "Read(c:\\Users\\USER'S\\Desktop/**)"
     ],
     "deny": [],
     "ask": [],
