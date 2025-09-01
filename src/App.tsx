@@ -22,9 +22,19 @@ function App() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="glass p-8 rounded-lg">
-          <div className="text-xl font-medium">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-surface to-surface-elevated">
+        <div className="flex flex-col items-center space-y-6 animate-fade-in">
+          <div className="relative">
+            <img 
+              src="/veblen-logo.png" 
+              alt="Veblen" 
+              className="w-32 h-32 object-contain animate-pulse-glow"
+            />
+          </div>
+          <div className="flex flex-col items-center space-y-2">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-lg font-medium text-muted-foreground">Loading VebTask...</div>
+          </div>
         </div>
       </div>
     );
