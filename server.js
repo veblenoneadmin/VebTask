@@ -1273,13 +1273,37 @@ app.get('/api/calendar/events/:userId', async (req, res) => {
     const [events] = await pool.execute(query, params);
     
     // Parse JSON fields and format response
-    const formattedEvents = events.map(event => ({
-      ...event,
-      recurringPattern: event.recurringPattern ? JSON.parse(event.recurringPattern) : null,
-      attendees: event.attendees ? JSON.parse(event.attendees) : [],
-      startTime: new Date(event.startTime).toISOString(),
-      endTime: new Date(event.endTime).toISOString()
-    }));
+    const formattedEvents = events.map(event => {
+      let recurringPattern = null;
+      let attendees = [];
+      
+      // Safe JSON parsing
+      try {
+        recurringPattern = event.recurringPattern && event.recurringPattern !== '' 
+          ? JSON.parse(event.recurringPattern) 
+          : null;
+      } catch (e) {
+        console.warn('Failed to parse recurringPattern:', event.recurringPattern);
+        recurringPattern = null;
+      }
+      
+      try {
+        attendees = event.attendees && event.attendees !== '' 
+          ? JSON.parse(event.attendees) 
+          : [];
+      } catch (e) {
+        console.warn('Failed to parse attendees:', event.attendees);
+        attendees = [];
+      }
+      
+      return {
+        ...event,
+        recurringPattern,
+        attendees,
+        startTime: new Date(event.startTime).toISOString(),
+        endTime: new Date(event.endTime).toISOString()
+      };
+    });
     
     res.json({
       success: true,
