@@ -177,19 +177,24 @@ app.get('/api/ai/openai-test', async (req, res) => {
   }
 });
 
-// Test endpoint with minimal audio data - calls OpenAI directly
-app.post('/api/ai/whisper-test', async (req, res) => {
+// Test endpoint using OpenAI SDK
+app.post('/api/ai/whisper-sdk-test', async (req, res) => {
   try {
-    console.log('🧪 Testing Whisper API with minimal data...');
+    console.log('🧪 Testing Whisper API with OpenAI SDK...');
     
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY?.trim();
     if (!OPENAI_API_KEY) {
       return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
     
+    // Import OpenAI SDK
+    const { OpenAI } = await import('openai');
+    const openai = new OpenAI({
+      apiKey: OPENAI_API_KEY
+    });
+    
     // Create a minimal base64 audio data for testing
-    // Using a more complete minimal WAV file
-    const testAudioData = 'UklGRnoAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoAAAC4uLi4uLi4uLi4'; // Better minimal WAV
+    const testAudioData = 'UklGRnoAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoAAAC4uLi4uLi4uLi4'; 
     const audioBuffer = Buffer.from(testAudioData, 'base64');
     
     console.log('🧪 Test audio buffer:', {
@@ -197,76 +202,33 @@ app.post('/api/ai/whisper-test', async (req, res) => {
       first8Bytes: Array.from(audioBuffer.slice(0, 8)).map(b => String.fromCharCode(b)).join('')
     });
     
-    console.log('🧪 Creating test FormData...', {
-      bufferLength: audioBuffer.length,
-      apiKeyLength: OPENAI_API_KEY.length
+    // Create a File-like object for the SDK
+    const audioFile = new File([audioBuffer], 'test-audio.wav', { type: 'audio/wav' });
+    
+    console.log('🧪 Sending request via OpenAI SDK...');
+    
+    const transcription = await openai.audio.transcriptions.create({
+      file: audioFile,
+      model: 'whisper-1',
+      language: 'en',
+      response_format: 'json'
     });
     
-    // Create form data for direct OpenAI API call
-    const FormData = (await import('form-data')).default;
-    const form = new FormData();
-    
-    console.log('🧪 Appending file to FormData...');
-    form.append('file', audioBuffer, {
-      filename: 'test-audio.wav',
-      contentType: 'audio/wav',
-      knownLength: audioBuffer.length
-    });
-    
-    console.log('🧪 Appending model and format...');
-    form.append('model', 'whisper-1');
-    form.append('response_format', 'json');
-    form.append('language', 'en');
-    
-    console.log('🧪 FormData headers:', form.getHeaders());
-    console.log('🧪 FormData boundary:', form.getBoundary());
-    
-    console.log('🧪 Sending test request to OpenAI...');
-    
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        ...form.getHeaders()
-      },
-      body: form
-    });
-    
-    console.log('🧪 OpenAI test response:', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🧪 OpenAI test error:', errorText);
-      return res.json({
-        test: 'whisper-api-direct',
-        status: response.status,
-        error: errorText,
-        success: false,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    const result = await response.json();
-    console.log('🧪 OpenAI test success:', result);
+    console.log('🧪 OpenAI SDK success:', transcription);
     
     res.json({
-      test: 'whisper-api-direct',
-      status: response.status,
-      result: result,
+      test: 'whisper-sdk',
       success: true,
+      result: transcription,
       timestamp: new Date().toISOString()
     });
     
   } catch (error) {
-    console.error('❌ Whisper test error:', error);
+    console.error('❌ Whisper SDK test error:', error);
     res.status(500).json({ 
-      error: 'Test failed',
+      error: 'SDK test failed',
       message: error.message,
-      stack: error.stack,
+      details: error.response?.data || error.stack,
       timestamp: new Date().toISOString()
     });
   }
