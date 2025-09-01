@@ -28,7 +28,12 @@
       "Bash(npm start)",
       "Bash(curl:*)",
       "Bash(PORT=3002 node server.js)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(npm audit:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run lint)",
+      "Bash(npx tsc:*)",
+      "Bash(npm test)"
     ],
     "deny": [],
     "ask": [],
