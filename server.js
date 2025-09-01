@@ -99,10 +99,33 @@ app.all('/api/auth/*', async (req, res, next) => {
   }
 });
 
+// Test endpoint for Whisper API debugging
+app.get('/api/ai/whisper-status', (req, res) => {
+  const status = {
+    openai_key_configured: !!process.env.OPENAI_API_KEY,
+    openai_key_length: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0,
+    openrouter_key_configured: !!process.env.OPENROUTER_API_KEY,
+    node_env: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  };
+  
+  console.log('🔍 Whisper status check:', status);
+  res.json(status);
+});
+
 // Whisper Speech-to-Text API endpoint
 app.post('/api/ai/transcribe', async (req, res) => {
   try {
+    console.log('🎤 Whisper API called:', {
+      hasBody: !!req.body,
+      hasAudioData: !!(req.body && req.body.audioData),
+      audioDataLength: req.body && req.body.audioData ? req.body.audioData.length : 0,
+      audioFormat: req.body ? req.body.audioFormat : 'none',
+      language: req.body ? req.body.language : 'none'
+    });
+
     if (!req.body || !req.body.audioData) {
+      console.log('❌ Missing audio data in request');
       return res.status(400).json({ error: 'Audio data is required' });
     }
 
