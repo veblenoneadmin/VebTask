@@ -101,9 +101,13 @@ app.all('/api/auth/*', async (req, res, next) => {
 
 // Test endpoint for Whisper API debugging
 app.get('/api/ai/whisper-status', (req, res) => {
+  const openaiKey = process.env.OPENAI_API_KEY;
   const status = {
-    openai_key_configured: !!process.env.OPENAI_API_KEY,
-    openai_key_length: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0,
+    openai_key_configured: !!openaiKey,
+    openai_key_length: openaiKey ? openaiKey.length : 0,
+    openai_key_prefix: openaiKey ? openaiKey.substring(0, 20) : 'none',
+    openai_key_suffix: openaiKey ? openaiKey.substring(openaiKey.length - 10) : 'none',
+    openai_key_has_spaces: openaiKey ? (openaiKey !== openaiKey.trim()) : false,
     openrouter_key_configured: !!process.env.OPENROUTER_API_KEY,
     node_env: process.env.NODE_ENV,
     timestamp: new Date().toISOString()
@@ -118,7 +122,7 @@ app.post('/api/ai/whisper-test', async (req, res) => {
   try {
     console.log('🧪 Testing Whisper API with minimal data...');
     
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY?.trim();
     if (!OPENAI_API_KEY) {
       return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
@@ -214,7 +218,7 @@ app.post('/api/ai/transcribe', async (req, res) => {
       return res.status(400).json({ error: 'Audio data is required' });
     }
 
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY?.trim();
     
     if (!OPENAI_API_KEY) {
       console.log('❌ OpenAI API key not found in environment variables');
