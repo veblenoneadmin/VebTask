@@ -183,7 +183,7 @@ export function BrainDump() {
         setError('Processing audio...');
         try {
           const result = await transcribeWithWhisper(audioBlob, {
-            language: 'en',
+            language: 'auto', // Let GPT-4o auto-detect language
             onFallback: () => {
               setUseWhisper(false);
               setError('Whisper unavailable, switched to browser recognition');

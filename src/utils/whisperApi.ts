@@ -45,10 +45,33 @@ export async function transcribeWithWhisper(
   } = {}
 ): Promise<TranscriptionResult> {
   try {
-    console.log('🎤 Starting Whisper transcription...');
+    console.log('🎤 Starting Whisper transcription...', {
+      size: audioBlob.size,
+      type: audioBlob.type
+    });
+    
+    // Check file size on client side too
+    const maxSize = 25 * 1024 * 1024; // 25MB
+    if (audioBlob.size > maxSize) {
+      throw new Error('Audio file too large. Please record shorter segments.');
+    }
     
     // Convert audio to base64
     const audioData = await audioToBase64(audioBlob);
+    
+    // Detect audio format more accurately
+    let audioFormat = 'webm'; // default
+    if (audioBlob.type.includes('wav')) {
+      audioFormat = 'wav';
+    } else if (audioBlob.type.includes('mp4') || audioBlob.type.includes('m4a')) {
+      audioFormat = 'mp4';
+    } else if (audioBlob.type.includes('mpeg') || audioBlob.type.includes('mp3')) {
+      audioFormat = 'mp3';
+    } else if (audioBlob.type.includes('webm')) {
+      audioFormat = 'webm';
+    }
+    
+    console.log('🎤 Audio format detected:', audioFormat);
     
     // Send to server for secure API processing
     const response = await fetch('/api/ai/transcribe', {
@@ -58,7 +81,8 @@ export async function transcribeWithWhisper(
       },
       body: JSON.stringify({
         audioData,
-        language: options.language || 'en'
+        audioFormat,
+        language: options.language || 'auto'
       })
     });
     
@@ -91,6 +115,7 @@ export class WhisperRecorder {
   private audioChunks: Blob[] = [];
   private stream: MediaStream | null = null;
   private isRecording = false;
+  private audioFormat = 'webm';
   
   async startRecording(): Promise<void> {
     try {
@@ -103,8 +128,28 @@ export class WhisperRecorder {
       });
       
       this.audioChunks = [];
+      
+      // Try different MIME types in order of Whisper compatibility
+      let mimeType = 'audio/webm;codecs=opus'; // fallback
+      let format = 'webm';
+      
+      if (MediaRecorder.isTypeSupported('audio/wav')) {
+        mimeType = 'audio/wav';
+        format = 'wav';
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mimeType = 'audio/mp4';
+        format = 'mp4';
+      } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus';
+        format = 'webm';
+      }
+      
+      // Store format for later use
+      this.audioFormat = format;
+      
       this.mediaRecorder = new MediaRecorder(this.stream, {
-        mimeType: 'audio/webm;codecs=opus'
+        mimeType,
+        audioBitsPerSecond: 128000 // Good quality for Whisper
       });
       
       this.mediaRecorder.ondataavailable = (event) => {
@@ -154,5 +199,9 @@ export class WhisperRecorder {
   
   isCurrentlyRecording(): boolean {
     return this.isRecording;
+  }
+  
+  getAudioFormat(): string {
+    return this.audioFormat;
   }
 }

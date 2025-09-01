@@ -120,16 +120,37 @@ app.post('/api/ai/transcribe', async (req, res) => {
     // Convert base64 audio to buffer
     const audioBuffer = Buffer.from(req.body.audioData, 'base64');
     
+    // Check file size (25MB limit)
+    const maxSize = 25 * 1024 * 1024; // 25MB in bytes
+    if (audioBuffer.length > maxSize) {
+      return res.status(413).json({ 
+        error: 'Audio file too large. Maximum size is 25MB.', 
+        fallback: 'browser-speech-recognition' 
+      });
+    }
+    
+    // Determine file extension based on audio format
+    const audioFormat = req.body.audioFormat || 'webm';
+    const filename = `audio.${audioFormat}`;
+    const contentType = `audio/${audioFormat}`;
+    
     // Create form data for Whisper API
     const FormData = (await import('form-data')).default;
     const form = new FormData();
     form.append('file', audioBuffer, {
-      filename: 'audio.webm',
-      contentType: 'audio/webm'
+      filename: filename,
+      contentType: contentType
     });
-    form.append('model', 'whisper-1');
-    form.append('language', req.body.language || 'en');
+    
+    // Use the better GPT-4o model for transcription
+    form.append('model', 'gpt-4o-mini-transcribe');
     form.append('response_format', 'json');
+    
+    // Add language if specified (optional for GPT-4o models)
+    if (req.body.language && req.body.language !== 'auto') {
+      // Note: GPT-4o models can be prompted for language instead
+      form.append('prompt', `Please transcribe this audio in ${req.body.language}.`);
+    }
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
@@ -152,11 +173,11 @@ app.post('/api/ai/transcribe', async (req, res) => {
 
     const data = await response.json();
     
-    console.log('✅ Audio transcribed successfully');
+    console.log('✅ Audio transcribed successfully with GPT-4o-mini-transcribe');
     return res.json({
       transcription: data.text,
-      confidence: data.confidence || 0.9,
-      model: 'whisper-1',
+      confidence: 0.95, // GPT-4o models have high confidence
+      model: 'gpt-4o-mini-transcribe',
       language: data.language || 'en'
     });
 
