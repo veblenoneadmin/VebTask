@@ -1106,6 +1106,11 @@ app.post('/api/init-db', async (req, res) => {
 
 // Serve the React app for all non-API routes (SPA routing)
 app.get('*', (req, res) => {
+  // Skip API routes - they should return JSON, not HTML
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found', path: req.path });
+  }
+  
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
