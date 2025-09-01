@@ -82,24 +82,26 @@ After deployment, verify:
 - **STAFF**: Work with data, limited admin functions  
 - **CLIENT**: Read-only access to relevant data
 
-## 📧 Email Configuration Active
+## 📧 Email Configuration 
 
-Your professional emails are configured:
+Professional email templates are ready for:
 ```
-From: VebTask <Admin@veblengroup.com.au>
-- Invitation emails
-- Password reset emails  
-- Welcome emails
+- Invitation emails with role context
+- Password reset emails with security notices
+- Welcome emails with onboarding guidance
 ```
 
-## 🔧 Environment Variables Set
+Configure your SMTP settings in Railway environment variables.
 
-All required environment variables are configured:
-- ✅ Database connection
-- ✅ Better Auth secret and URLs
-- ✅ Google OAuth credentials
-- ✅ SMTP email configuration  
-- ✅ Application URLs
+## 🔧 Environment Variables Required
+
+Set these in your Railway dashboard:
+- Database connection (auto-configured)
+- Better Auth secret and URLs
+- Google OAuth credentials
+- SMTP email configuration  
+- Application URLs
+- API keys (OpenAI, OpenRouter)
 
 ## 🚀 Ready to Deploy!
 

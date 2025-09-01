@@ -32,22 +32,22 @@ SMTP_FROM="Your App <noreply@domain.com>"
 NODE_ENV="production"
 ```
 
-## Your Current Configuration
+## Railway Environment Setup
 
-Based on what you provided, your Railway environment should have:
+In your Railway dashboard, add these environment variables with your actual values:
 
 ```env
-BETTER_AUTH_SECRET="bf8a9c4e2d7f1a6b8e3c5d9f2a4b7e1c8f6a3d9e2b5c8f1a4d7e9c2b6f8a1e4d7c"
+BETTER_AUTH_SECRET="your-generated-secret-32-characters-min"
 DATABASE_URL="${{MySQL.MYSQL_URL}}"
-GOOGLE_CLIENT_ID="621484568338-sbdcmkhkmv5ss5uh59nu3e7a13peoknb.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="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"
-OPENAI_API_KEY="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"
-OPENROUTER_API_KEY="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"
-SMTP_FROM="VebTask <Admin@veblengroup.com.au>"
+GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+OPENAI_API_KEY="your-openai-api-key"
+OPENROUTER_API_KEY="your-openrouter-api-key"
+SMTP_FROM="VebTask <your-email@domain.com>"
 SMTP_HOST="smtp.gmail.com"
-SMTP_PASS="ofbseybicxpfupom"
+SMTP_PASS="your-smtp-password"
 SMTP_PORT="587"
-SMTP_USER="Admin@veblengroup.com.au"
+SMTP_USER="your-email@domain.com"
 VITE_APP_URL="https://vebtask.com"
 BETTER_AUTH_URL="https://vebtask.com"
 ```
