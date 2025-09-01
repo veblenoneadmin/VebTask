@@ -133,8 +133,8 @@ model Account {
   accountId         String  // Better Auth compatibility  
   userId            String
   providerId        String  // Better Auth uses 'providerId' not 'provider'
-  providerAccountId String
-  type              String
+  providerAccountId String @default("")
+  type              String @default("oauth")
   refresh_token     String? @db.Text
   access_token      String? @db.Text
   expires_at        Int?
@@ -148,15 +148,19 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([providerId, providerAccountId])
+  @@unique([providerId, providerAccountId, userId])
   @@index([userId])
 }
 
 model Session {
   id           String   @id @default(cuid())
-  token        String   @unique // Better Auth uses 'token' not 'sessionToken'
+  token        String   @unique // Better Auth uses 'token' 
   userId       String
-  expires      DateTime
+  expiresAt    DateTime // Better Auth uses 'expiresAt'
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  ipAddress    String?  // Better Auth optional fields
+  userAgent    String?  // Better Auth optional fields
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
