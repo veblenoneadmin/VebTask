@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { WhisperRecorder, transcribeWithWhisper } from '../utils/whisperApi';
 import { 
   Brain, 
   Mic, 
@@ -53,6 +54,8 @@ export function BrainDump() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
+  const [whisperRecorder, setWhisperRecorder] = useState<WhisperRecorder | null>(null);
+  const [useWhisper, setUseWhisper] = useState(true);
   const [error, setError] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { data: session } = useSession();
@@ -76,8 +79,13 @@ export function BrainDump() {
     }
   }, [content]);
 
-  // Initialize speech recognition
+  // Initialize speech recognition systems
   useEffect(() => {
+    // Initialize Whisper recorder
+    const recorder = new WhisperRecorder();
+    setWhisperRecorder(recorder);
+    
+    // Initialize browser speech recognition as fallback
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
@@ -125,19 +133,84 @@ export function BrainDump() {
     }
   }, []);
 
-  const handleVoiceToggle = () => {
-    if (!recognition) {
-      setError('Voice recognition not supported in this browser');
-      return;
-    }
-    
+  const handleVoiceToggle = async () => {
     if (isRecording) {
-      recognition.stop();
-      setIsRecording(false);
+      await stopRecording();
     } else {
-      recognition.start();
-      setIsRecording(true);
+      await startRecording();
+    }
+  };
+
+  const startRecording = async () => {
+    try {
       setError('');
+      setIsRecording(true);
+
+      if (useWhisper && whisperRecorder) {
+        console.log('🎤 Starting Whisper recording...');
+        await whisperRecorder.startRecording();
+      } else if (recognition) {
+        console.log('🎤 Starting browser speech recognition...');
+        recognition.start();
+      } else {
+        throw new Error('No voice recognition available');
+      }
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      setError('Failed to start voice recording. Please check microphone permissions.');
+      setIsRecording(false);
+      
+      // Fallback to browser recognition
+      if (useWhisper && recognition) {
+        setUseWhisper(false);
+        try {
+          recognition.start();
+          setIsRecording(true);
+        } catch (fallbackError) {
+          console.error('Fallback recording failed:', fallbackError);
+        }
+      }
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      if (useWhisper && whisperRecorder?.isCurrentlyRecording()) {
+        console.log('🎤 Stopping Whisper recording...');
+        const audioBlob = await whisperRecorder.stopRecording();
+        
+        // Transcribe with Whisper API
+        setError('Processing audio...');
+        try {
+          const result = await transcribeWithWhisper(audioBlob, {
+            language: 'en',
+            onFallback: () => {
+              setUseWhisper(false);
+              setError('Whisper unavailable, switched to browser recognition');
+            }
+          });
+          
+          // Add transcription to content
+          setContent(prev => {
+            const newContent = prev + (prev.endsWith(' ') || !prev ? '' : ' ') + result.transcription;
+            return newContent;
+          });
+          
+          setError('');
+          console.log('✅ Whisper transcription completed');
+        } catch (transcribeError) {
+          console.warn('Whisper transcription failed:', transcribeError);
+          setError('Transcription failed. Please try again or switch to browser recognition.');
+        }
+      } else if (recognition) {
+        console.log('🎤 Stopping browser speech recognition...');
+        recognition.stop();
+      }
+    } catch (error) {
+      console.error('Failed to stop recording:', error);
+      setError('Failed to stop recording.');
+    } finally {
+      setIsRecording(false);
     }
   };
 
@@ -304,15 +377,22 @@ export function BrainDump() {
                     <p className="text-sm text-muted-foreground">Dump everything on your mind</p>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleVoiceToggle}
-                  className={isRecording ? 'timer-active' : 'glass-surface'}
-                >
-                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  {isRecording ? 'Stop' : 'Voice'}
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleVoiceToggle}
+                    className={isRecording ? 'timer-active' : 'glass-surface'}
+                  >
+                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    {isRecording ? 'Stop' : 'Voice'}
+                  </Button>
+                  {useWhisper && (
+                    <div className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">
+                      Whisper AI
+                    </div>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

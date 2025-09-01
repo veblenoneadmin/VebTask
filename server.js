@@ -99,6 +99,77 @@ app.all('/api/auth/*', async (req, res, next) => {
   }
 });
 
+// Whisper Speech-to-Text API endpoint
+app.post('/api/ai/transcribe', async (req, res) => {
+  try {
+    if (!req.body || !req.body.audioData) {
+      return res.status(400).json({ error: 'Audio data is required' });
+    }
+
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({ 
+        error: 'OpenAI API key not configured', 
+        fallback: 'browser-speech-recognition' 
+      });
+    }
+
+    console.log('🎤 Processing audio with OpenAI Whisper...');
+
+    // Convert base64 audio to buffer
+    const audioBuffer = Buffer.from(req.body.audioData, 'base64');
+    
+    // Create form data for Whisper API
+    const FormData = (await import('form-data')).default;
+    const form = new FormData();
+    form.append('file', audioBuffer, {
+      filename: 'audio.webm',
+      contentType: 'audio/webm'
+    });
+    form.append('model', 'whisper-1');
+    form.append('language', req.body.language || 'en');
+    form.append('response_format', 'json');
+
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        ...form.getHeaders()
+      },
+      body: form
+    });
+
+    if (!response.ok) {
+      console.error(`Whisper API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      return res.status(500).json({ 
+        error: 'Whisper transcription failed', 
+        details: errorText,
+        fallback: 'browser-speech-recognition' 
+      });
+    }
+
+    const data = await response.json();
+    
+    console.log('✅ Audio transcribed successfully');
+    return res.json({
+      transcription: data.text,
+      confidence: data.confidence || 0.9,
+      model: 'whisper-1',
+      language: data.language || 'en'
+    });
+
+  } catch (error) {
+    console.error('❌ Whisper transcription error:', error);
+    return res.status(500).json({ 
+      error: 'Transcription failed', 
+      message: error.message,
+      fallback: 'browser-speech-recognition' 
+    });
+  }
+});
+
 // AI Processing API endpoint (secure server-side OpenRouter proxy)
 app.post('/api/ai/process-brain-dump', async (req, res) => {
   try {
