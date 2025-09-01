@@ -113,6 +113,50 @@ app.get('/api/ai/whisper-status', (req, res) => {
   res.json(status);
 });
 
+// Test endpoint with minimal audio data
+app.post('/api/ai/whisper-test', async (req, res) => {
+  try {
+    console.log('🧪 Testing Whisper API with minimal data...');
+    
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+    
+    // Create a minimal base64 audio data for testing
+    // This is a tiny WAV file header that should be valid enough for OpenAI to process
+    const testAudioData = 'UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; // minimal WAV
+    
+    const response = await fetch('/api/ai/transcribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        audioData: testAudioData,
+        audioFormat: 'wav',
+        language: 'en'
+      })
+    });
+    
+    const result = await response.json();
+    
+    res.json({
+      test: 'whisper-api',
+      status: response.status,
+      result: result,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Whisper test error:', error);
+    res.status(500).json({ 
+      error: 'Test failed',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Whisper Speech-to-Text API endpoint
 app.post('/api/ai/transcribe', async (req, res) => {
   try {
@@ -168,8 +212,16 @@ app.post('/api/ai/transcribe', async (req, res) => {
     const contentType = `audio/${audioFormat}`;
     
     // Create form data for Whisper API
+    console.log('🔧 Creating FormData...');
     const FormData = (await import('form-data')).default;
     const form = new FormData();
+    
+    console.log('🔧 Appending file to FormData...', {
+      filename,
+      contentType,
+      bufferLength: audioBuffer.length
+    });
+    
     form.append('file', audioBuffer, {
       filename: filename,
       contentType: contentType,
@@ -185,6 +237,7 @@ app.post('/api/ai/transcribe', async (req, res) => {
       form.append('language', req.body.language);
     }
 
+    console.log('🔧 Sending request to OpenAI...');
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
@@ -192,6 +245,12 @@ app.post('/api/ai/transcribe', async (req, res) => {
         ...form.getHeaders()
       },
       body: form
+    });
+    
+    console.log('🔧 OpenAI response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
     });
 
     if (!response.ok) {
@@ -222,12 +281,28 @@ app.post('/api/ai/transcribe', async (req, res) => {
     console.error('❌ Whisper transcription error:', {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
+      requestBody: {
+        hasAudioData: !!(req.body && req.body.audioData),
+        audioDataLength: req.body && req.body.audioData ? req.body.audioData.length : 0,
+        audioFormat: req.body ? req.body.audioFormat : 'none'
+      },
+      environment: {
+        hasOpenAI: !!process.env.OPENAI_API_KEY,
+        keyLength: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0
+      },
+      timestamp: new Date().toISOString()
     });
     return res.status(500).json({ 
       error: 'Transcription failed', 
       message: error.message,
       type: error.name,
+      debug: {
+        timestamp: new Date().toISOString(),
+        hasAudioData: !!(req.body && req.body.audioData),
+        audioDataLength: req.body && req.body.audioData ? req.body.audioData.length : 0,
+        hasApiKey: !!process.env.OPENAI_API_KEY
+      },
       fallback: 'browser-speech-recognition' 
     });
   }
