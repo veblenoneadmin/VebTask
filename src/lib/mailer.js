@@ -179,6 +179,101 @@ export async function sendPasswordResetEmail(to, data) {
 }
 
 /**
+ * HTML template for welcome emails after joining organization
+ */
+export function welcomeEmailHtml(data) {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to ${data.orgName} on VebTask</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: white; padding: 30px 20px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn { display: inline-block; background: #48bb78; color: white !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+        .btn:hover { background: #38a169; }
+        .role-badge { display: inline-block; background: #e2e8f0; color: #4a5568; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 500; }
+        .footer { text-align: center; margin-top: 20px; color: #718096; font-size: 14px; }
+        .logo { font-size: 24px; font-weight: 700; }
+        .feature { background: #f7fafc; padding: 15px; border-radius: 6px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">VebTask</div>
+            <h1>Welcome to ${data.orgName}! 🎉</h1>
+        </div>
+        <div class="content">
+            <p>Hi ${data.name || 'there'}! 👋</p>
+            
+            <p>Congratulations! You've successfully joined <strong>${data.orgName}</strong> as a <span class="role-badge">${data.role}</span>.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${data.dashboardUrl}" class="btn">Go to Dashboard</a>
+            </div>
+            
+            <h2>🚀 Getting Started</h2>
+            
+            <div class="feature">
+                <h3>🤖 AI Brain Dump</h3>
+                <p>Transform chaotic thoughts into organized tasks with our AI-powered brain dump feature. Just speak or type your ideas!</p>
+            </div>
+            
+            <div class="feature">
+                <h3>⏱️ Smart Time Tracking</h3>
+                <p>Track time efficiently with our built-in timer, automatic task association, and billable hour management.</p>
+            </div>
+            
+            <div class="feature">
+                <h3>📅 Intelligent Calendar</h3>
+                <p>Let AI schedule your tasks at optimal times based on priority, energy levels, and your workflow patterns.</p>
+            </div>
+            
+            <div class="feature">
+                <h3>📊 Productivity Analytics</h3>
+                <p>Get insights into your productivity patterns with real-time dashboards and detailed reports.</p>
+            </div>
+            
+            <p><strong>Quick Tips:</strong></p>
+            <ul>
+                <li>Start with the Brain Dump feature to organize your thoughts</li>
+                <li>Use the Timer to track your work sessions</li>
+                <li>Check your Dashboard daily for productivity insights</li>
+                <li>Explore the Calendar for AI-optimized scheduling</li>
+            </ul>
+            
+            <p>Need help? Check out our documentation or reach out to your team administrator.</p>
+            
+            <p>Happy productivity! 🚀</p>
+        </div>
+        <div class="footer">
+            <p>You're now part of ${data.orgName}. Let's build something amazing together!</p>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
+/**
+ * Send welcome email after user joins organization
+ */
+export async function sendWelcomeEmail(to, data) {
+  const subject = `Welcome to ${data.orgName} on VebTask!`;
+  
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to,
+    subject,
+    html: welcomeEmailHtml(data)
+  });
+}
+
+/**
  * Utility to format time duration for email templates
  */
 export function formatDuration(minutes) {
