@@ -288,63 +288,37 @@ app.post('/api/ai/transcribe', async (req, res) => {
     const filename = `audio.${audioFormat}`;
     const contentType = `audio/${audioFormat}`;
     
-    // Create form data for Whisper API
-    console.log('🔧 Creating FormData...');
-    const FormData = (await import('form-data')).default;
-    const form = new FormData();
+    // Use OpenAI SDK for reliable multipart handling
+    console.log('🔧 Using OpenAI SDK for transcription...');
+    const { OpenAI } = await import('openai');
+    const openai = new OpenAI({
+      apiKey: OPENAI_API_KEY
+    });
     
-    console.log('🔧 Appending file to FormData...', {
+    // Create a File-like object for the SDK
+    const audioFile = new File([audioBuffer], filename, { type: contentType });
+    
+    console.log('🔧 Sending request via OpenAI SDK...', {
       filename,
       contentType,
-      bufferLength: audioBuffer.length
+      bufferLength: audioBuffer.length,
+      language: req.body.language
     });
     
-    form.append('file', audioBuffer, {
-      filename: filename,
-      contentType: contentType,
-      knownLength: audioBuffer.length
-    });
-    
-    // Start with whisper-1 for compatibility, then upgrade to GPT-4o
-    form.append('model', 'whisper-1');
-    form.append('response_format', 'json');
+    const transcriptionParams = {
+      file: audioFile,
+      model: 'whisper-1',
+      response_format: 'json'
+    };
     
     // Add language if specified
     if (req.body.language && req.body.language !== 'auto') {
-      form.append('language', req.body.language);
+      transcriptionParams.language = req.body.language;
     }
-
-    console.log('🔧 Sending request to OpenAI...');
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        ...form.getHeaders()
-      },
-      body: form
-    });
     
-    console.log('🔧 OpenAI response received:', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ Whisper API error: ${response.status} ${response.statusText}`, {
-        error: errorText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-      return res.status(500).json({ 
-        error: 'Whisper transcription failed', 
-        details: errorText,
-        status: response.status,
-        fallback: 'browser-speech-recognition' 
-      });
-    }
-
-    const data = await response.json();
+    const data = await openai.audio.transcriptions.create(transcriptionParams);
+    
+    console.log('🔧 OpenAI SDK response received successfully');
     
     console.log('✅ Audio transcribed successfully with Whisper-1');
     return res.json({
