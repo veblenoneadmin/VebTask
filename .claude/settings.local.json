@@ -54,7 +54,9 @@
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" PORT=3009 node server.js)",
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" npx prisma generate)",
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" npx prisma db push --accept-data-loss)",
-      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" BETTER_AUTH_URL=\"http://localhost:3009\" PORT=3009 node server.js)"
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" BETTER_AUTH_URL=\"http://localhost:3009\" PORT=3009 node server.js)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" BETTER_AUTH_URL=\"http://localhost:3009\" PORT=3009 SMTP_HOST=smtp.gmail.com SMTP_PORT=587 node server.js)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@mysql.railway.internal:3306/railway\" BETTER_AUTH_URL=\"http://localhost:3009\" PORT=3009 SMTP_HOST=smtp.gmail.com SMTP_PORT=587 SMTP_USER=Admin@veblengroup.com.au SMTP_PASS=ofbseybicxpfupom SMTP_FROM=\"VebTask <Admin@veblengroup.com.au>\" node server.js)"
     ],
     "deny": [],
     "ask": [],
