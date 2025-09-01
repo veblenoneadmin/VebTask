@@ -115,10 +115,14 @@ app.post('/api/ai/transcribe', async (req, res) => {
       });
     }
 
-    console.log('🎤 Processing audio with OpenAI Whisper...');
-
     // Convert base64 audio to buffer
     const audioBuffer = Buffer.from(req.body.audioData, 'base64');
+    
+    console.log('🎤 Processing audio with OpenAI Whisper...', {
+      audioSize: audioBuffer.length,
+      audioFormat: req.body.audioFormat,
+      language: req.body.language
+    });
     
     // Check file size (25MB limit)
     const maxSize = 25 * 1024 * 1024; // 25MB in bytes
@@ -139,17 +143,17 @@ app.post('/api/ai/transcribe', async (req, res) => {
     const form = new FormData();
     form.append('file', audioBuffer, {
       filename: filename,
-      contentType: contentType
+      contentType: contentType,
+      knownLength: audioBuffer.length
     });
     
-    // Use the better GPT-4o model for transcription
-    form.append('model', 'gpt-4o-mini-transcribe');
+    // Start with whisper-1 for compatibility, then upgrade to GPT-4o
+    form.append('model', 'whisper-1');
     form.append('response_format', 'json');
     
-    // Add language if specified (optional for GPT-4o models)
+    // Add language if specified
     if (req.body.language && req.body.language !== 'auto') {
-      // Note: GPT-4o models can be prompted for language instead
-      form.append('prompt', `Please transcribe this audio in ${req.body.language}.`);
+      form.append('language', req.body.language);
     }
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -162,30 +166,39 @@ app.post('/api/ai/transcribe', async (req, res) => {
     });
 
     if (!response.ok) {
-      console.error(`Whisper API error: ${response.status} ${response.statusText}`);
       const errorText = await response.text();
+      console.error(`❌ Whisper API error: ${response.status} ${response.statusText}`, {
+        error: errorText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
       return res.status(500).json({ 
         error: 'Whisper transcription failed', 
         details: errorText,
+        status: response.status,
         fallback: 'browser-speech-recognition' 
       });
     }
 
     const data = await response.json();
     
-    console.log('✅ Audio transcribed successfully with GPT-4o-mini-transcribe');
+    console.log('✅ Audio transcribed successfully with Whisper-1');
     return res.json({
       transcription: data.text,
-      confidence: 0.95, // GPT-4o models have high confidence
-      model: 'gpt-4o-mini-transcribe',
+      confidence: data.confidence || 0.9,
+      model: 'whisper-1',
       language: data.language || 'en'
     });
 
   } catch (error) {
-    console.error('❌ Whisper transcription error:', error);
+    console.error('❌ Whisper transcription error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return res.status(500).json({ 
       error: 'Transcription failed', 
       message: error.message,
+      type: error.name,
       fallback: 'browser-speech-recognition' 
     });
   }

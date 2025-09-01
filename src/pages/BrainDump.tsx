@@ -389,7 +389,7 @@ export function BrainDump() {
                   </Button>
                   {useWhisper && (
                     <div className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">
-                      Whisper AI
+                      GPT-4o Whisper
                     </div>
                   )}
                 </div>
