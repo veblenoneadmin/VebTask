@@ -15,8 +15,7 @@
     "db:reset": "prisma db push --force-reset",
     "db:studio": "prisma studio",
     "db:seed": "node scripts/backfill-orgs.js",
-    "postinstall": "prisma generate",
-    "deploy": "npm run build && prisma db push --force-reset"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

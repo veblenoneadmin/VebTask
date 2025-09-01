@@ -4,8 +4,9 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and Prisma schema
 COPY package*.json ./
+COPY prisma/ ./prisma/
 
 # Install all dependencies (including devDependencies for build)
 RUN npm ci
@@ -20,4 +21,4 @@ RUN npm run build
 EXPOSE 3001
 
 # Initialize database and start the server
-CMD ["sh", "-c", "node init-db.js && node server.js"]
+CMD ["sh", "-c", "npx prisma db push --force-reset && node server.js"]
