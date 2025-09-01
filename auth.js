@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { google } from "better-auth/providers/google";
+import { google } from "better-auth/providers";
 import { prisma } from "./src/lib/prisma.js";
 
 console.log('✅ Using Prisma adapter for Better Auth');
