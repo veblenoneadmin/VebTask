@@ -83,7 +83,7 @@ export const auth = betterAuth({
       const nodemailer = await import('nodemailer');
       
       // Create SMTP transporter
-      const transporter = nodemailer.default.createTransporter({
+      const transporter = nodemailer.default.createTransport({
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.SMTP_PORT || '587'),
         secure: false, // true for 465, false for other ports
