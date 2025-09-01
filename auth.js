@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { google } from "better-auth/providers";
 import { prisma } from "./src/lib/prisma.js";
 
 console.log('✅ Using Prisma adapter for Better Auth');
@@ -12,14 +11,8 @@ export const auth = betterAuth({
   baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET || "test-secret-key-for-debugging",
   
-  // Authentication providers
-  providers: [
-    google({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      redirectURI: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth/callback/google"
-    })
-  ],
+  // Authentication providers (Google OAuth disabled for now - can be added later)
+  providers: [],
   
   // Email and password authentication
   emailAndPassword: {
