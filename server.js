@@ -117,6 +117,66 @@ app.get('/api/ai/whisper-status', (req, res) => {
   res.json(status);
 });
 
+// Test OpenAI API key with simple models endpoint
+app.get('/api/ai/openai-test', async (req, res) => {
+  try {
+    console.log('🧪 Testing OpenAI API key with models endpoint...');
+    
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY?.trim();
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+    
+    // Test with simple models endpoint first
+    const response = await fetch('https://api.openai.com/v1/models', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
+      }
+    });
+    
+    console.log('🧪 OpenAI models response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🧪 OpenAI models error:', errorText);
+      return res.json({
+        test: 'openai-models',
+        status: response.status,
+        error: errorText,
+        success: false,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    const result = await response.json();
+    const whisperModels = result.data?.filter(model => model.id.includes('whisper')) || [];
+    
+    console.log('🧪 OpenAI API key valid, found models:', result.data?.length);
+    
+    res.json({
+      test: 'openai-models',
+      status: response.status,
+      success: true,
+      totalModels: result.data?.length || 0,
+      whisperModels: whisperModels.map(m => m.id),
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ OpenAI test error:', error);
+    res.status(500).json({ 
+      error: 'Test failed',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Test endpoint with minimal audio data - calls OpenAI directly
 app.post('/api/ai/whisper-test', async (req, res) => {
   try {
