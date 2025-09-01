@@ -132,8 +132,14 @@ app.post('/api/ai/transcribe', async (req, res) => {
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     
     if (!OPENAI_API_KEY) {
+      console.log('❌ OpenAI API key not found in environment variables');
       return res.status(500).json({ 
         error: 'OpenAI API key not configured', 
+        debug: {
+          env_keys: Object.keys(process.env).filter(key => key.includes('OPENAI')),
+          node_env: process.env.NODE_ENV,
+          timestamp: new Date().toISOString()
+        },
         fallback: 'browser-speech-recognition' 
       });
     }
