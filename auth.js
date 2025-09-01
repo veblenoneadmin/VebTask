@@ -18,8 +18,10 @@ export const auth = betterAuth({
   baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET || "test-secret-key-for-debugging",
   
-  // Authentication providers (Google OAuth disabled for now - can be added later)
-  providers: [],
+  // Authentication providers
+  providers: [
+    // Email/password provider is automatically added when emailAndPassword is enabled
+  ],
   
   // Email and password authentication
   emailAndPassword: {
