@@ -3,6 +3,11 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./src/lib/prisma.js";
 
 console.log('✅ Using Prisma adapter for Better Auth');
+console.log('🔐 Better Auth Config:', {
+  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth",
+  hasSecret: !!process.env.BETTER_AUTH_SECRET,
+  environment: process.env.NODE_ENV
+});
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
