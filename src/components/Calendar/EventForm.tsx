@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CalendarEvent, RecurringPattern } from '../../hooks/useCalendar';
+import type { CalendarEvent, RecurringPattern } from '../../hooks/useCalendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -52,7 +52,7 @@ export function EventForm({ isOpen, onClose, onSubmit, initialEvent, selectedDat
       frequency: 'weekly' as RecurringPattern['frequency'],
       interval: 1,
       endDate: '',
-      daysOfWeek: []
+      daysOfWeek: [] as number[]
     },
     status: 'scheduled' as CalendarEvent['status']
   });
@@ -77,11 +77,11 @@ export function EventForm({ isOpen, onClose, onSubmit, initialEvent, selectedDat
         location: initialEvent.location || '',
         attendees: initialEvent.attendees || [],
         isRecurring: initialEvent.isRecurring,
-        recurringPattern: initialEvent.recurringPattern || {
-          frequency: 'weekly',
-          interval: 1,
-          endDate: '',
-          daysOfWeek: []
+        recurringPattern: {
+          frequency: initialEvent.recurringPattern?.frequency || 'weekly',
+          interval: initialEvent.recurringPattern?.interval || 1,
+          endDate: initialEvent.recurringPattern?.endDate || '',
+          daysOfWeek: initialEvent.recurringPattern?.daysOfWeek || []
         },
         status: initialEvent.status
       });
@@ -134,10 +134,10 @@ export function EventForm({ isOpen, onClose, onSubmit, initialEvent, selectedDat
       attendees: [],
       isRecurring: false,
       recurringPattern: {
-        frequency: 'weekly',
+        frequency: 'weekly' as const,
         interval: 1,
         endDate: '',
-        daysOfWeek: []
+        daysOfWeek: [] as number[]
       },
       status: 'scheduled'
     });
@@ -162,8 +162,6 @@ export function EventForm({ isOpen, onClose, onSubmit, initialEvent, selectedDat
       attendees: prev.attendees.filter(a => a !== attendee)
     }));
   };
-
-  const selectedEventType = eventTypes.find(t => t.value === formData.type);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useCalendar } from '../hooks/useCalendar';
+import { useCalendar, type CalendarEvent } from '../hooks/useCalendar';
 import { EventForm } from '../components/Calendar/EventForm';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -30,7 +30,7 @@ export function Calendar() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   const [showEventForm, setShowEventForm] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   const {
     events,
@@ -40,8 +40,6 @@ export function Calendar() {
     createEvent,
     updateEvent,
     deleteEvent,
-    fetchEvents,
-    getEventsForDate,
     clearError
   } = useCalendar();
 
@@ -373,7 +371,7 @@ export function Calendar() {
               <h3 className="font-semibold">Upcoming Events</h3>
             </CardHeader>
             <CardContent className="space-y-3">
-              {overview?.upcomingEvents?.length > 0 ? (
+              {overview?.upcomingEvents && overview.upcomingEvents.length > 0 ? (
                 overview.upcomingEvents.slice(0, 5).map((event) => (
                   <div key={event.id} className="flex items-start space-x-3 p-2 glass-surface rounded-lg">
                     <div className="w-3 h-3 rounded-full mt-1" style={{ backgroundColor: event.color }} />
@@ -496,8 +494,8 @@ export function Calendar() {
           setSelectedEvent(null);
         }}
         onSubmit={selectedEvent ? handleUpdateEvent : handleCreateEvent}
-        initialEvent={selectedEvent}
-        selectedDate={selectedDate}
+        initialEvent={selectedEvent || undefined}
+        selectedDate={selectedDate || undefined}
       />
     </div>
   );
