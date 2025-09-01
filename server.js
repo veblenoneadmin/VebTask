@@ -1240,6 +1240,422 @@ app.get('/api/brain-dumps/:userId', async (req, res) => {
   }
 });
 
+// ==================== CALENDAR API ENDPOINTS ====================
+
+// Get calendar events for a user
+app.get('/api/calendar/events/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { startDate, endDate, type, limit = 100 } = req.query;
+
+    const pool = await getDbPool();
+    
+    let query = `
+      SELECT ce.*, mt.title as taskTitle, mt.description as taskDescription
+      FROM calendar_events ce
+      LEFT JOIN macro_tasks mt ON ce.taskId = mt.id
+      WHERE ce.userId = ?
+    `;
+    const params = [userId];
+    
+    if (startDate && endDate) {
+      query += ' AND ce.startTime BETWEEN ? AND ?';
+      params.push(startDate, endDate);
+    }
+    
+    if (type) {
+      query += ' AND ce.type = ?';
+      params.push(type);
+    }
+    
+    query += ' ORDER BY ce.startTime ASC LIMIT ?';
+    params.push(parseInt(limit));
+    
+    const [events] = await pool.execute(query, params);
+    
+    // Parse JSON fields and format response
+    const formattedEvents = events.map(event => ({
+      ...event,
+      recurringPattern: event.recurringPattern ? JSON.parse(event.recurringPattern) : null,
+      attendees: event.attendees ? JSON.parse(event.attendees) : [],
+      startTime: new Date(event.startTime).toISOString(),
+      endTime: new Date(event.endTime).toISOString()
+    }));
+    
+    res.json({
+      success: true,
+      events: formattedEvents,
+      count: formattedEvents.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Get calendar events error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a new calendar event
+app.post('/api/calendar/events', async (req, res) => {
+  try {
+    const { 
+      userId, title, description, startTime, endTime, type, taskId, 
+      color, location, attendees, isRecurring, recurringPattern, status 
+    } = req.body;
+
+    if (!userId || !title || !startTime || !endTime) {
+      return res.status(400).json({ error: 'userId, title, startTime, and endTime are required' });
+    }
+
+    const pool = await getDbPool();
+    const eventId = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Validate dates
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    if (start >= end) {
+      return res.status(400).json({ error: 'End time must be after start time' });
+    }
+    
+    // Format datetime for MySQL
+    const formatDateTime = (dt) => dt.toISOString().slice(0, 19).replace('T', ' ');
+    
+    await pool.execute(`
+      INSERT INTO calendar_events (
+        id, userId, title, description, startTime, endTime, type, taskId,
+        color, location, attendees, isRecurring, recurringPattern, status, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    `, [
+      eventId, userId, title, description || null, 
+      formatDateTime(start), formatDateTime(end),
+      type || 'personal', taskId || null, color || '#6366f1',
+      location || null, attendees ? JSON.stringify(attendees) : null,
+      isRecurring || false, recurringPattern ? JSON.stringify(recurringPattern) : null,
+      status || 'scheduled'
+    ]);
+    
+    // If it's a recurring event, create recurring instances
+    if (isRecurring && recurringPattern) {
+      await createRecurringEvents(pool, eventId, {
+        userId, title, description, type, taskId, color, location, attendees, status
+      }, start, end, recurringPattern);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Calendar event created successfully',
+      eventId,
+      isRecurring: isRecurring || false
+    });
+    
+  } catch (error) {
+    console.error('❌ Create calendar event error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update a calendar event
+app.patch('/api/calendar/events/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { 
+      title, description, startTime, endTime, type, color, 
+      location, attendees, status, updateRecurring 
+    } = req.body;
+
+    const pool = await getDbPool();
+    
+    let query = 'UPDATE calendar_events SET updatedAt = NOW()';
+    const params = [];
+    
+    if (title) {
+      query += ', title = ?';
+      params.push(title);
+    }
+    
+    if (description !== undefined) {
+      query += ', description = ?';
+      params.push(description);
+    }
+    
+    if (startTime) {
+      const start = new Date(startTime);
+      query += ', startTime = ?';
+      params.push(start.toISOString().slice(0, 19).replace('T', ' '));
+    }
+    
+    if (endTime) {
+      const end = new Date(endTime);
+      query += ', endTime = ?';
+      params.push(end.toISOString().slice(0, 19).replace('T', ' '));
+    }
+    
+    if (type) {
+      query += ', type = ?';
+      params.push(type);
+    }
+    
+    if (color) {
+      query += ', color = ?';
+      params.push(color);
+    }
+    
+    if (location !== undefined) {
+      query += ', location = ?';
+      params.push(location);
+    }
+    
+    if (attendees) {
+      query += ', attendees = ?';
+      params.push(JSON.stringify(attendees));
+    }
+    
+    if (status) {
+      query += ', status = ?';
+      params.push(status);
+    }
+    
+    query += ' WHERE id = ?';
+    params.push(eventId);
+    
+    const [result] = await pool.execute(query, params);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    
+    // Handle recurring event updates
+    if (updateRecurring) {
+      // Get the original event to find related recurring events
+      const [events] = await pool.execute(
+        'SELECT * FROM calendar_events WHERE id = ?', 
+        [eventId]
+      );
+      
+      if (events.length > 0 && events[0].isRecurring) {
+        // Update all future instances of this recurring event
+        await pool.execute(`
+          UPDATE calendar_events 
+          SET ${query.replace('WHERE id = ?', 'WHERE recurringPattern = ? AND startTime > ?')}
+        `, [...params.slice(0, -1), events[0].recurringPattern, new Date()]);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Calendar event updated successfully',
+      eventId
+    });
+    
+  } catch (error) {
+    console.error('❌ Update calendar event error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a calendar event
+app.delete('/api/calendar/events/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { deleteRecurring } = req.query;
+
+    const pool = await getDbPool();
+    
+    if (deleteRecurring === 'true') {
+      // Get the event to check if it's recurring
+      const [events] = await pool.execute(
+        'SELECT recurringPattern FROM calendar_events WHERE id = ?', 
+        [eventId]
+      );
+      
+      if (events.length > 0 && events[0].recurringPattern) {
+        // Delete all instances of this recurring event
+        await pool.execute(
+          'DELETE FROM calendar_events WHERE recurringPattern = ?', 
+          [events[0].recurringPattern]
+        );
+      } else {
+        // Just delete this single event
+        await pool.execute('DELETE FROM calendar_events WHERE id = ?', [eventId]);
+      }
+    } else {
+      // Delete only this single event
+      const [result] = await pool.execute('DELETE FROM calendar_events WHERE id = ?', [eventId]);
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Calendar event deleted successfully',
+      eventId
+    });
+    
+  } catch (error) {
+    console.error('❌ Delete calendar event error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get calendar overview/stats for a user
+app.get('/api/calendar/overview/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { month, year } = req.query;
+
+    const pool = await getDbPool();
+    
+    // Get stats for the specified month/year or current month
+    const targetDate = month && year 
+      ? new Date(parseInt(year), parseInt(month) - 1, 1)
+      : new Date();
+    
+    const startOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+    const endOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59);
+    
+    // Get event counts by type
+    const [eventStats] = await pool.execute(`
+      SELECT 
+        type,
+        COUNT(*) as count,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+      FROM calendar_events 
+      WHERE userId = ? AND startTime BETWEEN ? AND ?
+      GROUP BY type
+    `, [userId, startOfMonth, endOfMonth]);
+    
+    // Get daily event counts for the month
+    const [dailyStats] = await pool.execute(`
+      SELECT 
+        DATE(startTime) as date,
+        COUNT(*) as eventCount,
+        GROUP_CONCAT(DISTINCT type) as types
+      FROM calendar_events 
+      WHERE userId = ? AND startTime BETWEEN ? AND ?
+      GROUP BY DATE(startTime)
+      ORDER BY date
+    `, [userId, startOfMonth, endOfMonth]);
+    
+    // Get upcoming events (next 7 days)
+    const [upcomingEvents] = await pool.execute(`
+      SELECT id, title, startTime, endTime, type, color, location
+      FROM calendar_events 
+      WHERE userId = ? AND startTime BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 7 DAY)
+      AND status != 'cancelled'
+      ORDER BY startTime ASC
+      LIMIT 10
+    `, [userId]);
+    
+    res.json({
+      success: true,
+      overview: {
+        month: targetDate.getMonth() + 1,
+        year: targetDate.getFullYear(),
+        eventStats: eventStats.reduce((acc, stat) => ({
+          ...acc,
+          [stat.type]: { count: stat.count, completed: stat.completed }
+        }), {}),
+        dailyStats,
+        upcomingEvents: upcomingEvents.map(event => ({
+          ...event,
+          startTime: new Date(event.startTime).toISOString(),
+          endTime: new Date(event.endTime).toISOString()
+        })),
+        totalEvents: eventStats.reduce((sum, stat) => sum + stat.count, 0)
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Get calendar overview error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper function to create recurring events
+async function createRecurringEvents(pool, parentEventId, eventData, startDate, endDate, pattern) {
+  const { frequency, interval, endDate: patternEndDate, daysOfWeek } = pattern;
+  
+  if (!frequency || !interval) return;
+  
+  const maxRecurrences = 52; // Limit to 1 year of recurrences
+  const patternEnd = patternEndDate ? new Date(patternEndDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  
+  let currentStart = new Date(startDate);
+  let currentEnd = new Date(endDate);
+  let count = 0;
+  
+  while (count < maxRecurrences && currentStart <= patternEnd) {
+    // Calculate next occurrence based on frequency
+    switch (frequency) {
+      case 'daily':
+        currentStart.setDate(currentStart.getDate() + interval);
+        currentEnd.setDate(currentEnd.getDate() + interval);
+        break;
+      case 'weekly':
+        if (daysOfWeek && daysOfWeek.length > 0) {
+          // Handle specific days of week
+          const nextDay = getNextWeekday(currentStart, daysOfWeek, interval);
+          const daysDiff = (nextDay.getTime() - currentStart.getTime()) / (24 * 60 * 60 * 1000);
+          currentEnd.setDate(currentEnd.getDate() + daysDiff);
+          currentStart = nextDay;
+        } else {
+          currentStart.setDate(currentStart.getDate() + (7 * interval));
+          currentEnd.setDate(currentEnd.getDate() + (7 * interval));
+        }
+        break;
+      case 'monthly':
+        currentStart.setMonth(currentStart.getMonth() + interval);
+        currentEnd.setMonth(currentEnd.getMonth() + interval);
+        break;
+      default:
+        return; // Unknown frequency
+    }
+    
+    if (currentStart > patternEnd) break;
+    
+    // Create the recurring event instance
+    const recurringEventId = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-r${count}`;
+    
+    await pool.execute(`
+      INSERT INTO calendar_events (
+        id, userId, title, description, startTime, endTime, type, taskId,
+        color, location, attendees, isRecurring, recurringPattern, status, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    `, [
+      recurringEventId, eventData.userId, eventData.title, eventData.description,
+      currentStart.toISOString().slice(0, 19).replace('T', ' '),
+      currentEnd.toISOString().slice(0, 19).replace('T', ' '),
+      eventData.type, eventData.taskId, eventData.color,
+      eventData.location, eventData.attendees ? JSON.stringify(eventData.attendees) : null,
+      true, JSON.stringify({ ...pattern, parentEventId }),
+      eventData.status
+    ]);
+    
+    count++;
+  }
+}
+
+// Helper function to get next weekday for weekly recurring events
+function getNextWeekday(currentDate, daysOfWeek, weekInterval) {
+  const current = new Date(currentDate);
+  const currentDay = current.getDay(); // 0 = Sunday, 6 = Saturday
+  
+  // Find next day in the daysOfWeek array
+  const sortedDays = daysOfWeek.sort((a, b) => a - b);
+  let nextDay = sortedDays.find(day => day > currentDay);
+  
+  if (!nextDay) {
+    // No more days this week, go to first day of next week cycle
+    nextDay = sortedDays[0];
+    current.setDate(current.getDate() + (7 * weekInterval) + (nextDay - currentDay));
+  } else {
+    current.setDate(current.getDate() + (nextDay - currentDay));
+  }
+  
+  return current;
+}
+
 // Database initialization endpoint (for production) - Complete schema
 app.post('/api/init-db', async (req, res) => {
   try {
