@@ -46,7 +46,15 @@
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" mysql -h shortline.proxy.rlwy.net -P 48906 -u root -pjgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW railway -e \"ALTER TABLE calendar_events ADD COLUMN status ENUM(''scheduled'', ''in_progress'', ''completed'', ''cancelled'') DEFAULT ''scheduled'';\")",
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" node fix-calendar-schema.js)",
       "Bash(xcopy:*)",
-      "Bash(robocopy:*)"
+      "Bash(robocopy:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" npx prisma migrate dev --name \"fix-better-auth-schema\")",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" npx prisma migrate deploy)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" npx prisma db push)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" PORT=3009 node server.js)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" npx prisma generate)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" npx prisma db push --accept-data-loss)",
+      "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" BETTER_AUTH_URL=\"http://localhost:3009\" PORT=3009 node server.js)"
     ],
     "deny": [],
     "ask": [],
