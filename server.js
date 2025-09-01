@@ -113,37 +113,77 @@ app.get('/api/ai/whisper-status', (req, res) => {
   res.json(status);
 });
 
-// Test endpoint with minimal audio data
+// Test endpoint with minimal audio data - calls OpenAI directly
 app.post('/api/ai/whisper-test', async (req, res) => {
   try {
     console.log('🧪 Testing Whisper API with minimal data...');
     
-    if (!process.env.OPENAI_API_KEY) {
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
       return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
     
     // Create a minimal base64 audio data for testing
     // This is a tiny WAV file header that should be valid enough for OpenAI to process
     const testAudioData = 'UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; // minimal WAV
+    const audioBuffer = Buffer.from(testAudioData, 'base64');
     
-    const response = await fetch('/api/ai/transcribe', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        audioData: testAudioData,
-        audioFormat: 'wav',
-        language: 'en'
-      })
+    console.log('🧪 Creating test FormData...', {
+      bufferLength: audioBuffer.length,
+      apiKeyLength: OPENAI_API_KEY.length
     });
     
+    // Create form data for direct OpenAI API call
+    const FormData = (await import('form-data')).default;
+    const form = new FormData();
+    
+    form.append('file', audioBuffer, {
+      filename: 'test-audio.wav',
+      contentType: 'audio/wav',
+      knownLength: audioBuffer.length
+    });
+    
+    form.append('model', 'whisper-1');
+    form.append('response_format', 'json');
+    form.append('language', 'en');
+    
+    console.log('🧪 Sending test request to OpenAI...');
+    
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        ...form.getHeaders()
+      },
+      body: form
+    });
+    
+    console.log('🧪 OpenAI test response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🧪 OpenAI test error:', errorText);
+      return res.json({
+        test: 'whisper-api-direct',
+        status: response.status,
+        error: errorText,
+        success: false,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     const result = await response.json();
+    console.log('🧪 OpenAI test success:', result);
     
     res.json({
-      test: 'whisper-api',
+      test: 'whisper-api-direct',
       status: response.status,
       result: result,
+      success: true,
       timestamp: new Date().toISOString()
     });
     
@@ -152,6 +192,7 @@ app.post('/api/ai/whisper-test', async (req, res) => {
     res.status(500).json({ 
       error: 'Test failed',
       message: error.message,
+      stack: error.stack,
       timestamp: new Date().toISOString()
     });
   }
