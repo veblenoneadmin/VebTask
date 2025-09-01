@@ -26,7 +26,7 @@ export const auth = betterAuth({
   // Email and password authentication
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification: true,
     minPasswordLength: 6,
     maxPasswordLength: 128
   },
@@ -72,12 +72,62 @@ export const auth = betterAuth({
     }
   },
   
-  // Email verification (disabled for now, but can be enabled later)
+  // Email verification
   emailVerification: {
-    enabled: false,
+    enabled: true,
     expiresIn: 60 * 60 * 24, // 24 hours
     sendVerificationEmail: async ({ user, token }) => {
-      console.log(`Email verification for ${user.email}, token: ${token}`);
+      console.log(`📧 Sending verification email to ${user.email}, token: ${token}`);
+      
+      // Import nodemailer
+      const nodemailer = await import('nodemailer');
+      
+      // Create SMTP transporter
+      const transporter = nodemailer.default.createTransporter({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const verificationUrl = `${process.env.BETTER_AUTH_URL || 'http://localhost:3009'}/api/auth/verify-email?token=${token}`;
+
+      const mailOptions = {
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: user.email,
+        subject: 'Verify your VebTask account',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #6366f1;">Welcome to VebTask! 🚀</h2>
+            <p>Hi ${user.name || 'there'},</p>
+            <p>Thank you for signing up! Please click the button below to verify your email address:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" 
+                 style="background: linear-gradient(135deg, #6366f1, #8b5cf6); 
+                        color: white; padding: 12px 24px; text-decoration: none; 
+                        border-radius: 8px; font-weight: bold;">
+                Verify Email Address
+              </a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #6366f1;">${verificationUrl}</p>
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+              This link will expire in 24 hours. If you didn't sign up for VebTask, please ignore this email.
+            </p>
+          </div>
+        `
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Verification email sent to ${user.email}`);
+      } catch (error) {
+        console.error('❌ Failed to send verification email:', error);
+        throw error;
+      }
     }
   },
   
