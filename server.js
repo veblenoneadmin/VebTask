@@ -1074,11 +1074,21 @@ app.post('/api/time-logs', async (req, res) => {
     // Generate UUID for time log
     const timeLogId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+    // Handle null values properly
+    const safeTaskId = taskId || null;
+    const safeStartTime = startTime || new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const safeEndTime = endTime || null;
+    const safeType = type || 'work';
+    const safeDescription = description || null;
+    const safeIsBillable = isBillable || false;
+    const safeHourlyRate = hourlyRate || null;
+    const safeEarnings = earnings || null;
+
     // Insert time log
     await pool.execute(
       `INSERT INTO time_logs (id, taskId, userId, startTime, endTime, duration, type, description, isBillable, hourlyRate, earnings, createdAt) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [timeLogId, taskId, userId, startTime, endTime, duration, type || 'work', description, isBillable || false, hourlyRate, earnings]
+      [timeLogId, safeTaskId, userId, safeStartTime, safeEndTime, duration, safeType, safeDescription, safeIsBillable, safeHourlyRate, safeEarnings]
     );
 
     res.json({ 
@@ -1087,12 +1097,16 @@ app.post('/api/time-logs', async (req, res) => {
       message: 'Time log saved successfully',
       data: {
         id: timeLogId,
-        taskId,
+        taskId: safeTaskId,
         userId,
+        startTime: safeStartTime,
+        endTime: safeEndTime,
         duration,
-        type,
-        description,
-        earnings
+        type: safeType,
+        description: safeDescription,
+        isBillable: safeIsBillable,
+        hourlyRate: safeHourlyRate,
+        earnings: safeEarnings
       }
     });
     
@@ -1102,7 +1116,131 @@ app.post('/api/time-logs', async (req, res) => {
   }
 });
 
-// Database initialization endpoint (for production)
+// Get user's tasks endpoint
+app.get('/api/tasks/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status, limit = 50, offset = 0 } = req.query;
+
+    const pool = await getDbPool();
+    
+    let query = `
+      SELECT id, title, description, priority, estimatedHours, actualHours, 
+             status, category, tags, dueDate, completedAt, createdAt, updatedAt
+      FROM macro_tasks 
+      WHERE userId = ?
+    `;
+    const params = [userId];
+    
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY createdAt DESC LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), parseInt(offset));
+    
+    const [tasks] = await pool.execute(query, params);
+    
+    // Parse JSON tags for each task
+    const formattedTasks = tasks.map(task => ({
+      ...task,
+      tags: task.tags ? JSON.parse(task.tags) : {}
+    }));
+    
+    res.json({
+      success: true,
+      tasks: formattedTasks,
+      count: formattedTasks.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Get tasks error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update task status endpoint
+app.patch('/api/tasks/:taskId', async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { status, actualHours, completedAt } = req.body;
+
+    const pool = await getDbPool();
+    
+    let query = 'UPDATE macro_tasks SET updatedAt = NOW()';
+    const params = [];
+    
+    if (status) {
+      query += ', status = ?';
+      params.push(status);
+      
+      if (status === 'completed' && !completedAt) {
+        query += ', completedAt = NOW()';
+      }
+    }
+    
+    if (actualHours !== undefined) {
+      query += ', actualHours = ?';
+      params.push(actualHours);
+    }
+    
+    if (completedAt) {
+      query += ', completedAt = ?';
+      params.push(completedAt);
+    }
+    
+    query += ' WHERE id = ?';
+    params.push(taskId);
+    
+    const [result] = await pool.execute(query, params);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Task updated successfully',
+      taskId
+    });
+    
+  } catch (error) {
+    console.error('❌ Update task error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's brain dump history
+app.get('/api/brain-dumps/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 20, offset = 0 } = req.query;
+
+    const pool = await getDbPool();
+    
+    const [dumps] = await pool.execute(`
+      SELECT id, rawContent, processingStatus, aiModel, processedAt, createdAt,
+             JSON_LENGTH(processedContent, '$.extractedTasks') as taskCount
+      FROM brain_dumps 
+      WHERE userId = ? 
+      ORDER BY createdAt DESC 
+      LIMIT ? OFFSET ?
+    `, [userId, parseInt(limit), parseInt(offset)]);
+    
+    res.json({
+      success: true,
+      brainDumps: dumps,
+      count: dumps.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Get brain dumps error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Database initialization endpoint (for production) - Complete schema
 app.post('/api/init-db', async (req, res) => {
   try {
     const { createPool } = await import('mysql2/promise');
@@ -1122,10 +1260,14 @@ app.post('/api/init-db', async (req, res) => {
 
     const pool = createPool(dbConfig);
 
-    console.log('🔄 Initializing database tables...');
+    console.log('🔄 Initializing complete database schema...');
     
     // Drop existing tables in correct order (reverse foreign key dependency)
     await pool.execute('SET FOREIGN_KEY_CHECKS = 0');
+    await pool.execute('DROP TABLE IF EXISTS calendar_events');
+    await pool.execute('DROP TABLE IF EXISTS time_logs');
+    await pool.execute('DROP TABLE IF EXISTS macro_tasks');
+    await pool.execute('DROP TABLE IF EXISTS brain_dumps');
     await pool.execute('DROP TABLE IF EXISTS verification');
     await pool.execute('DROP TABLE IF EXISTS session');  
     await pool.execute('DROP TABLE IF EXISTS account');
@@ -1194,10 +1336,111 @@ app.post('/api/init-db', async (req, res) => {
       )
     `);
 
+    // Create brain_dumps table for storing processed brain dump data
+    await pool.execute(`
+      CREATE TABLE brain_dumps (
+        id VARCHAR(50) PRIMARY KEY,
+        userId VARCHAR(36) NOT NULL,
+        rawContent TEXT NOT NULL,
+        processedContent JSON,
+        processingStatus ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+        aiModel VARCHAR(100),
+        processedAt TIMESTAMP NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE,
+        INDEX idx_user_created (userId, createdAt),
+        INDEX idx_status (processingStatus)
+      )
+    `);
+
+    // Create macro_tasks table for storing extracted tasks from brain dumps
+    await pool.execute(`
+      CREATE TABLE macro_tasks (
+        id VARCHAR(50) PRIMARY KEY,
+        title VARCHAR(500) NOT NULL,
+        description TEXT,
+        userId VARCHAR(36) NOT NULL,
+        createdBy VARCHAR(36) NOT NULL,
+        priority ENUM('Urgent', 'High', 'Medium', 'Low') DEFAULT 'Medium',
+        estimatedHours DECIMAL(5,2) DEFAULT 0,
+        actualHours DECIMAL(5,2) DEFAULT 0,
+        status ENUM('not_started', 'in_progress', 'completed', 'cancelled') DEFAULT 'not_started',
+        category VARCHAR(100) DEFAULT 'General',
+        tags JSON,
+        dueDate TIMESTAMP NULL,
+        completedAt TIMESTAMP NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE,
+        FOREIGN KEY (createdBy) REFERENCES user(id) ON DELETE CASCADE,
+        INDEX idx_user_status (userId, status),
+        INDEX idx_priority (priority),
+        INDEX idx_due_date (dueDate),
+        FULLTEXT idx_search (title, description)
+      )
+    `);
+
+    // Create time_logs table for tracking time spent on tasks
+    await pool.execute(`
+      CREATE TABLE time_logs (
+        id VARCHAR(50) PRIMARY KEY,
+        taskId VARCHAR(50),
+        userId VARCHAR(36) NOT NULL,
+        startTime TIMESTAMP NOT NULL,
+        endTime TIMESTAMP NULL,
+        duration INT NOT NULL COMMENT 'Duration in seconds',
+        type ENUM('work', 'break', 'meeting', 'research', 'other') DEFAULT 'work',
+        description TEXT,
+        isBillable BOOLEAN DEFAULT FALSE,
+        hourlyRate DECIMAL(10,2) NULL,
+        earnings DECIMAL(10,2) NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE,
+        FOREIGN KEY (taskId) REFERENCES macro_tasks(id) ON DELETE SET NULL,
+        INDEX idx_user_date (userId, startTime),
+        INDEX idx_task (taskId),
+        INDEX idx_billable (isBillable)
+      )
+    `);
+
+    // Create calendar_events table for scheduling tasks and events
+    await pool.execute(`
+      CREATE TABLE calendar_events (
+        id VARCHAR(50) PRIMARY KEY,
+        userId VARCHAR(36) NOT NULL,
+        title VARCHAR(500) NOT NULL,
+        description TEXT,
+        startTime TIMESTAMP NOT NULL,
+        endTime TIMESTAMP NOT NULL,
+        type ENUM('task', 'meeting', 'reminder', 'break', 'personal') DEFAULT 'task',
+        taskId VARCHAR(50) NULL,
+        color VARCHAR(20) DEFAULT '#6366f1',
+        isRecurring BOOLEAN DEFAULT FALSE,
+        recurringPattern JSON NULL,
+        status ENUM('scheduled', 'in_progress', 'completed', 'cancelled') DEFAULT 'scheduled',
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE,
+        FOREIGN KEY (taskId) REFERENCES macro_tasks(id) ON DELETE SET NULL,
+        INDEX idx_user_time (userId, startTime, endTime),
+        INDEX idx_task (taskId),
+        INDEX idx_type (type)
+      )
+    `);
+
     await pool.end();
 
-    console.log('✅ Database initialized successfully');
-    res.json({ success: true, message: 'Database initialized successfully' });
+    console.log('✅ Complete database schema initialized successfully');
+    res.json({ 
+      success: true, 
+      message: 'Complete database schema initialized successfully',
+      tables: [
+        'user', 'session', 'account', 'verification',
+        'brain_dumps', 'macro_tasks', 'time_logs', 'calendar_events'
+      ]
+    });
     
   } catch (error) {
     console.error('❌ Database initialization error:', error);
