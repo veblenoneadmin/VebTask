@@ -88,9 +88,12 @@ app.use('/api/auth', (req, res, next) => {
 });
 
 // Auth routes using proper Express adapter with error handling
-app.all('/api/auth/*', async (req, res, next) => {
+// Better Auth needs the full path, not the wildcard pattern
+app.use('/api/auth', async (req, res, next) => {
   try {
-    await toNodeHandler(auth)(req, res, next);
+    // toNodeHandler expects the auth instance directly
+    const handler = toNodeHandler(auth);
+    await handler(req, res);
   } catch (error) {
     console.error('❌ Auth handler error:', {
       path: req.path,
@@ -167,7 +170,8 @@ app.use('/api/organizations', memberRoutes);
 // Invite system routes
 app.use('/api', inviteRoutes);
 
-// Additional auth routes (password reset, etc.)
+// Additional custom auth routes (password reset, etc.)
+// Note: Better Auth routes are handled above
 app.use('/api/auth', authRoutes);
 
 // Test endpoint for Whisper API debugging
