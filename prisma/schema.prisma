@@ -129,26 +129,27 @@ model Invite {
 
 // Better Auth required models
 model Account {
-  id                String  @id @default(cuid())
-  accountId         String  // Better Auth compatibility  
-  userId            String
-  providerId        String  // Better Auth uses 'providerId' not 'provider'
-  providerAccountId String @default("")
-  type              String @default("oauth")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-  password          String? @db.Text  // For email/password auth
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                     String  @id @default(cuid())
+  accountId              String  // Better Auth compatibility  
+  userId                 String
+  providerId             String  // Better Auth uses 'providerId' not 'provider'
+  providerAccountId      String?
+  type                   String  @default("oauth")
+  refreshToken           String? @db.Text
+  accessToken            String? @db.Text
+  accessTokenExpiresAt   DateTime?
+  expires_at             Int?
+  token_type             String?
+  scope                  String?
+  idToken                String? @db.Text
+  session_state          String?
+  password               String? @db.Text  // For email/password auth
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([providerId, providerAccountId, userId])
+  @@unique([providerId, providerAccountId])
   @@index([userId])
 }
 

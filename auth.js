@@ -224,7 +224,14 @@ Veblen Group
   // Callbacks for custom logic
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('🔐 Sign in callback:', { userId: user.id, email: user.email, provider: account?.provider });
+      console.log('🔐 Sign in callback:', { 
+        userId: user?.id, 
+        email: user?.email, 
+        provider: account?.providerId,
+        providerAccountId: account?.providerAccountId,
+        profileId: profile?.id,
+        profileEmail: profile?.email 
+      });
       return true;
     },
     async session({ session, token }) {
@@ -252,7 +259,10 @@ Veblen Group
       method: request?.method,
       body: request?.body,
       provider: request?.body?.provider,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : error.stack
+      name: error.name,
+      code: error.code,
+      cause: error.cause,
+      stack: error.stack
     });
   },
   
