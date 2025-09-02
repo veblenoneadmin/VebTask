@@ -98,26 +98,95 @@ export const auth = betterAuth({
       const mailOptions = {
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: user.email,
-        subject: 'Verify your VebTask account',
+        replyTo: process.env.SMTP_FROM || process.env.SMTP_USER,
+        subject: 'Verify your VebTask account - Action Required',
+        headers: {
+          'X-Priority': '1',
+          'X-Mailer': 'VebTask Authentication System',
+          'List-Unsubscribe': `<mailto:unsubscribe@veblengroup.com.au>`,
+          'Message-ID': `<${Date.now()}.${Math.random().toString(36)}@veblengroup.com.au>`
+        },
+        text: `
+Welcome to VebTask!
+
+Hi ${user.name || 'there'},
+
+Thank you for signing up for VebTask. To complete your registration and secure your account, please verify your email address.
+
+Verify your email by visiting this link:
+${verificationUrl}
+
+This verification link will expire in 24 hours for security purposes.
+
+If you did not create a VebTask account, please ignore this email.
+
+Best regards,
+The VebTask Team
+Veblen Group
+        `.trim(),
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #6366f1;">Welcome to VebTask! 🚀</h2>
-            <p>Hi ${user.name || 'there'},</p>
-            <p>Thank you for signing up! Please click the button below to verify your email address:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${verificationUrl}" 
-                 style="background: linear-gradient(135deg, #6366f1, #8b5cf6); 
-                        color: white; padding: 12px 24px; text-decoration: none; 
-                        border-radius: 8px; font-weight: bold;">
-                Verify Email Address
-              </a>
-            </div>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #6366f1;">${verificationUrl}</p>
-            <p style="color: #666; font-size: 14px; margin-top: 30px;">
-              This link will expire in 24 hours. If you didn't sign up for VebTask, please ignore this email.
-            </p>
-          </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify your VebTask Account</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0; background-color: #f8fafc;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 20px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                            <img src="https://vebtask.com/veblen-logo.png" alt="VebTask" style="height: 40px; width: auto;" />
+                            <h1 style="margin: 20px 0 0; color: #1e293b; font-size: 24px; font-weight: 600;">Welcome to VebTask</h1>
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="margin: 0 0 20px; color: #334155; font-size: 16px; line-height: 1.6;">Hi ${user.name || 'there'},</p>
+                            
+                            <p style="margin: 0 0 20px; color: #334155; font-size: 16px; line-height: 1.6;">Thank you for signing up for VebTask! To complete your registration and secure your account, please verify your email address.</p>
+                            
+                            <!-- CTA Button -->
+                            <div style="text-align: center; margin: 40px 0;">
+                                <a href="${verificationUrl}" style="display: inline-block; background-color: #6366f1; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Verify Email Address</a>
+                            </div>
+                            
+                            <p style="margin: 20px 0; color: #64748b; font-size: 14px; line-height: 1.6;">If the button above doesn't work, copy and paste this link into your browser:</p>
+                            <p style="margin: 0 0 20px; color: #6366f1; font-size: 14px; word-break: break-all;">${verificationUrl}</p>
+                            
+                            <hr style="margin: 30px 0; border: none; border-top: 1px solid #e2e8f0;" />
+                            
+                            <p style="margin: 0 0 10px; color: #64748b; font-size: 14px; line-height: 1.6;"><strong>Security Notice:</strong> This verification link will expire in 24 hours.</p>
+                            <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">If you did not create a VebTask account, please ignore this email.</p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 40px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 0 0 10px; color: #64748b; font-size: 12px;">Best regards,<br>The VebTask Team</p>
+                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Veblen Group | Secure Task Management</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
         `
       };
 
