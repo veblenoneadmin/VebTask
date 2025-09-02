@@ -62,20 +62,17 @@ export function Register() {
     setError('');
     
     try {
-      const result = await signIn.social({
+      // Better Auth social sign-in automatically redirects to Google
+      // No result is returned - it redirects the browser
+      await signIn.social({
         provider: 'google',
       });
-      
-      if (result.error) {
-        setError(result.error.message || 'Google sign in failed');
-      }
-      // Note: redirect will be handled automatically by Better Auth
     } catch (err) {
+      setLoading(false);
       setError('An error occurred during Google sign in');
       console.error('Google sign in error:', err);
-    } finally {
-      setLoading(false);
     }
+    // Note: Don't set loading to false here - the page will redirect
   };
 
   return (

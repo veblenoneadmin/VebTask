@@ -250,7 +250,9 @@ Veblen Group
       message: error.message,
       path: request?.url,
       method: request?.method,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      body: request?.body,
+      provider: request?.body?.provider,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : error.stack
     });
   },
   
