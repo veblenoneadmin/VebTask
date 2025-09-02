@@ -69,9 +69,9 @@ export const auth = betterAuth({
   // Pages configuration for redirects
   pages: {
     signIn: "/login",
-    signUp: "/register",
+    signUp: "/register", 
     resetPassword: "/reset-password",
-    callback: "/dashboard" // Redirect here after successful OAuth
+    callback: `${getBaseURL()}/dashboard` // Redirect here after successful OAuth
   },
   
   // Trusted origins for CORS
@@ -310,12 +310,13 @@ Veblen Group
     if (request.url?.includes('/callback/')) {
       console.log('🔐 Auth Response:', {
         url: request.url,
-        status: response.status,
-        hasSetCookie: !!response.headers?.['set-cookie'],
-        location: response.headers?.location,
-        responseHeaders: Object.keys(response.headers || {})
+        status: response?.status || 'no-status',
+        hasSetCookie: !!response?.headers?.['set-cookie'],
+        location: response?.headers?.location,
+        responseHeaders: Object.keys(response?.headers || {})
       });
     }
+    return response;
   },
   
   // Error handling
