@@ -91,7 +91,7 @@ export function Onboarding() {
       const result = await response.json();
       
       if (result.success) {
-        const { needsOnboarding, nextStep, completedSteps } = result.data;
+        const { needsOnboarding, nextStep } = result.data;
         
         if (!needsOnboarding) {
           // User has completed onboarding, redirect to dashboard
@@ -109,7 +109,7 @@ export function Onboarding() {
     }
   };
 
-  const completeWizardStep = async (stepId) => {
+  const completeWizardStep = async (stepId: string) => {
     try {
       const response = await fetch('/api/wizard/complete-step', {
         method: 'POST',

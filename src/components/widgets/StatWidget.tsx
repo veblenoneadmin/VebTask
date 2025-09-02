@@ -1,6 +1,5 @@
-import React from 'react';
 import { BaseWidget } from './BaseWidget';
-import { WidgetProps } from '../../lib/widgets/WidgetInterface';
+import type { WidgetProps } from '../../lib/widgets/WidgetInterface';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface StatWidgetData {

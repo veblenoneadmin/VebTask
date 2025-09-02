@@ -1,6 +1,5 @@
-import React from 'react';
 import { BaseWidget } from './BaseWidget';
-import { WidgetProps } from '../../lib/widgets/WidgetInterface';
+import type { WidgetProps } from '../../lib/widgets/WidgetInterface';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Clock, Play, Eye, Calendar } from 'lucide-react';

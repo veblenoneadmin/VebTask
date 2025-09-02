@@ -1,24 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { ClientDashboard } from './ClientDashboard';
 import { widgetService } from '../lib/widgets/WidgetService';
 import { defaultDashboardLayouts, widgetDataFetchers } from '../lib/widgets/widgetRegistry';
 import { 
-  Clock, 
-  CheckSquare,
-  TrendingUp,
   Timer,
-  Target,
-  Users,
   Calendar,
   Brain,
   Zap,
-  Building2,
   Activity,
-  ArrowRight,
   Plus,
   Settings,
   LayoutGrid
@@ -26,8 +19,8 @@ import {
 
 export function Dashboard() {
   const { data: session } = useSession();
-  const [widgets, setWidgets] = useState([]);
-  const [widgetData, setWidgetData] = useState({});
+  const [widgets, setWidgets] = useState<any[]>([]);
+  const [widgetData, setWidgetData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   
@@ -66,15 +59,15 @@ export function Dashboard() {
   }, [session, userRole]);
 
   // Load data for widgets
-  const loadWidgetData = async (widgetInstances) => {
+  const loadWidgetData = async (widgetInstances: any[]) => {
     if (!session?.user?.id) return;
 
-    const data = {};
-    const orgId = session.user.orgId || 'default'; // TODO: Get from organization membership
+    const data: Record<string, any> = {};
+    const orgId = (session.user as any).orgId || 'default'; // TODO: Get from organization membership
     
     for (const instance of widgetInstances) {
       try {
-        const fetcher = widgetDataFetchers[instance.widgetId];
+        const fetcher = (widgetDataFetchers as any)[instance.widgetId];
         if (fetcher) {
           data[instance.instanceId] = await fetcher(orgId, session.user.id);
         }
@@ -87,11 +80,11 @@ export function Dashboard() {
     setWidgetData(data);
   };
 
-  const handleWidgetRefresh = async (instanceId, widgetId) => {
+  const handleWidgetRefresh = async (instanceId: string, widgetId: string) => {
     if (!session?.user?.id) return;
     
-    const orgId = session.user.orgId || 'default';
-    const fetcher = widgetDataFetchers[widgetId];
+    const orgId = (session.user as any).orgId || 'default';
+    const fetcher = (widgetDataFetchers as any)[widgetId];
     
     if (fetcher) {
       try {
@@ -106,7 +99,7 @@ export function Dashboard() {
     }
   };
 
-  const renderWidget = (instance) => {
+  const renderWidget = (instance: any) => {
     const widget = widgetService.getWidget(instance.widgetId);
     if (!widget) return null;
 
@@ -129,12 +122,14 @@ export function Dashboard() {
           loading={!data && !hasError}
           error={hasError ? data.error : null}
           onRefresh={() => handleWidgetRefresh(instance.instanceId, instance.widgetId)}
+          orgId={(session?.user as any)?.orgId || 'default'}
+          userId={session?.user?.id || ''}
         />
       </div>
     );
   };
 
-  const getGridSizeClass = (position) => {
+  const getGridSizeClass = (position: any) => {
     return `col-span-${position.width} row-span-${position.height}`;
   };
   

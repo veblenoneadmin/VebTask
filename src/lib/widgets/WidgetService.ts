@@ -1,4 +1,4 @@
-import { Widget, WidgetService } from './WidgetInterface';
+import type { Widget, WidgetService } from './WidgetInterface';
 
 class WidgetServiceImpl implements WidgetService {
   private widgets: Map<string, Widget> = new Map();

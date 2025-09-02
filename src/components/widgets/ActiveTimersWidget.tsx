@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BaseWidget } from './BaseWidget';
-import { WidgetProps } from '../../lib/widgets/WidgetInterface';
+import type { WidgetProps } from '../../lib/widgets/WidgetInterface';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Play, Pause, Square, Clock } from 'lucide-react';
@@ -74,7 +74,7 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
         setLocalTimers(prevTimers => 
           prevTimers.map(timer => 
             timer.id === timerId 
-              ? { ...timer, status: action === 'pause' ? 'paused' : 'running' }
+              ? { ...timer, status: action === 'pause' ? 'paused' as const : 'running' as const }
               : timer
           ).filter(timer => action !== 'stop' || timer.id !== timerId)
         );

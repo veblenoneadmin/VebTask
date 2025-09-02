@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { MoreHorizontal, RefreshCw, Settings, X } from 'lucide-react';
@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { WidgetProps } from '../../lib/widgets/WidgetInterface';
+import type { WidgetProps } from '../../lib/widgets/WidgetInterface';
 
 interface BaseWidgetProps extends WidgetProps {
   children: React.ReactNode;

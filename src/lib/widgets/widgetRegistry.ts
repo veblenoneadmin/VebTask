@@ -1,5 +1,5 @@
 import { widgetService } from './WidgetService';
-import { Widget } from './WidgetInterface';
+import type { Widget } from './WidgetInterface';
 
 // Import widget components
 import { StatWidget } from '../../components/widgets/StatWidget';
@@ -205,7 +205,7 @@ export const defaultDashboardLayouts = {
 
 // Widget data fetchers - these would connect to your actual APIs
 export const widgetDataFetchers = {
-  'tasks-completed-today': async (orgId: string, userId: string) => {
+  'tasks-completed-today': async (orgId: string, _userId: string) => {
     try {
       const response = await fetch(`/api/stats/tasks-completed-today?orgId=${orgId}`, {
         credentials: 'include'
@@ -265,7 +265,7 @@ export const widgetDataFetchers = {
     }
   },
   
-  'recent-tasks': async (orgId: string, userId: string) => {
+  'recent-tasks': async (orgId: string, _userId: string) => {
     try {
       const response = await fetch(`/api/tasks/recent?orgId=${orgId}&limit=10`, {
         credentials: 'include'
