@@ -19,9 +19,16 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || "test-secret-key-for-debugging",
   
   // Authentication providers
-  providers: [
-    // Email/password provider is automatically added when emailAndPassword is enabled
-  ],
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // Always show account selector
+      prompt: "select_account",
+      // Ensure we can get refresh tokens
+      accessType: "offline"
+    }
+  },
   
   // Email and password authentication
   emailAndPassword: {
