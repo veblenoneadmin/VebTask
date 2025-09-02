@@ -63,28 +63,64 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleTimerAction = async (timerId: string, action: 'pause' | 'stop') => {
+  const handleStopTimer = async (timerId: string) => {
     try {
-      const response = await fetch(`/api/timers/${timerId}/${action}`, {
+      // Get user context (you may need to adjust this based on your auth implementation)
+      const userId = localStorage.getItem('userId') || 'temp-user-id'; // Replace with actual user ID
+      
+      const response = await fetch(`/api/timers/${timerId}/stop`, {
         method: 'POST',
-        credentials: 'include'
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId })
       });
 
       if (response.ok) {
-        // Update local state optimistically
+        // Remove stopped timer from local state
         setLocalTimers(prevTimers => 
-          prevTimers.map(timer => 
-            timer.id === timerId 
-              ? { ...timer, status: action === 'pause' ? 'paused' as const : 'running' as const }
-              : timer
-          ).filter(timer => action !== 'stop' || timer.id !== timerId)
+          prevTimers.filter(timer => timer.id !== timerId)
         );
         
         // Trigger parent refresh
         props.onRefresh?.();
       }
     } catch (error) {
-      console.error(`Failed to ${action} timer:`, error);
+      console.error('Failed to stop timer:', error);
+    }
+  };
+
+  const handleRestartTimer = async (timerId: string) => {
+    try {
+      const userId = localStorage.getItem('userId') || 'temp-user-id';
+      const orgId = localStorage.getItem('orgId') || 'temp-org-id';
+      
+      const response = await fetch(`/api/timers/${timerId}/restart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId, orgId })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Add new timer to local state
+        setLocalTimers(prevTimers => [...prevTimers, {
+          id: result.timer.id,
+          taskTitle: result.timer.taskTitle,
+          startTime: new Date(result.timer.startTime),
+          duration: 0,
+          status: 'running' as const
+        }]);
+        
+        // Trigger parent refresh
+        props.onRefresh?.();
+      }
+    } catch (error) {
+      console.error('Failed to restart timer:', error);
     }
   };
 
@@ -150,27 +186,11 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
                   </div>
                   
                   <div className="flex items-center space-x-1 ml-2">
-                    {timer.status === 'running' ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTimerAction(timer.id, 'pause')}
-                      >
-                        <Pause className="h-3 w-3" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTimerAction(timer.id, 'pause')} // Resume
-                      >
-                        <Play className="h-3 w-3" />
-                      </Button>
-                    )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleTimerAction(timer.id, 'stop')}
+                      onClick={() => handleStopTimer(timer.id)}
+                      title="Stop timer"
                     >
                       <Square className="h-3 w-3" />
                     </Button>

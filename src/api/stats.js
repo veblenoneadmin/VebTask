@@ -1,5 +1,6 @@
 // Widget statistics API endpoints
 import express from 'express';
+import { prisma } from '../lib/prisma.js';
 const router = express.Router();
 
 // Tasks completed today endpoint
@@ -7,14 +8,39 @@ router.get('/tasks-completed-today', async (req, res) => {
   try {
     const { orgId } = req.query;
     
-    // Mock data for now - replace with actual database queries
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
+    }
     
-    // Simulate database query results
-    const todayCount = Math.floor(Math.random() * 15) + 5; // 5-20 tasks
-    const yesterdayCount = Math.floor(Math.random() * 15) + 3; // 3-18 tasks
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    
+    const todayCount = await prisma.macroTask.count({
+      where: {
+        orgId,
+        status: 'completed',
+        completedAt: {
+          gte: startOfDay,
+          lt: endOfDay
+        }
+      }
+    });
+    
+    // Get yesterday's count for trend calculation
+    const yesterday = new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000);
+    const yesterdayEnd = new Date(yesterday.getTime() + 24 * 60 * 60 * 1000);
+    
+    const yesterdayCount = await prisma.macroTask.count({
+      where: {
+        orgId,
+        status: 'completed',
+        completedAt: {
+          gte: yesterday,
+          lt: yesterdayEnd
+        }
+      }
+    });
     
     const trendPercentage = yesterdayCount > 0 
       ? ((todayCount - yesterdayCount) / yesterdayCount * 100).toFixed(1)
@@ -40,9 +66,51 @@ router.get('/time-today', async (req, res) => {
   try {
     const { orgId, userId } = req.query;
     
-    // Mock data - replace with actual time tracking queries
-    const todaySeconds = Math.floor(Math.random() * 28800) + 3600; // 1-9 hours in seconds
-    const yesterdaySeconds = Math.floor(Math.random() * 25200) + 1800; // 0.5-7.5 hours
+    if (!orgId || !userId) {
+      return res.status(400).json({ error: 'orgId and userId are required' });
+    }
+    
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    
+    const result = await prisma.timeLog.aggregate({
+      where: {
+        userId,
+        orgId,
+        begin: {
+          gte: startOfDay,
+          lt: endOfDay
+        },
+        end: { not: null } // Only completed entries
+      },
+      _sum: {
+        duration: true
+      }
+    });
+    
+    const todaySeconds = result._sum.duration || 0;
+    
+    // Get yesterday's time for trend
+    const yesterday = new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000);
+    const yesterdayEnd = new Date(yesterday.getTime() + 24 * 60 * 60 * 1000);
+    
+    const yesterdayResult = await prisma.timeLog.aggregate({
+      where: {
+        userId,
+        orgId,
+        begin: {
+          gte: yesterday,
+          lt: yesterdayEnd
+        },
+        end: { not: null }
+      },
+      _sum: {
+        duration: true
+      }
+    });
+    
+    const yesterdaySeconds = yesterdayResult._sum.duration || 0;
     
     const trendPercentage = yesterdaySeconds > 0 
       ? ((todaySeconds - yesterdaySeconds) / yesterdaySeconds * 100).toFixed(1)
@@ -68,9 +136,42 @@ router.get('/active-projects', async (req, res) => {
   try {
     const { orgId } = req.query;
     
-    // Mock data - replace with actual project queries
-    const activeCount = Math.floor(Math.random() * 8) + 2; // 2-10 projects
-    const dueSoon = Math.floor(Math.random() * 3) + 1; // 1-3 due soon
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Count distinct categories with active tasks (used as projects proxy)
+    const result = await prisma.macroTask.findMany({
+      where: {
+        orgId,
+        status: {
+          not: 'completed'
+        }
+      },
+      select: {
+        category: true
+      },
+      distinct: ['category']
+    });
+    
+    const activeCount = result.length;
+    
+    // Count tasks due this week
+    const today = new Date();
+    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    const dueSoon = await prisma.macroTask.count({
+      where: {
+        orgId,
+        status: {
+          not: 'completed'
+        },
+        dueDate: {
+          gte: today,
+          lte: weekFromNow
+        }
+      }
+    });
     
     res.json({
       count: activeCount,
@@ -88,14 +189,39 @@ router.get('/team-members', async (req, res) => {
   try {
     const { orgId } = req.query;
     
-    // Mock data - replace with actual member queries
-    const memberCount = Math.floor(Math.random() * 12) + 3; // 3-15 members
-    const activeToday = Math.floor(memberCount * 0.7); // ~70% active today
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    const memberCount = await prisma.membership.count({
+      where: {
+        orgId
+      }
+    });
+    
+    // Count members who have been active today (created time logs)
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    
+    const activeToday = await prisma.timeLog.findMany({
+      where: {
+        orgId,
+        begin: {
+          gte: startOfDay,
+          lt: endOfDay
+        }
+      },
+      select: {
+        userId: true
+      },
+      distinct: ['userId']
+    });
     
     res.json({
       count: memberCount,
-      activeToday: activeToday,
-      label: `${activeToday} active today`
+      activeToday: activeToday.length,
+      label: `${activeToday.length} active today`
     });
   } catch (error) {
     console.error('Error fetching team members:', error);
@@ -103,44 +229,78 @@ router.get('/team-members', async (req, res) => {
   }
 });
 
-// Weekly hours endpoint
-router.get('/weekly-hours', async (req, res) => {
-  try {
-    const { orgId, userId } = req.query;
-    
-    // Mock data - replace with actual weekly time queries
-    const weeklySeconds = Math.floor(Math.random() * 144000) + 36000; // 10-50 hours
-    const lastWeekSeconds = Math.floor(Math.random() * 129600) + 28800; // 8-44 hours
-    
-    const trendPercentage = lastWeekSeconds > 0 
-      ? ((weeklySeconds - lastWeekSeconds) / lastWeekSeconds * 100).toFixed(1)
-      : 0;
-    
-    const trendDirection = trendPercentage > 0 ? 'up' : trendPercentage < 0 ? 'down' : 'neutral';
-    
-    res.json({
-      seconds: weeklySeconds,
-      trend: {
-        percentage: Math.abs(trendPercentage),
-        direction: trendDirection
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching weekly hours:', error);
-    res.status(500).json({ error: 'Failed to fetch weekly statistics' });
-  }
-});
 
 // Productivity score endpoint
-router.get('/productivity-score', async (req, res) => {
+router.get('/productivity', async (req, res) => {
   try {
     const { orgId, userId } = req.query;
     
-    // Mock productivity calculation - replace with actual algorithm
-    const score = Math.floor(Math.random() * 30) + 70; // 70-100% score
-    const lastWeekScore = Math.floor(Math.random() * 25) + 65; // 65-90% last week
+    if (!orgId || !userId) {
+      return res.status(400).json({ error: 'orgId and userId are required' });
+    }
     
-    const trendPercentage = ((score - lastWeekScore) / lastWeekScore * 100).toFixed(1);
+    // Get current week boundaries
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    // Get tasks completed this week
+    const completedTasks = await prisma.macroTask.count({
+      where: {
+        userId,
+        orgId,
+        status: 'completed',
+        completedAt: {
+          gte: startOfWeek
+        }
+      }
+    });
+    
+    // Get total tasks assigned this week (or updated)
+    const totalTasks = await prisma.macroTask.count({
+      where: {
+        userId,
+        orgId,
+        updatedAt: {
+          gte: startOfWeek
+        }
+      }
+    });
+    
+    // Calculate simple productivity score
+    const score = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    // Get last week's score for trend
+    const lastWeekStart = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const lastWeekEnd = new Date(startOfWeek.getTime());
+    
+    const lastWeekCompleted = await prisma.macroTask.count({
+      where: {
+        userId,
+        orgId,
+        status: 'completed',
+        completedAt: {
+          gte: lastWeekStart,
+          lt: lastWeekEnd
+        }
+      }
+    });
+    
+    const lastWeekTotal = await prisma.macroTask.count({
+      where: {
+        userId,
+        orgId,
+        updatedAt: {
+          gte: lastWeekStart,
+          lt: lastWeekEnd
+        }
+      }
+    });
+    
+    const lastWeekScore = lastWeekTotal > 0 ? Math.round((lastWeekCompleted / lastWeekTotal) * 100) : 0;
+    
+    const trendPercentage = lastWeekScore > 0 ? ((score - lastWeekScore) / lastWeekScore * 100).toFixed(1) : 0;
     const trendDirection = trendPercentage > 0 ? 'up' : trendPercentage < 0 ? 'down' : 'neutral';
     
     res.json({
@@ -161,8 +321,24 @@ router.get('/overdue-tasks', async (req, res) => {
   try {
     const { orgId } = req.query;
     
-    // Mock data - replace with actual overdue task queries
-    const overdueCount = Math.floor(Math.random() * 8); // 0-8 overdue tasks
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    const now = new Date();
+    
+    const overdueCount = await prisma.macroTask.count({
+      where: {
+        orgId,
+        status: {
+          not: 'completed'
+        },
+        dueDate: {
+          lt: now
+        }
+      }
+    });
+    
     const priority = overdueCount > 5 ? 'high' : overdueCount > 2 ? 'medium' : 'low';
     
     res.json({

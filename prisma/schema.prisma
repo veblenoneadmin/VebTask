@@ -242,14 +242,25 @@ model TimeLog {
   taskId      String?   @db.VarChar(50)
   userId      String    @db.VarChar(36)
   orgId       String    @db.VarChar(191) // Added for org scoping
-  startTime   DateTime
-  endTime     DateTime?
-  duration    Int // Duration in seconds
-  type        String    @default("work") @db.VarChar(20)
+  
+  // Kimai-style timer fields
+  begin       DateTime  // Start time (was startTime)
+  end         DateTime? // End time (was endTime) - null means active/running
+  duration    Int       @default(0) // Duration in seconds - calculated when stopped
+  timezone    String    @default("UTC") @db.VarChar(64) // User timezone
+  
+  // Work categorization 
+  category    String    @default("work") @db.VarChar(20) // work, break, meeting, etc
   description String?   @db.Text
+  
+  // Billing information
   isBillable  Boolean   @default(false)
   hourlyRate  Decimal?  @db.Decimal(10, 2)
   earnings    Decimal?  @db.Decimal(10, 2)
+  
+  // Export tracking
+  isExported  Boolean   @default(false)
+  exportedAt  DateTime?
 
   // Relationships
   user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -259,7 +270,12 @@ model TimeLog {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@index([userId, startTime])
+  // Kimai-style indexes for performance
+  @@index([userId, begin])
+  @@index([begin, end])
+  @@index([begin, end, userId])
+  @@index([end, userId])
+  @@index([userId, end]) // For active entries (end IS NULL)
   @@index([orgId])
   @@index([taskId])
   @@index([isBillable])

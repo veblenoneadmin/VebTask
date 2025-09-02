@@ -279,7 +279,90 @@ export const widgetDataFetchers = {
       console.error('Failed to fetch recent tasks:', error);
       return { tasks: [], totalTasks: 0 };
     }
-  }
+  },
   
-  // Add more data fetchers for other widgets...
+  'active-projects': async (orgId: string, _userId: string) => {
+    try {
+      const response = await fetch(`/api/stats/active-projects?orgId=${orgId}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      return {
+        value: data.count || 0,
+        label: 'Active Projects',
+        format: 'number'
+      };
+    } catch (error) {
+      console.error('Failed to fetch active projects:', error);
+      return { value: 0, label: 'Active Projects', format: 'number' };
+    }
+  },
+  
+  'team-members': async (orgId: string, _userId: string) => {
+    try {
+      const response = await fetch(`/api/stats/team-members?orgId=${orgId}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      return {
+        value: data.count || 0,
+        label: 'Team Members',
+        format: 'number'
+      };
+    } catch (error) {
+      console.error('Failed to fetch team members:', error);
+      return { value: 0, label: 'Team Members', format: 'number' };
+    }
+  },
+  
+  'weekly-hours': async (orgId: string, userId: string) => {
+    try {
+      const response = await fetch(`/api/timers/stats?orgId=${orgId}&userId=${userId}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      return {
+        value: data.weekTotalSeconds || 0,
+        label: 'This Week',
+        format: 'duration'
+      };
+    } catch (error) {
+      console.error('Failed to fetch weekly hours:', error);
+      return { value: 0, label: 'This Week', format: 'duration' };
+    }
+  },
+  
+  'productivity-score': async (orgId: string, userId: string) => {
+    try {
+      const response = await fetch(`/api/stats/productivity?orgId=${orgId}&userId=${userId}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      return {
+        value: data.score || 0,
+        label: 'Productivity',
+        format: 'percentage'
+      };
+    } catch (error) {
+      console.error('Failed to fetch productivity score:', error);
+      return { value: 0, label: 'Productivity', format: 'percentage' };
+    }
+  },
+  
+  'overdue-tasks': async (orgId: string, _userId: string) => {
+    try {
+      const response = await fetch(`/api/stats/overdue-tasks?orgId=${orgId}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      return {
+        value: data.count || 0,
+        label: 'Overdue',
+        format: 'number'
+      };
+    } catch (error) {
+      console.error('Failed to fetch overdue tasks:', error);
+      return { value: 0, label: 'Overdue', format: 'number' };
+    }
+  }
 };

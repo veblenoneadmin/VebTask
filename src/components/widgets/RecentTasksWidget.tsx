@@ -80,6 +80,10 @@ export function RecentTasksWidget(props: RecentTasksWidgetProps) {
 
   const handleStartTimer = async (taskId: string) => {
     try {
+      // Get user context (you may need to adjust this based on your auth implementation)
+      const userId = localStorage.getItem('userId') || 'temp-user-id'; // Replace with actual user ID
+      const orgId = localStorage.getItem('orgId') || 'temp-org-id'; // Replace with actual org ID
+      
       const response = await fetch('/api/timers', {
         method: 'POST',
         headers: {
@@ -88,12 +92,19 @@ export function RecentTasksWidget(props: RecentTasksWidgetProps) {
         credentials: 'include',
         body: JSON.stringify({
           taskId,
-          description: `Working on task`
+          userId,
+          orgId,
+          description: `Working on task`,
+          category: 'work',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         })
       });
 
       if (response.ok) {
         props.onRefresh?.();
+      } else {
+        const error = await response.json();
+        console.error('Failed to start timer:', error);
       }
     } catch (error) {
       console.error('Failed to start timer:', error);
