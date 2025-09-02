@@ -10,6 +10,9 @@ import organizationRoutes from './src/routes/organizations.js';
 import memberRoutes from './src/routes/members.js';
 import inviteRoutes from './src/routes/invites.js';
 import wizardRoutes from './src/routes/wizard.js';
+import statsRoutes from './src/api/stats.js';
+import timersRoutes from './src/api/timers.js';
+import tasksRoutes from './src/api/tasks.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -173,6 +176,11 @@ app.use('/api', inviteRoutes);
 
 // Wizard/onboarding routes
 app.use('/api/wizard', wizardRoutes);
+
+// Widget API routes
+app.use('/api/stats', statsRoutes);
+app.use('/api/timers', timersRoutes);
+app.use('/api/tasks', tasksRoutes);
 
 // Additional custom auth routes (password reset, etc.)
 // Note: Better Auth routes are handled above

@@ -18,6 +18,10 @@ import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import MainLayout from './components/Layout/MainLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { initializeWidgets } from './lib/widgets/widgetRegistry';
+
+// Initialize widgets on app load
+initializeWidgets();
 
 function App() {
   const { data: session, isPending } = useSession();
