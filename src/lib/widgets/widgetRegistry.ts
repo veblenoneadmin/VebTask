@@ -14,7 +14,7 @@ const widgets: Widget[] = [
     name: 'Tasks Completed Today',
     description: 'Number of tasks completed today',
     category: 'statistics',
-    component: StatWidget,
+    component: StatWidget as any,
     defaultConfig: {
       title: 'Completed Today',
       size: 'small',
@@ -30,7 +30,7 @@ const widgets: Widget[] = [
     name: 'Total Time Today',
     description: 'Total time tracked today',
     category: 'statistics',
-    component: StatWidget,
+    component: StatWidget as any,
     defaultConfig: {
       title: 'Time Today',
       size: 'small',
@@ -46,7 +46,7 @@ const widgets: Widget[] = [
     name: 'Active Projects',
     description: 'Number of active projects',
     category: 'statistics',
-    component: StatWidget,
+    component: StatWidget as any,
     defaultConfig: {
       title: 'Active Projects',
       size: 'small',
@@ -62,7 +62,7 @@ const widgets: Widget[] = [
     name: 'Team Members',
     description: 'Number of team members in organization',
     category: 'statistics',
-    component: StatWidget,
+    component: StatWidget as any,
     defaultConfig: {
       title: 'Team Members',
       size: 'small',
@@ -80,7 +80,7 @@ const widgets: Widget[] = [
     name: 'Active Timers',
     description: 'Currently running time trackers',
     category: 'overview',
-    component: ActiveTimersWidget,
+    component: ActiveTimersWidget as any,
     defaultConfig: {
       title: 'Active Timers',
       size: 'medium',
@@ -98,7 +98,7 @@ const widgets: Widget[] = [
     name: 'Recent Tasks',
     description: 'Recently worked on or due tasks',
     category: 'lists',
-    component: RecentTasksWidget,
+    component: RecentTasksWidget as any,
     defaultConfig: {
       title: 'Recent Tasks',
       size: 'medium',
@@ -116,7 +116,7 @@ const widgets: Widget[] = [
     name: 'Weekly Hours',
     description: 'Total hours tracked this week',
     category: 'statistics',
-    component: StatWidget,
+    component: StatWidget as any,
     defaultConfig: {
       title: 'This Week',
       size: 'small',
@@ -134,7 +134,7 @@ const widgets: Widget[] = [
     name: 'Productivity Score',
     description: 'Weekly productivity score based on completed tasks',
     category: 'statistics',
-    component: StatWidget,
+    component: StatWidget as any,
     defaultConfig: {
       title: 'Productivity',
       size: 'small',
@@ -152,7 +152,7 @@ const widgets: Widget[] = [
     name: 'Overdue Tasks',
     description: 'Number of overdue tasks',
     category: 'statistics',
-    component: StatWidget,
+    component: StatWidget as any,
     defaultConfig: {
       title: 'Overdue',
       size: 'small',

@@ -14,7 +14,8 @@ import {
   Activity,
   Plus,
   Settings,
-  LayoutGrid
+  LayoutGrid,
+  CheckSquare
 } from 'lucide-react';
 
 export function Dashboard() {

@@ -25,7 +25,7 @@ export interface Widget {
 
 export interface WidgetProps {
   config: WidgetConfig;
-  data?: WidgetData;
+  data?: any; // Allow any data type for flexibility
   loading?: boolean;
   error?: string | null;
   onRefresh?: () => void;
