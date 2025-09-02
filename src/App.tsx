@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useSession } from './lib/auth-client';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { EmailVerified } from './pages/EmailVerified';
 import { Dashboard } from './pages/Dashboard';
 import { BrainDump } from './pages/BrainDump';
 import { Timer } from './pages/Timer';
@@ -52,6 +53,10 @@ function App() {
           <Route 
             path="/register" 
             element={session ? <Navigate to="/dashboard" replace /> : <Register />} 
+          />
+          <Route 
+            path="/email-verified" 
+            element={<EmailVerified />} 
           />
           <Route 
             path="/*" 

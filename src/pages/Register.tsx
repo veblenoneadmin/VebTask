@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { signUp } from '../lib/auth-client';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, MailCheck, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -15,6 +15,8 @@ export function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -38,7 +40,12 @@ export function Register() {
 
       if (result.error) {
         setError(result.error.message || 'Registration failed');
+      } else if (result.data && !result.data.token) {
+        // Email verification required - show success message
+        setUserEmail(email);
+        setEmailSent(true);
       } else {
+        // Direct login (no email verification) - go to dashboard
         navigate('/dashboard');
       }
     } catch (err) {
@@ -76,13 +83,15 @@ export function Register() {
 
         {/* Register Card */}
         <Card className="glass shadow-elevation">
-          <CardHeader className="space-y-1 pb-4">
-            <h2 className="text-2xl font-semibold text-center">Create your account ✨</h2>
-            <p className="text-sm text-muted-foreground text-center">
-              Join thousands of productive professionals
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          {!emailSent ? (
+            <>
+              <CardHeader className="space-y-1 pb-4">
+                <h2 className="text-2xl font-semibold text-center">Create your account ✨</h2>
+                <p className="text-sm text-muted-foreground text-center">
+                  Join thousands of productive professionals
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name Inputs */}
               <div className="grid grid-cols-2 gap-4">
@@ -214,7 +223,69 @@ export function Register() {
                 </Link>
               </p>
             </div>
-          </CardContent>
+              </CardContent>
+            </>
+          ) : (
+            <>
+              <CardHeader className="space-y-1 pb-4">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-4 bg-success/10 rounded-full">
+                    <MailCheck className="h-8 w-8 text-success" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-semibold text-center">Check Your Email! 📧</h2>
+                <p className="text-sm text-muted-foreground text-center">
+                  We've sent a verification link to your email
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center space-y-4">
+                  <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                    <p className="text-sm text-foreground mb-2">
+                      <strong>Verification email sent to:</strong>
+                    </p>
+                    <p className="text-success font-medium">{userEmail}</p>
+                  </div>
+                  
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                      <AlertCircle className="h-4 w-4 mt-0.5 text-amber-500 flex-shrink-0" />
+                      <div className="text-left">
+                        <p className="font-medium text-foreground mb-1">Didn't receive the email?</p>
+                        <ul className="space-y-1 text-xs">
+                          <li>• Check your spam/junk folder</li>
+                          <li>• Wait up to 5 minutes for delivery</li>
+                          <li>• Make sure {userEmail} is correct</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>What's next?</strong>
+                    </p>
+                    <ol className="text-xs text-muted-foreground space-y-1 text-left bg-muted/30 p-4 rounded-lg">
+                      <li>1. Open the email from VebTask</li>
+                      <li>2. Click the "Verify Email Address" button</li>
+                      <li>3. Return here and sign in with your credentials</li>
+                    </ol>
+                  </div>
+                </div>
+
+                {/* Back to Login */}
+                <div className="text-center pt-4 border-t border-border">
+                  <Link 
+                    to="/login" 
+                    className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium"
+                  >
+                    <ArrowRight className="h-4 w-4 rotate-180" />
+                    Back to Sign In
+                  </Link>
+                </div>
+              </CardContent>
+            </>
+          )}
         </Card>
 
         {/* Footer */}

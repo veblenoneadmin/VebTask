@@ -93,7 +93,7 @@ export const auth = betterAuth({
         },
       });
 
-      const verificationUrl = `${process.env.BETTER_AUTH_URL || 'http://localhost:3009'}/api/auth/verify-email?token=${token}`;
+      const verificationUrl = `${process.env.BETTER_AUTH_URL || 'http://localhost:3009'}/email-verified?token=${token}`;
 
       const mailOptions = {
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
