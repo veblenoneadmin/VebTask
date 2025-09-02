@@ -88,31 +88,13 @@ app.use('/api/auth', (req, res, next) => {
 });
 
 // Auth routes using proper Express adapter with error handling
-// Better Auth needs the full path, not the wildcard pattern
+// Create the handler once
 const authHandler = toNodeHandler(auth);
-app.all('/api/auth/*', async (req, res, next) => {
-  try {
-    // Better Auth expects the handler to be called directly
-    await authHandler(req, res);
-    // If no response was sent, it means the route wasn't found
-    if (!res.headersSent) {
-      res.status(404).json({ error: 'Auth route not found' });
-    }
-  } catch (error) {
-    console.error('❌ Auth handler error:', {
-      path: req.path,
-      method: req.method,
-      error: error.message,
-      stack: error.stack
-    });
-    if (!res.headersSent) {
-      res.status(500).json({ 
-        error: 'Authentication error', 
-        message: error.message,
-        path: req.path 
-      });
-    }
-  }
+
+// Use a catch-all route for Better Auth
+app.all("/api/auth/*", (req, res) => {
+  // Better Auth's toNodeHandler expects to handle the request/response directly
+  return authHandler(req, res);
 });
 
 // ==================== USER AUTHENTICATION MIDDLEWARE ====================

@@ -261,6 +261,11 @@ Veblen Group
       });
       return true;
     },
+    async redirect({ url, baseURL }) {
+      console.log('🔐 Redirect callback:', { url, baseURL });
+      // Always redirect to dashboard after sign in
+      return `${baseURL}/dashboard`;
+    },
     async session({ session, token }) {
       console.log('🔐 Session callback:', {
         sessionId: session?.id,
