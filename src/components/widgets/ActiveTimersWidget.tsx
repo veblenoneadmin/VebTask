@@ -9,7 +9,7 @@ interface ActiveTimer {
   id: string;
   taskTitle: string;
   projectName?: string;
-  startTime: Date;
+  startTime: Date | string;
   duration: number; // seconds
   status: 'running' | 'paused';
 }
@@ -40,7 +40,8 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
       setLocalTimers(prevTimers => 
         prevTimers.map(timer => {
           if (timer.status === 'running') {
-            const elapsed = Math.floor((Date.now() - timer.startTime.getTime()) / 1000);
+            const startTime = timer.startTime instanceof Date ? timer.startTime : new Date(timer.startTime);
+            const elapsed = Math.floor((Date.now() - startTime.getTime()) / 1000);
             return { ...timer, duration: elapsed };
           }
           return timer;
