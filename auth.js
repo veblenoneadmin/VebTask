@@ -27,7 +27,9 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       // Always get refresh token and show account selector
       accessType: "offline",
-      prompt: "select_account consent"
+      prompt: "select_account consent",
+      // Explicitly set redirect URI
+      redirectURI: "https://vebtask.com/api/auth/callback/google"
     }
   },
   
@@ -278,14 +280,16 @@ Veblen Group
   
   // Request/Response logging
   async onRequest(request, response) {
-    if (request.url?.includes('callback') || request.url?.includes('google')) {
-      console.log('🔐 OAuth Request:', {
-        method: request.method,
-        url: request.url,
-        query: request.query,
-        cookies: Object.keys(request.headers?.cookie?.split(';') || [])
-      });
-    }
+    // Log ALL auth-related requests to debug OAuth flow
+    console.log('🔐 Auth Request:', {
+      method: request.method,
+      url: request.url,
+      pathname: request.pathname,
+      query: request.query,
+      hasAuthHeader: !!request.headers?.authorization,
+      hasCookies: !!request.headers?.cookie,
+      userAgent: request.headers?.['user-agent']?.substring(0, 50)
+    });
   },
   
   // Error handling
