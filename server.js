@@ -89,11 +89,15 @@ app.use('/api/auth', (req, res, next) => {
 
 // Auth routes using proper Express adapter with error handling
 // Better Auth needs the full path, not the wildcard pattern
-app.use('/api/auth', async (req, res, next) => {
+const authHandler = toNodeHandler(auth);
+app.all('/api/auth/*', async (req, res, next) => {
   try {
-    // toNodeHandler expects the auth instance directly
-    const handler = toNodeHandler(auth);
-    await handler(req, res);
+    // Better Auth expects the handler to be called directly
+    await authHandler(req, res);
+    // If no response was sent, it means the route wasn't found
+    if (!res.headersSent) {
+      res.status(404).json({ error: 'Auth route not found' });
+    }
   } catch (error) {
     console.error('❌ Auth handler error:', {
       path: req.path,
