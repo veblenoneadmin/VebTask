@@ -304,6 +304,19 @@ Veblen Group
       userAgent: request.headers?.['user-agent']?.substring(0, 50)
     });
   },
+
+  async onResponse(request, response) {
+    // Log responses, especially for OAuth callbacks
+    if (request.url?.includes('/callback/')) {
+      console.log('🔐 Auth Response:', {
+        url: request.url,
+        status: response.status,
+        hasSetCookie: !!response.headers?.['set-cookie'],
+        location: response.headers?.location,
+        responseHeaders: Object.keys(response.headers || {})
+      });
+    }
+  },
   
   // Error handling
   onError(error, request) {
