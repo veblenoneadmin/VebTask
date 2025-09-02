@@ -16,6 +16,8 @@ function getAuthBaseURL() {
 console.log('🔐 Better Auth Config:', {
   appBaseURL: getBaseURL(),
   authBaseURL: getAuthBaseURL(),
+  googleRedirectURI: process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? 
+    "Auto-generated from baseURL" : "N/A",
   hasSecret: !!process.env.BETTER_AUTH_SECRET,
   environment: process.env.NODE_ENV,
   googleOAuthEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
@@ -39,9 +41,8 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       // Always get refresh token and show account selector
       accessType: "offline",
-      prompt: "select_account consent",
-      // Dynamic redirect URI based on environment
-      redirectURI: getAuthBaseURL() + "/callback/google"
+      prompt: "select_account consent"
+      // Let Better Auth auto-generate redirectURI from baseURL
     }
   } : {},
   
