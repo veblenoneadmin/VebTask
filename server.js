@@ -91,7 +91,21 @@ app.use('/api/auth', (req, res, next) => {
 // Create the handler once
 const authHandler = toNodeHandler(auth);
 
-// Use a catch-all route for Better Auth
+// Handle the /api/auth root path
+app.get("/api/auth", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "Better Auth API",
+    endpoints: [
+      "/api/auth/sign-in/social",
+      "/api/auth/callback/google",
+      "/api/auth/get-session",
+      "/api/auth/sign-out"
+    ]
+  });
+});
+
+// Use a catch-all route for Better Auth sub-paths
 app.all("/api/auth/*", (req, res) => {
   // Better Auth's toNodeHandler expects to handle the request/response directly
   return authHandler(req, res);
