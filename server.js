@@ -9,6 +9,7 @@ import authRoutes from './src/routes/auth.js';
 import organizationRoutes from './src/routes/organizations.js';
 import memberRoutes from './src/routes/members.js';
 import inviteRoutes from './src/routes/invites.js';
+import wizardRoutes from './src/routes/wizard.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -169,6 +170,9 @@ app.use('/api/organizations', memberRoutes);
 
 // Invite system routes
 app.use('/api', inviteRoutes);
+
+// Wizard/onboarding routes
+app.use('/api/wizard', wizardRoutes);
 
 // Additional custom auth routes (password reset, etc.)
 // Note: Better Auth routes are handled above

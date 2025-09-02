@@ -33,6 +33,9 @@ model User {
   name         String?
   image        String?
   
+  // Onboarding wizard tracking
+  completedWizards String? // Comma-separated list of completed wizard steps
+  
   // Organization relationships
   memberships      Membership[]
   createdOrgs      Organization[]  @relation("OrganizationCreator")

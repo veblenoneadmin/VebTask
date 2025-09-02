@@ -3,6 +3,7 @@ import { useSession } from './lib/auth-client';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { EmailVerified } from './pages/EmailVerified';
+import { Onboarding } from './pages/Onboarding';
 import { Dashboard } from './pages/Dashboard';
 import { BrainDump } from './pages/BrainDump';
 import { Timer } from './pages/Timer';
@@ -57,6 +58,10 @@ function App() {
           <Route 
             path="/email-verified" 
             element={<EmailVerified />} 
+          />
+          <Route 
+            path="/onboarding" 
+            element={session ? <Onboarding /> : <Navigate to="/login" replace />} 
           />
           <Route 
             path="/*" 
