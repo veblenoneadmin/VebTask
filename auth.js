@@ -6,7 +6,9 @@ console.log('✅ Using Prisma adapter for Better Auth');
 console.log('🔐 Better Auth Config:', {
   baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth",
   hasSecret: !!process.env.BETTER_AUTH_SECRET,
-  environment: process.env.NODE_ENV
+  environment: process.env.NODE_ENV,
+  hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
+  hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET
 });
 
 export const auth = betterAuth({
