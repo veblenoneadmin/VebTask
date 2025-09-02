@@ -23,10 +23,9 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      // Always show account selector
-      prompt: "select_account",
-      // Ensure we can get refresh tokens
-      accessType: "offline"
+      // Always get refresh token and show account selector
+      accessType: "offline",
+      prompt: "select_account consent"
     }
   },
   
