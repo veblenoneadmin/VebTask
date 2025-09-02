@@ -3,8 +3,19 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./src/lib/prisma.js";
 
 console.log('✅ Using Prisma adapter for Better Auth');
+// Helper function to get the base URL for the application
+function getBaseURL() {
+  return process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3009";
+}
+
+// Helper function to get the full auth API URL
+function getAuthBaseURL() {
+  return getBaseURL() + "/api/auth";
+}
+
 console.log('🔐 Better Auth Config:', {
-  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3009") + "/api/auth",
+  appBaseURL: getBaseURL(),
+  authBaseURL: getAuthBaseURL(),
   hasSecret: !!process.env.BETTER_AUTH_SECRET,
   environment: process.env.NODE_ENV,
   googleOAuthEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
@@ -18,7 +29,7 @@ export const auth = betterAuth({
     // Custom field mappings for Better Auth compatibility
     useTrueUUID: true
   }),
-  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3009") + "/api/auth",
+  baseURL: getAuthBaseURL(),
   secret: process.env.BETTER_AUTH_SECRET || "test-secret-key-for-debugging",
   
   // Authentication providers
@@ -30,7 +41,7 @@ export const auth = betterAuth({
       accessType: "offline",
       prompt: "select_account consent",
       // Dynamic redirect URI based on environment
-      redirectURI: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3009") + "/api/auth/callback/google"
+      redirectURI: getAuthBaseURL() + "/callback/google"
     }
   } : {},
   
@@ -118,7 +129,7 @@ export const auth = betterAuth({
         },
       });
 
-      const verificationUrl = `${process.env.BETTER_AUTH_URL || 'http://localhost:3009'}/email-verified?token=${token}`;
+      const verificationUrl = `${getBaseURL()}/email-verified?token=${token}`;
 
       const mailOptions = {
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
