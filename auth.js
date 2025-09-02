@@ -44,7 +44,19 @@ export const auth = betterAuth({
     strategy: "jwt",
     maxAge: 60 * 60 * 24 * 30, // 30 days
     updateAge: 60 * 60 * 24, // 24 hours
-    cookieName: "vebtask.session"
+    cookieName: "vebtask.session",
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5 // 5 minutes
+    }
+  },
+  
+  // Pages configuration for redirects
+  pages: {
+    signIn: "/login",
+    signUp: "/register",
+    resetPassword: "/reset-password",
+    callback: "/dashboard" // Redirect here after successful OAuth
   },
   
   // Trusted origins for CORS
@@ -235,6 +247,12 @@ Veblen Group
       return true;
     },
     async session({ session, token }) {
+      console.log('🔐 Session callback:', {
+        sessionId: session?.id,
+        userId: session?.userId,
+        tokenId: token?.id,
+        hasActiveOrgId: !!token?.activeOrgId
+      });
       // Add organization context to session
       if (token.activeOrgId) {
         session.activeOrgId = token.activeOrgId;
@@ -242,6 +260,13 @@ Veblen Group
       return session;
     },
     async jwt({ token, user, account }) {
+      console.log('🔐 JWT callback:', {
+        hasToken: !!token,
+        hasUser: !!user,
+        hasAccount: !!account,
+        tokenId: token?.id,
+        userId: user?.id
+      });
       // Add custom claims to JWT
       if (user) {
         token.id = user.id;
