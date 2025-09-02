@@ -10,8 +10,8 @@ interface RecentTask {
   projectName?: string;
   status: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
   priority: 'Low' | 'Medium' | 'High' | 'Urgent';
-  dueDate?: Date;
-  lastWorked?: Date;
+  dueDate?: Date | string;
+  lastWorked?: Date | string;
   totalTime?: number; // seconds
 }
 
@@ -62,11 +62,12 @@ export function RecentTasksWidget(props: RecentTasksWidgetProps) {
     return `${hours}h ${minutes}m`;
   };
 
-  const formatRelativeTime = (date?: Date): string => {
+  const formatRelativeTime = (date?: Date | string): string => {
     if (!date) return '';
     
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const dateObj = date instanceof Date ? date : new Date(date);
+    const diff = now.getTime() - dateObj.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor(diff / (1000 * 60));
@@ -166,9 +167,9 @@ export function RecentTasksWidget(props: RecentTasksWidgetProps) {
                       
                       {task.dueDate && (
                         <span className={
-                          task.dueDate < new Date() ? 'text-red-600' : ''
+                          (task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate)) < new Date() ? 'text-red-600' : ''
                         }>
-                          Due: {task.dueDate.toLocaleDateString()}
+                          Due: {(task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate)).toLocaleDateString()}
                         </span>
                       )}
                     </div>

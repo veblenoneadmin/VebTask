@@ -74,8 +74,8 @@ router.get('/recent', async (req, res) => {
     // Sort by last worked date (most recent first)
     const sortedTasks = mockTasks
       .sort((a, b) => {
-        const aTime = a.lastWorked ? a.lastWorked.getTime() : 0;
-        const bTime = b.lastWorked ? b.lastWorked.getTime() : 0;
+        const aTime = a.lastWorked ? (a.lastWorked instanceof Date ? a.lastWorked.getTime() : new Date(a.lastWorked).getTime()) : 0;
+        const bTime = b.lastWorked ? (b.lastWorked instanceof Date ? b.lastWorked.getTime() : new Date(b.lastWorked).getTime()) : 0;
         return bTime - aTime;
       })
       .slice(0, parseInt(limit));
