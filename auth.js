@@ -4,9 +4,10 @@ import { prisma } from "./src/lib/prisma.js";
 
 console.log('✅ Using Prisma adapter for Better Auth');
 console.log('🔐 Better Auth Config:', {
-  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth",
+  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3009") + "/api/auth",
   hasSecret: !!process.env.BETTER_AUTH_SECRET,
   environment: process.env.NODE_ENV,
+  googleOAuthEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
   hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
   hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET
 });
@@ -17,21 +18,21 @@ export const auth = betterAuth({
     // Custom field mappings for Better Auth compatibility
     useTrueUUID: true
   }),
-  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3001") + "/api/auth",
+  baseURL: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3009") + "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET || "test-secret-key-for-debugging",
   
   // Authentication providers
-  socialProviders: {
+  socialProviders: process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       // Always get refresh token and show account selector
       accessType: "offline",
       prompt: "select_account consent",
-      // Explicitly set redirect URI
-      redirectURI: "https://vebtask.com/api/auth/callback/google"
+      // Dynamic redirect URI based on environment
+      redirectURI: (process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "http://localhost:3009") + "/api/auth/callback/google"
     }
-  },
+  } : {},
   
   // Email and password authentication
   emailAndPassword: {

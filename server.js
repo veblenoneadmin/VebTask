@@ -74,6 +74,8 @@ app.get('/test', (req, res) => {
 // Add logging middleware for auth routes
 app.use('/api/auth/*', (req, res, next) => {
   console.log(`🔐 Auth ${req.method} ${req.path}`, {
+    fullUrl: req.url,
+    query: req.query,
     body: req.method === 'POST' ? req.body : undefined,
     headers: {
       'content-type': req.headers['content-type'],
@@ -774,6 +776,14 @@ function generateSimpleId() {
 
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// Auth configuration endpoint
+app.get('/api/auth-config', (req, res) => {
+  res.json({
+    googleOAuthEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    emailVerificationEnabled: true
+  });
+});
 
 // Health check endpoint for Railway
 app.get('/health', async (req, res) => {

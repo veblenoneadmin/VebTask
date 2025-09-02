@@ -7,6 +7,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { useAuthConfig } from '../hooks/useAuthConfig';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -15,6 +16,7 @@ export function Login() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { config } = useAuthConfig();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -156,27 +158,32 @@ export function Login() {
               </Button>
             </form>
 
-            {/* Divider */}
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div>
+            {/* Google OAuth Section - Only show if enabled */}
+            {config.googleOAuthEnabled && (
+              <>
+                {/* Divider */}
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                  </div>
+                </div>
 
-            {/* Google Sign In Button */}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="w-full border-border hover:bg-muted/50 transition-all duration-300"
-            >
-              <FcGoogle className="w-5 h-5 mr-2" />
-              Continue with Google
-            </Button>
+                {/* Google Sign In Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                  className="w-full border-border hover:bg-muted/50 transition-all duration-300"
+                >
+                  <FcGoogle className="w-5 h-5 mr-2" />
+                  Continue with Google
+                </Button>
+              </>
+            )}
 
             {/* Sign Up Link */}
             <div className="text-center pt-4 border-t border-border">
