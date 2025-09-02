@@ -24,4 +24,4 @@ RUN npm run build
 EXPOSE 3001
 
 # Initialize database and start the server
-CMD ["sh", "-c", "sleep 5 && npx prisma db push --force-reset && node server.js"]
+CMD ["sh", "-c", "sleep 5 && npx prisma generate && npx prisma db push && node server.js"]
