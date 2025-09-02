@@ -57,7 +57,9 @@
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" BETTER_AUTH_URL=\"http://localhost:3009\" PORT=3009 node server.js)",
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@shortline.proxy.rlwy.net:48906/railway\" BETTER_AUTH_URL=\"http://localhost:3009\" PORT=3009 SMTP_HOST=smtp.gmail.com SMTP_PORT=587 node server.js)",
       "Bash(DATABASE_URL=\"mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@mysql.railway.internal:3306/railway\" BETTER_AUTH_URL=\"http://localhost:3009\" PORT=3009 SMTP_HOST=smtp.gmail.com SMTP_PORT=587 SMTP_USER=Admin@veblengroup.com.au SMTP_PASS=ofbseybicxpfupom SMTP_FROM=\"VebTask <Admin@veblengroup.com.au>\" node server.js)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(npm i:*)",
+      "Bash(npx prisma generate:*)"
     ],
     "deny": [],
     "ask": [],
