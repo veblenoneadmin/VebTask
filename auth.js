@@ -27,11 +27,10 @@ console.log('🔐 Better Auth Config:', {
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: "mysql",
-    // Custom field mappings for Better Auth compatibility
-    useTrueUUID: true
+    provider: "mysql"
   }),
-  baseURL: getAuthBaseURL(),
+  baseURL: process.env.BETTER_AUTH_URL || "https://vebtask.com",
+  basePath: "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET || "test-secret-key-for-debugging",
   
   // Authentication providers
@@ -66,13 +65,7 @@ export const auth = betterAuth({
     }
   },
   
-  // Pages configuration for redirects
-  pages: {
-    signIn: "/login",
-    signUp: "/register", 
-    resetPassword: "/reset-password",
-    callback: `${getBaseURL()}/dashboard` // Redirect here after successful OAuth
-  },
+  // Pages configuration for redirects (removed callback - let Better Auth handle it)
   
   // Trusted origins for CORS
   trustedOrigins: [
@@ -260,11 +253,6 @@ Veblen Group
         profileEmail: profile?.email 
       });
       return true;
-    },
-    async redirect({ url, baseURL }) {
-      console.log('🔐 Redirect callback:', { url, baseURL });
-      // Always redirect to dashboard after sign in
-      return `${baseURL}/dashboard`;
     },
     async session({ session, token }) {
       console.log('🔐 Session callback:', {
