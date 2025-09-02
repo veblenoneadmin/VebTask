@@ -63,7 +63,9 @@ export const auth = betterAuth({
   
   // Advanced configuration
   advanced: {
-    generateId: () => crypto.randomUUID(),
+    database: {
+      generateId: () => crypto.randomUUID()
+    },
     crossSubDomainCookies: {
       enabled: true,
       domain: process.env.NODE_ENV === 'production' ? '.vebtask.com' : 'localhost'
