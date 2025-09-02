@@ -70,6 +70,11 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 
 
+// Simple health check for Railway (at root path)
+app.get('/health-simple', (req, res) => {
+  res.json({ status: 'ok', service: 'vebtask', timestamp: new Date() });
+});
+
 // Test route
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working!' });
@@ -1989,6 +1994,15 @@ app.get('*', (req, res) => {
     return res.status(404).json({ error: 'API endpoint not found', path: req.path });
   }
   
+  // Handle root path health checks from Railway
+  if (req.path === '/' && (
+    req.headers['user-agent']?.toLowerCase().includes('railway') ||
+    req.headers['x-healthcheck'] ||
+    req.query.health === 'check'
+  )) {
+    return res.json({ status: 'ok', service: 'vebtask', timestamp: new Date() });
+  }
+  
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
@@ -1996,4 +2010,10 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`🔐 Auth endpoints available at /api/auth/*`);
   console.log(`📱 React app available at /`);
+  console.log(`🏥 Health check available at /health-simple`);
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📊 Database URL configured: ${!!process.env.DATABASE_URL}`);
+}).on('error', (err) => {
+  console.error('❌ Server startup error:', err);
+  process.exit(1);
 });

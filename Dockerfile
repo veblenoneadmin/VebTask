@@ -23,5 +23,5 @@ RUN npm run build
 # Expose the port (Railway will set PORT env var dynamically)
 EXPOSE 3001
 
-# Initialize database and start the server
-CMD ["sh", "-c", "sleep 5 && npx prisma generate && npx prisma db push && node server.js"]
+# Generate Prisma client and start the server
+CMD ["sh", "-c", "npx prisma generate && node server.js"]
