@@ -41,7 +41,7 @@ export const auth = betterAuth({
   
   // Session configuration
   session: {
-    strategy: "jwt",
+    strategy: "database",
     maxAge: 60 * 60 * 24 * 30, // 30 days
     updateAge: 60 * 60 * 24, // 24 hours
     cookieName: "vebtask.session",
@@ -273,6 +273,18 @@ Veblen Group
         token.email = user.email;
       }
       return token;
+    }
+  },
+  
+  // Request/Response logging
+  async onRequest(request, response) {
+    if (request.url?.includes('callback') || request.url?.includes('google')) {
+      console.log('🔐 OAuth Request:', {
+        method: request.method,
+        url: request.url,
+        query: request.query,
+        cookies: Object.keys(request.headers?.cookie?.split(';') || [])
+      });
     }
   },
   
