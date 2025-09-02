@@ -86,9 +86,11 @@ export const auth = betterAuth({
     database: {
       generateId: () => crypto.randomUUID()
     },
-    crossSubDomainCookies: {
-      enabled: true,
-      domain: process.env.NODE_ENV === 'production' ? '.vebtask.com' : 'localhost'
+    cookies: {
+      secure: true,
+      sameSite: "lax",
+      httpOnly: true,
+      domain: process.env.NODE_ENV === 'production' ? 'vebtask.com' : undefined
     }
   },
   
@@ -323,8 +325,13 @@ Veblen Group
       name: error.name,
       code: error.code,
       cause: error.cause,
-      stack: error.stack
+      stack: error.stack,
+      fullError: error
     });
+    // Log database errors specifically
+    if (error.message?.includes('database') || error.message?.includes('prisma')) {
+      console.error('Database error details:', error);
+    }
   },
   
   // Rate limiting
