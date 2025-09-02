@@ -72,8 +72,9 @@ app.get('/test', (req, res) => {
 });
 
 // Add logging middleware for auth routes
-app.use('/api/auth/*', (req, res, next) => {
-  console.log(`🔐 Auth ${req.method} ${req.path}`, {
+app.use('/api/auth', (req, res, next) => {
+  console.log(`🔐 Auth ${req.method} ${req.originalUrl}`, {
+    path: req.path,
     fullUrl: req.url,
     query: req.query,
     body: req.method === 'POST' ? req.body : undefined,
