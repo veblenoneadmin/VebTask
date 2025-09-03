@@ -24,6 +24,16 @@ const PORT = process.env.PORT || 3001;
 
 console.log('🚀 Starting server...');
 
+// Environment variable validation (non-blocking)
+const requiredEnvVars = ['DATABASE_URL'];
+const missingEnvVars = requiredEnvVars.filter(env => !process.env[env]);
+if (missingEnvVars.length > 0) {
+  console.warn('⚠️  Missing environment variables:', missingEnvVars.join(', '));
+  console.warn('🔧 Server will start but some features may not work properly');
+} else {
+  console.log('✅ All required environment variables are configured');
+}
+
 // CORS headers with environment-aware configuration
 app.use((req, res, next) => {
   const allowedOrigins = [
