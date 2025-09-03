@@ -13,6 +13,7 @@ import wizardRoutes from './src/routes/wizard.js';
 import statsRoutes from './src/api/stats.js';
 import timersRoutes from './src/api/timers.js';
 import tasksRoutes from './src/api/tasks.js';
+import calendarRoutes from './src/api/calendar.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -186,6 +187,7 @@ app.use('/api/wizard', wizardRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/timers', timersRoutes);
 app.use('/api/tasks', tasksRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Additional custom auth routes (password reset, etc.)
 // Note: Better Auth routes are handled above
