@@ -252,11 +252,13 @@ app.get('/fix-tony-membership', async (req, res) => {
       
       if (!veblenOrg) {
         console.log('🏢 Creating Veblen organization...');
+        console.log('Using actual Tony user ID:', tonyUser.id, 'from database, not config ID:', INTERNAL_CONFIG.ORGANIZATION.ownerId);
+        
         veblenOrg = await prisma.organization.create({
           data: {
             name: INTERNAL_CONFIG.ORGANIZATION.name,
             slug: INTERNAL_CONFIG.ORGANIZATION.slug,
-            createdById: tonyUser.id
+            createdById: tonyUser.id  // Use the actual user ID from database
           }
         });
         console.log(`✅ Created organization: ${veblenOrg.name} (${veblenOrg.id})`);
@@ -334,6 +336,80 @@ app.get('/fix-tony-membership', async (req, res) => {
     console.error('❌ Error fixing membership:', error);
     res.status(500).json({ 
       error: 'Failed to fix membership', 
+      details: error.message 
+    });
+  }
+});
+
+// ==================== DIAGNOSTIC ENDPOINT ====================
+app.get('/debug-tony-user', async (req, res) => {
+  try {
+    console.log('🔍 DIAGNOSTIC: Checking Tony\'s user record...');
+    
+    const { PrismaClient } = await import('@prisma/client');
+    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    
+    const prisma = new PrismaClient();
+    
+    try {
+      // Find Tony by email
+      const tonyByEmail = await prisma.user.findUnique({
+        where: { email: INTERNAL_CONFIG.ORGANIZATION.ownerEmail }
+      });
+      
+      // Find Tony by ID from config
+      const tonyById = await prisma.user.findUnique({
+        where: { id: INTERNAL_CONFIG.ORGANIZATION.ownerId }
+      });
+      
+      // Get all users to see what exists
+      const allUsers = await prisma.user.findMany({
+        select: { id: true, email: true, name: true },
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      });
+      
+      const result = {
+        config: {
+          ownerEmail: INTERNAL_CONFIG.ORGANIZATION.ownerEmail,
+          ownerId: INTERNAL_CONFIG.ORGANIZATION.ownerId
+        },
+        userByEmail: tonyByEmail ? {
+          id: tonyByEmail.id,
+          email: tonyByEmail.email,
+          name: tonyByEmail.name,
+          emailVerified: tonyByEmail.emailVerified
+        } : null,
+        userById: tonyById ? {
+          id: tonyById.id,
+          email: tonyById.email,
+          name: tonyById.name,
+          emailVerified: tonyById.emailVerified
+        } : null,
+        recentUsers: allUsers,
+        diagnosis: {
+          userExistsByEmail: !!tonyByEmail,
+          userExistsById: !!tonyById,
+          idsMatch: tonyByEmail && tonyById && tonyByEmail.id === tonyById.id,
+          recommendation: tonyByEmail && tonyById ? 
+            'IDs match - should work' :
+            tonyByEmail ? 
+            'User exists but config ID is wrong - update config' :
+            'User does not exist - need to create or find correct email'
+        }
+      };
+      
+      console.log('🎯 DIAGNOSTIC RESULT:', result);
+      res.json(result);
+      
+    } finally {
+      await prisma.$disconnect();
+    }
+    
+  } catch (error) {
+    console.error('❌ Diagnostic error:', error);
+    res.status(500).json({ 
+      error: 'Diagnostic failed', 
       details: error.message 
     });
   }
