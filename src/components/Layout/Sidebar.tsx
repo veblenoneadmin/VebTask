@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useSession, signOut } from '../../lib/auth-client';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { hasAdminAccess } from '../../config/internal';
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -17,7 +18,8 @@ import {
   Building2,
   Users,
   FileText,
-  DollarSign
+  DollarSign,
+  Shield
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -34,12 +36,37 @@ const navigation = [
   { name: 'Invoices', href: '/invoices', icon: FileText },
   { name: 'Expenses', href: '/expenses', icon: DollarSign },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
+  { name: 'Administration', href: '/admin', icon: Shield },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const { data: session } = useSession();
+  const [userRole, setUserRole] = useState<string>('CLIENT');
+  
+  // Fetch user role when session is available
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch('/api/organizations');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.organizations && data.organizations.length > 0) {
+              setUserRole(data.organizations[0].role || 'CLIENT');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch user role:', error);
+        }
+      }
+    };
+    
+    if (session) {
+      fetchUserRole();
+    }
+  }, [session]);
 
   const handleSignOut = async () => {
     try {
@@ -71,14 +98,22 @@ const Sidebar: React.FC = () => {
             <img src="/veblen-logo.png" alt="VebTask Logo" className="h-10 w-10 object-contain rounded-lg" />
             <div>
               <h1 className="text-lg font-bold gradient-text">VebTask</h1>
-              <p className="text-xs text-muted-foreground">AI-Powered Task Management</p>
+              <p className="text-xs text-muted-foreground">Veblen Internal</p>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {navigation.map((item) => {
+          {navigation
+            .filter(item => {
+              // Show admin navigation only to admins/owners
+              if (item.name === 'Administration') {
+                return hasAdminAccess(userRole);
+              }
+              return true;
+            })
+            .map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
             
@@ -119,7 +154,7 @@ const Sidebar: React.FC = () => {
                   {session?.user?.email?.split('@')[0] || 'User'}
                 </p>
                 <Badge variant="outline" className="text-xs capitalize">
-                  Admin
+                  {userRole.toLowerCase()}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground truncate">{session?.user?.email}</p>

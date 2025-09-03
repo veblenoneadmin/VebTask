@@ -19,6 +19,7 @@ import { Invoices } from './pages/Invoices';
 import { Expenses } from './pages/Expenses';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
+import { Admin } from './pages/Admin';
 import MainLayout from './components/Layout/MainLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initializeWidgets } from './lib/widgets/widgetRegistry';
@@ -127,6 +128,7 @@ function App() {
             <Route path="expenses" element={<Expenses />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="admin" element={<Admin />} />
           </Route>
           <Route 
             path="/" 
