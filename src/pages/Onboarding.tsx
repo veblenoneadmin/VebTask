@@ -271,21 +271,21 @@ export function Onboarding() {
       case 'welcome':
         return (
           <div className="text-center space-y-6">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center mx-auto shadow-glow">
               <CheckCircle className="w-10 h-10 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Welcome to VebTask!</h2>
-              <p className="text-gray-600 mt-2">
+              <h2 className="text-2xl font-bold gradient-text">Welcome to VebTask!</h2>
+              <p className="text-muted-foreground mt-2">
                 Hi {session?.user?.name || 'there'}! Let's set up your workspace to get you started with task management and team collaboration.
               </p>
             </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-800">
+            <div className="glass-surface p-4 rounded-lg border border-border">
+              <p className="text-sm text-foreground">
                 This quick setup will take about 2-3 minutes and will help you get the most out of VebTask.
               </p>
             </div>
-            <Button onClick={nextStep} className="w-full">
+            <Button onClick={nextStep} className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow transition-all duration-300">
               Let's Get Started
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
@@ -296,18 +296,18 @@ export function Onboarding() {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center mx-auto shadow-glow">
                 <Building2 className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mt-4">Create Your Organization</h2>
-              <p className="text-gray-600 mt-2">
+              <h2 className="text-2xl font-bold gradient-text mt-4">Create Your Organization</h2>
+              <p className="text-muted-foreground mt-2">
                 Your organization is your workspace where you'll manage tasks, projects, and collaborate with your team.
               </p>
             </div>
             
             <div className="space-y-4">
               <div>
-                <label htmlFor="orgName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="orgName" className="block text-sm font-medium text-foreground mb-1">
                   Organization Name *
                 </label>
                 <Input
@@ -316,12 +316,12 @@ export function Onboarding() {
                   placeholder="Enter your organization name"
                   value={organization.name}
                   onChange={(e) => setOrganization({ ...organization, name: e.target.value })}
-                  className="w-full"
+                  className="w-full glass-surface"
                 />
               </div>
               
               <div>
-                <label htmlFor="orgSlug" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="orgSlug" className="block text-sm font-medium text-foreground mb-1">
                   URL Slug (optional)
                 </label>
                 <Input
@@ -330,7 +330,7 @@ export function Onboarding() {
                   placeholder="your-organization"
                   value={organization.slug || ''}
                   onChange={(e) => setOrganization({ ...organization, slug: e.target.value })}
-                  className="w-full"
+                  className="w-full glass-surface"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   This will be used in your organization URL
@@ -339,13 +339,13 @@ export function Onboarding() {
             </div>
 
             <div className="flex space-x-3">
-              <Button variant="outline" onClick={prevStep} className="flex-1">
+              <Button variant="outline" onClick={prevStep} className="flex-1 glass-surface border-border hover:bg-surface-elevated">
                 <ArrowLeft className="mr-2 w-4 h-4" />
                 Back
               </Button>
               <Button 
                 onClick={handleCreateOrganization} 
-                className="flex-1"
+                className="flex-1 bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow transition-all duration-300"
                 disabled={!organization.name.trim() || loading}
               >
                 {loading ? 'Creating...' : 'Create Organization'}
@@ -359,18 +359,18 @@ export function Onboarding() {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow rounded-full flex items-center justify-center mx-auto">
                 <UserCheck className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mt-4">Complete Your Profile</h2>
-              <p className="text-gray-600 mt-2">
+              <h2 className="text-2xl font-bold gradient-text mt-4">Complete Your Profile</h2>
+              <p className="text-muted-foreground mt-2">
                 Help your team know who you are by completing your profile information.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="firstName" className="block text-sm font-medium text-foreground mb-1">
                   First Name
                 </label>
                 <Input
@@ -382,7 +382,7 @@ export function Onboarding() {
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="lastName" className="block text-sm font-medium text-foreground mb-1">
                   Last Name
                 </label>
                 <Input
@@ -394,7 +394,7 @@ export function Onboarding() {
                 />
               </div>
               <div>
-                <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="jobTitle" className="block text-sm font-medium text-foreground mb-1">
                   Job Title
                 </label>
                 <Input
@@ -406,7 +406,7 @@ export function Onboarding() {
                 />
               </div>
               <div>
-                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="company" className="block text-sm font-medium text-foreground mb-1">
                   Company
                 </label>
                 <Input
@@ -424,7 +424,7 @@ export function Onboarding() {
                 <ArrowLeft className="mr-2 w-4 h-4" />
                 Back
               </Button>
-              <Button onClick={nextStep} className="flex-1">
+              <Button onClick={nextStep} className="flex-1 bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow transition-all duration-300">
                 Continue
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
@@ -436,17 +436,17 @@ export function Onboarding() {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow rounded-full flex items-center justify-center mx-auto">
                 <Users className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mt-4">Invite Your Team</h2>
-              <p className="text-gray-600 mt-2">
+              <h2 className="text-2xl font-bold gradient-text mt-4">Invite Your Team</h2>
+              <p className="text-muted-foreground mt-2">
                 Invite team members to collaborate on tasks and projects. You can always do this later from settings.
               </p>
             </div>
 
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-foreground">
                 Team Member Email Addresses
               </label>
               {inviteEmails.map((email, index) => (
@@ -473,7 +473,7 @@ export function Onboarding() {
                 variant="outline"
                 size="sm"
                 onClick={addEmailField}
-                className="w-full"
+                className="w-full glass-surface"
               >
                 Add Another Email
               </Button>
@@ -484,7 +484,7 @@ export function Onboarding() {
                 <ArrowLeft className="mr-2 w-4 h-4" />
                 Back
               </Button>
-              <Button onClick={handleInviteTeam} className="flex-1" disabled={loading}>
+              <Button onClick={handleInviteTeam} className="flex-1 bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow transition-all duration-300" disabled={loading}>
                 {loading ? 'Sending...' : inviteEmails.some(e => e.trim()) ? 'Send Invites' : 'Skip for Now'}
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
@@ -499,12 +499,12 @@ export function Onboarding() {
               <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">You're All Set!</h2>
-              <p className="text-gray-600 mt-2">
+              <h2 className="text-2xl font-bold gradient-text">You're All Set!</h2>
+              <p className="text-muted-foreground mt-2">
                 Welcome to VebTask! Your workspace is ready and you can start managing tasks and collaborating with your team.
               </p>
             </div>
-            <Button onClick={handleCompleteOnboarding} className="w-full" disabled={loading}>
+            <Button onClick={handleCompleteOnboarding} className="w-full glass-surface" disabled={loading}>
               {loading ? 'Setting up...' : 'Go to Dashboard'}
             </Button>
           </div>
@@ -513,26 +513,47 @@ export function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        <Card>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5"></div>
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
+      
+      <div className="w-full max-w-2xl relative z-10">
+        {/* Logo & Brand */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-6">
+            <img src="/veblen-logo.png" alt="VebTask Logo" className="h-16 w-16 object-contain rounded-xl shadow-glow animate-pulse-glow" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold gradient-text">VebTask Setup</h1>
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Let's create your workspace
+            </p>
+          </div>
+        </div>
+
+        <Card className="glass shadow-elevation">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg font-semibold">
+                <CardTitle className="text-lg font-semibold gradient-text">
                   Setup Progress
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-muted-foreground">
                   Step {currentStep + 1} of {steps.length}
                 </CardDescription>
               </div>
               <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">
+                <div className="text-sm font-medium text-foreground">
                   {Math.round(progress)}% Complete
                 </div>
               </div>
             </div>
-            <Progress value={progress} className="w-full" />
+            <Progress value={progress} className="w-full bg-surface-elevated" />
           </CardHeader>
           
           <CardContent className="pt-6">
