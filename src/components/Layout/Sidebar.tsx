@@ -50,15 +50,27 @@ const Sidebar: React.FC = () => {
     const fetchUserRole = async () => {
       if (session?.user?.id) {
         try {
+          console.log('🔍 Fetching organizations for user:', session.user.email);
           const response = await fetch('/api/organizations');
+          console.log('📡 Organizations API response status:', response.status);
+          
           if (response.ok) {
             const data = await response.json();
+            console.log('📋 Organizations data:', data);
+            
             if (data.organizations && data.organizations.length > 0) {
-              setUserRole(data.organizations[0].role || 'CLIENT');
+              const role = data.organizations[0].role || 'CLIENT';
+              console.log('👤 Setting user role to:', role);
+              setUserRole(role);
+            } else {
+              console.log('⚠️ No organizations found, defaulting to CLIENT');
+              setUserRole('CLIENT');
             }
+          } else {
+            console.error('❌ Failed to fetch organizations:', response.status, response.statusText);
           }
         } catch (error) {
-          console.error('Failed to fetch user role:', error);
+          console.error('❌ Failed to fetch user role:', error);
         }
       }
     };
