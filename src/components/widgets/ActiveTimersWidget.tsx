@@ -3,7 +3,7 @@ import { BaseWidget } from './BaseWidget';
 import type { WidgetProps } from '../../lib/widgets/WidgetInterface';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Play, Pause, Square, Clock } from 'lucide-react';
+import { Square, Clock } from 'lucide-react';
 
 interface ActiveTimer {
   id: string;
@@ -91,38 +91,6 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
     }
   };
 
-  const handleRestartTimer = async (timerId: string) => {
-    try {
-      const userId = localStorage.getItem('userId') || 'temp-user-id';
-      const orgId = localStorage.getItem('orgId') || 'temp-org-id';
-      
-      const response = await fetch(`/api/timers/${timerId}/restart`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ userId, orgId })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        // Add new timer to local state
-        setLocalTimers(prevTimers => [...prevTimers, {
-          id: result.timer.id,
-          taskTitle: result.timer.taskTitle,
-          startTime: new Date(result.timer.startTime),
-          duration: 0,
-          status: 'running' as const
-        }]);
-        
-        // Trigger parent refresh
-        props.onRefresh?.();
-      }
-    } catch (error) {
-      console.error('Failed to restart timer:', error);
-    }
-  };
 
   const totalRunningTime = localTimers
     .filter(timer => timer.status === 'running')
