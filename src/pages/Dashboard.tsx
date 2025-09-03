@@ -25,9 +25,9 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   
-  // TODO: Get user's role from organization membership
-  // For now, check if user email indicates client role
-  const userRole = session?.user?.email?.includes('client') ? 'CLIENT' : 'ADMIN';
+  // Get user's role from organization membership
+  const [userRole, setUserRole] = useState<string>('ADMIN');
+  const [orgId, setOrgId] = useState<string>('default');
   
   // If user is a CLIENT, show the client-specific dashboard
   if (userRole === 'CLIENT') {
@@ -37,12 +37,41 @@ export function Dashboard() {
   const userName = session?.user?.email?.split('@')[0]?.replace(/[^a-zA-Z]/g, '') || 'User';
   const displayName = userName.charAt(0).toUpperCase() + userName.slice(1);
   
+  // Fetch user's organization and role
+  useEffect(() => {
+    const fetchUserOrgInfo = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/organizations?userId=${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.organizations && data.organizations.length > 0) {
+            const org = data.organizations[0]; // Use first organization
+            setOrgId(org.id);
+            setUserRole(org.role || 'ADMIN');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user organization info:', error);
+      }
+    };
+
+    if (session?.user?.id) {
+      fetchUserOrgInfo();
+    }
+  }, [session]);
+
   // Initialize dashboard widgets
   useEffect(() => {
     const initializeDashboard = async () => {
       try {
-        // For now, use default layout - later this would come from user preferences
-        const defaultLayout = userRole === 'ADMIN' ? defaultDashboardLayouts.standard : defaultDashboardLayouts.minimal;
+        // Use layout based on user role
+        const defaultLayout = userRole === 'ADMIN' || userRole === 'OWNER' 
+          ? defaultDashboardLayouts.standard 
+          : userRole === 'STAFF'
+          ? defaultDashboardLayouts.minimal
+          : defaultDashboardLayouts.minimal;
         setWidgets(defaultLayout);
         
         // Load initial data for all widgets
@@ -54,17 +83,16 @@ export function Dashboard() {
       }
     };
 
-    if (session?.user) {
+    if (session?.user && orgId !== 'default') {
       initializeDashboard();
     }
-  }, [session, userRole]);
+  }, [session, userRole, orgId]);
 
   // Load data for widgets
   const loadWidgetData = async (widgetInstances: any[]) => {
     if (!session?.user?.id) return;
 
     const data: Record<string, any> = {};
-    const orgId = (session.user as any).orgId || 'default'; // TODO: Get from organization membership
     
     for (const instance of widgetInstances) {
       try {
@@ -83,8 +111,6 @@ export function Dashboard() {
 
   const handleWidgetRefresh = async (instanceId: string, widgetId: string) => {
     if (!session?.user?.id) return;
-    
-    const orgId = (session.user as any).orgId || 'default';
     const fetcher = (widgetDataFetchers as any)[widgetId];
     
     if (fetcher) {
@@ -123,7 +149,7 @@ export function Dashboard() {
           loading={!data && !hasError}
           error={hasError ? data.error : null}
           onRefresh={() => handleWidgetRefresh(instance.instanceId, instance.widgetId)}
-          orgId={(session?.user as any)?.orgId || 'default'}
+          orgId={orgId}
           userId={session?.user?.id || ''}
         />
       </div>

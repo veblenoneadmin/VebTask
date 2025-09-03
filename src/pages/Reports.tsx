@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -99,20 +99,96 @@ export function Reports() {
   const { data: session } = useSession();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [selectedReport, setSelectedReport] = useState<'overview' | 'financial' | 'projects' | 'clients'>('overview');
+  const [loading, setLoading] = useState(true);
+  const [orgId, setOrgId] = useState('default');
+  
+  // API Data State
+  const [financialData, setFinancialData] = useState<ReportData[]>([]);
+  const [projectData, setProjectData] = useState<any[]>([]);
+  const [clientData, setClientData] = useState<any[]>([]);
+  const [summaryData, setSummaryData] = useState<any>({});
 
-  const currentData = mockReportData[0];
-  const previousData = mockReportData[1];
+  // Fetch user's organization
+  useEffect(() => {
+    const fetchUserOrgInfo = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/organizations?userId=${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.organizations && data.organizations.length > 0) {
+            setOrgId(data.organizations[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user organization:', error);
+      }
+    };
+
+    if (session?.user?.id) {
+      fetchUserOrgInfo();
+    }
+  }, [session]);
+
+  // Fetch report data
+  useEffect(() => {
+    const fetchReportData = async () => {
+      if (!session?.user?.id || orgId === 'default') return;
+      
+      setLoading(true);
+      try {
+        const [financialRes, projectRes, clientRes, summaryRes] = await Promise.all([
+          fetch(`/api/reports/financial?orgId=${orgId}&period=${selectedPeriod}`),
+          fetch(`/api/reports/projects?orgId=${orgId}`),
+          fetch(`/api/reports/clients?orgId=${orgId}`),
+          fetch(`/api/reports/summary?orgId=${orgId}`)
+        ]);
+
+        if (financialRes.ok) {
+          const financial = await financialRes.json();
+          setFinancialData(financial.data || []);
+        }
+
+        if (projectRes.ok) {
+          const projects = await projectRes.json();
+          setProjectData(projects.data || []);
+        }
+
+        if (clientRes.ok) {
+          const clients = await clientRes.json();
+          setClientData(clients.data || []);
+        }
+
+        if (summaryRes.ok) {
+          const summary = await summaryRes.json();
+          setSummaryData(summary.summary || {});
+        }
+      } catch (error) {
+        console.error('Failed to fetch report data:', error);
+        // Fallback to mock data
+        setFinancialData(mockReportData);
+        setProjectData(projectPerformance);
+        setClientData(clientMetrics);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReportData();
+  }, [session, orgId, selectedPeriod]);
+
+  const currentData = financialData[0] || mockReportData[0];
+  const previousData = financialData[1] || mockReportData[1];
 
   const calculateGrowth = (current: number, previous: number) => {
     if (previous === 0) return 0;
     return ((current - previous) / previous) * 100;
   };
 
-  const revenueGrowth = calculateGrowth(currentData.revenue, previousData.revenue);
-  const profitGrowth = calculateGrowth(currentData.profit, previousData.profit);
-  const hoursGrowth = calculateGrowth(currentData.hoursTracked, previousData.hoursTracked);
-
-  console.log(session);
+  const revenueGrowth = summaryData.revenue?.trend || calculateGrowth(currentData.revenue, previousData.revenue);
+  const profitGrowth = summaryData.profit?.trend || calculateGrowth(currentData.profit, previousData.profit);
+  const hoursGrowth = summaryData.hours?.trend || calculateGrowth(currentData.hoursTracked, previousData.hoursTracked);
 
   const getProjectStatusColor = (status: string) => {
     switch (status) {
@@ -123,6 +199,30 @@ export function Reports() {
       default: return 'text-muted-foreground bg-muted/10 border-border';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold gradient-text">Reports & Analytics</h1>
+            <p className="text-muted-foreground mt-2">Loading business insights...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="glass p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-1/2 mb-4"></div>
+                <div className="h-3 bg-muted rounded w-2/3"></div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -371,7 +471,7 @@ export function Reports() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {projectPerformance.map((project) => (
+                {projectData.map((project) => (
                   <div key={project.name} className="p-4 glass-surface rounded-lg">
                     <div className="flex items-center justify-between mb-3">
                       <div>
@@ -447,7 +547,7 @@ export function Reports() {
                     </tr>
                   </thead>
                   <tbody>
-                    {clientMetrics.map((client) => (
+                    {clientData.map((client) => (
                       <tr key={client.name} className="border-b border-border hover:bg-surface-elevated/50 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center space-x-3">

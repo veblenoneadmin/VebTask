@@ -18,6 +18,7 @@ import invoicesRoutes from './src/api/invoices.js';
 import projectsRoutes from './src/api/projects.js';
 import clientsRoutes from './src/api/clients.js';
 import expensesRoutes from './src/api/expenses.js';
+import reportsRoutes from './src/api/reports.js';
 import passwordResetRoutes from './src/routes/password-reset.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -207,6 +208,7 @@ app.use('/api/invoices', invoicesRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/expenses', expensesRoutes);
+app.use('/api/reports', reportsRoutes);
 app.use('/api/auth', passwordResetRoutes);
 
 // Additional custom auth routes (password reset, etc.)

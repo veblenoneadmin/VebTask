@@ -1,10 +1,11 @@
 // Widget statistics API endpoints
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
+import { requireAuth } from '../lib/rbac.js';
 const router = express.Router();
 
 // Tasks completed today endpoint
-router.get('/tasks-completed-today', async (req, res) => {
+router.get('/tasks-completed-today', requireAuth, async (req, res) => {
   try {
     const { orgId } = req.query;
     
@@ -62,7 +63,7 @@ router.get('/tasks-completed-today', async (req, res) => {
 });
 
 // Time tracked today endpoint
-router.get('/time-today', async (req, res) => {
+router.get('/time-today', requireAuth, async (req, res) => {
   try {
     const { orgId, userId } = req.query;
     
@@ -132,7 +133,7 @@ router.get('/time-today', async (req, res) => {
 });
 
 // Active projects count endpoint
-router.get('/active-projects', async (req, res) => {
+router.get('/active-projects', requireAuth, async (req, res) => {
   try {
     const { orgId } = req.query;
     
@@ -185,7 +186,7 @@ router.get('/active-projects', async (req, res) => {
 });
 
 // Team members count endpoint
-router.get('/team-members', async (req, res) => {
+router.get('/team-members', requireAuth, async (req, res) => {
   try {
     const { orgId } = req.query;
     
@@ -231,7 +232,7 @@ router.get('/team-members', async (req, res) => {
 
 
 // Productivity score endpoint
-router.get('/productivity', async (req, res) => {
+router.get('/productivity', requireAuth, async (req, res) => {
   try {
     const { orgId, userId } = req.query;
     
@@ -317,7 +318,7 @@ router.get('/productivity', async (req, res) => {
 });
 
 // Overdue tasks endpoint
-router.get('/overdue-tasks', async (req, res) => {
+router.get('/overdue-tasks', requireAuth, async (req, res) => {
   try {
     const { orgId } = req.query;
     

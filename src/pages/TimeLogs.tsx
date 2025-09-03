@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -134,13 +134,81 @@ const mockTimeLogs: TimeLog[] = [
 
 export function TimeLogs() {
   const { data: session } = useSession();
-  console.log(session);
-  const [timeLogs] = useState<TimeLog[]>(mockTimeLogs);
-  console.log(timeLogs);
+  const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [orgId, setOrgId] = useState('default');
   const [selectedDateRange, setSelectedDateRange] = useState<'today' | 'week' | 'month' | 'custom'>('week');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterClient, setFilterClient] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Fetch user's organization
+  useEffect(() => {
+    const fetchUserOrgInfo = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/organizations?userId=${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.organizations && data.organizations.length > 0) {
+            setOrgId(data.organizations[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user organization:', error);
+      }
+    };
+
+    if (session?.user?.id) {
+      fetchUserOrgInfo();
+    }
+  }, [session]);
+
+  // Fetch time logs
+  useEffect(() => {
+    const fetchTimeLogs = async () => {
+      if (!session?.user?.id || orgId === 'default') return;
+      
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/timers/recent?userId=${session.user.id}&orgId=${orgId}&limit=50`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Transform API data to match our TimeLog interface
+          const transformedLogs: TimeLog[] = data.entries.map((entry: any) => ({
+            id: entry.id,
+            taskTitle: entry.taskTitle || 'Untitled Task',
+            projectName: 'Unknown Project', // TODO: Add project name from API
+            clientName: 'Unknown Client', // TODO: Add client name from API
+            date: entry.startTime ? new Date(entry.startTime).toISOString().split('T')[0] : '',
+            startTime: entry.startTime ? new Date(entry.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '',
+            endTime: entry.endTime ? new Date(entry.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '',
+            duration: entry.duration ? Math.round(entry.duration / 60) : 0, // Convert seconds to minutes
+            description: entry.description || 'No description',
+            isBillable: true, // TODO: Add billable field to API
+            hourlyRate: 95, // TODO: Add hourly rate from API
+            earnings: entry.duration ? Math.round(entry.duration / 60 / 60 * 95) : 0, // Calculate earnings
+            tags: [entry.category].filter(Boolean),
+            status: entry.status === 'running' ? 'logged' : 'logged' // TODO: Add proper status field
+          }));
+          
+          setTimeLogs(transformedLogs);
+        } else {
+          console.error('Failed to fetch time logs');
+          setTimeLogs(mockTimeLogs); // Fallback to mock data
+        }
+      } catch (error) {
+        console.error('Error fetching time logs:', error);
+        setTimeLogs(mockTimeLogs); // Fallback to mock data
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTimeLogs();
+  }, [session, orgId]);
 
   const filteredLogs = timeLogs.filter(log => {
     const matchesSearch = log.taskTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -177,6 +245,41 @@ export function TimeLogs() {
   };
 
   const uniqueClients = [...new Set(timeLogs.map(log => log.clientName))];
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold gradient-text">Time Tracking</h1>
+            <p className="text-muted-foreground mt-2">Loading your time logs...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="glass p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-1/2"></div>
+              </div>
+            </Card>
+          ))}
+        </div>
+        <Card className="glass">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

@@ -515,10 +515,10 @@ export function Onboarding() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-success/5"></div>
       <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-success/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
       
       <div className="w-full max-w-2xl relative z-10">
@@ -528,10 +528,10 @@ export function Onboarding() {
             <img src="/veblen-logo.png" alt="VebTask Logo" className="h-16 w-16 object-contain rounded-xl shadow-glow animate-pulse-glow" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold gradient-text">VebTask Setup</h1>
+            <h1 className="text-3xl font-bold gradient-text">VebTask</h1>
             <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
               <Building2 className="h-4 w-4" />
-              Let's create your workspace
+              AI-Powered Task Management
             </p>
           </div>
         </div>
