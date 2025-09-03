@@ -204,9 +204,39 @@ export function Onboarding() {
     if (validEmails.length > 0) {
       setLoading(true);
       try {
-        // Send invitations (implement later)
+        // Send invitations using the API
         console.log('Sending invitations to:', validEmails);
-        // For now, just proceed to completion
+        
+        // Get the current user's organization ID (assuming first org for now)
+        const orgResponse = await fetch(`/api/organizations?userId=${session?.user?.id}`);
+        if (orgResponse.ok) {
+          const orgData = await orgResponse.json();
+          const organizationId = orgData.organizations?.[0]?.id;
+          
+          if (organizationId) {
+            // Send invites for each email
+            for (const email of validEmails) {
+              const inviteResponse = await fetch(`/api/invites`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  email: email.trim(),
+                  role: 'STAFF',
+                  organizationId: organizationId,
+                  message: 'Join our team on VebTask!'
+                }),
+              });
+              
+              if (inviteResponse.ok) {
+                console.log(`✅ Invite sent to ${email}`);
+              } else {
+                console.error(`❌ Failed to send invite to ${email}`);
+              }
+            }
+          }
+        }
         nextStep();
       } catch (error) {
         console.error('Error sending invitations:', error);

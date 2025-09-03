@@ -129,9 +129,45 @@ export function OrgMembers() {
     }
   };
 
-  const handleInviteSend = () => {
-    // TODO: Implement actual invite API call
-    console.log('Sending invite to:', inviteEmail, 'with role:', inviteRole);
+  const handleInviteSend = async () => {
+    if (!inviteEmail || !session?.user?.id) return;
+    
+    try {
+      // Get the current user's organization ID
+      const orgResponse = await fetch(`/api/organizations?userId=${session.user.id}`);
+      if (orgResponse.ok) {
+        const orgData = await orgResponse.json();
+        const organizationId = orgData.organizations?.[0]?.id;
+        
+        if (organizationId) {
+          const inviteResponse = await fetch(`/api/invites`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: inviteEmail.trim(),
+              role: inviteRole,
+              organizationId: organizationId,
+              message: `You've been invited to join our team on VebTask!`
+            }),
+          });
+          
+          if (inviteResponse.ok) {
+            console.log(`✅ Invite sent to ${inviteEmail}`);
+            // TODO: Show success message to user
+            // TODO: Refresh invites list
+          } else {
+            console.error(`❌ Failed to send invite to ${inviteEmail}`);
+            // TODO: Show error message to user
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      // TODO: Show error message to user
+    }
+    
     setShowInviteDialog(false);
     setInviteEmail('');
     setInviteRole('STAFF');
