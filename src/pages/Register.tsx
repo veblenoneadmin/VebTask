@@ -49,19 +49,36 @@ export function Register() {
         name: fullName,
       });
 
+      console.log('🔍 Registration result:', result);
+
       if (result.error) {
+        console.error('❌ Registration error:', result.error);
         setError(result.error.message || 'Registration failed');
-      } else if (result.data && !result.data.token) {
-        // Email verification required - show success message
+      } else if (result.data) {
+        console.log('✅ Registration successful:', result.data);
+        // Check if user needs email verification
+        if (!result.data.user?.emailVerified) {
+          console.log('📧 Email verification required');
+          setUserEmail(email);
+          setEmailSent(true);
+        } else {
+          console.log('🚀 User already verified, redirecting to dashboard');
+          navigate('/dashboard');
+        }
+      } else {
+        console.log('📧 No result data, assuming email verification needed');
+        // Fallback: assume email verification is required
         setUserEmail(email);
         setEmailSent(true);
-      } else {
-        // Direct login (no email verification) - go to dashboard
-        navigate('/dashboard');
       }
     } catch (err) {
+      console.error('❌ Caught registration error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
       setError('An error occurred during registration');
-      console.error('Registration error:', err);
     } finally {
       setLoading(false);
     }
