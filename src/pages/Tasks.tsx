@@ -509,7 +509,7 @@ export function Tasks() {
                 </div>
               </div>
               ))
-            }
+            )}
           </div>
         </CardContent>
       </Card>
