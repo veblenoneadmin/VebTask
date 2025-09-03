@@ -95,19 +95,36 @@ router.post('/', requireAuth, async (req, res) => {
 
     // Create organization and membership in a transaction
     const result = await prisma.$transaction(async (tx) => {
+      // Ensure user exists in our database (upsert from Better Auth session)
+      const user = await tx.user.upsert({
+        where: { id: req.user.id },
+        update: {
+          name: req.user.name,
+          email: req.user.email,
+          image: req.user.image
+        },
+        create: {
+          id: req.user.id,
+          name: req.user.name || '',
+          email: req.user.email,
+          emailVerified: new Date(), // Assume verified from Better Auth
+          image: req.user.image
+        }
+      });
+
       // Create organization
       const organization = await tx.organization.create({
         data: {
           name,
           slug,
-          createdById: req.user.id
+          createdById: user.id
         }
       });
 
       // Create OWNER membership for creator
       const membership = await tx.membership.create({
         data: {
-          userId: req.user.id,
+          userId: user.id,
           orgId: organization.id,
           role: 'OWNER'
         }
