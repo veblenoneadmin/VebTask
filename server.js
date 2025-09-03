@@ -411,14 +411,26 @@ app.get('/quick-fix-membership', async (req, res) => {
       });
       
       if (!veblenOrg) {
-        console.log('🏢 Creating Veblen organization...');
-        veblenOrg = await prisma.organization.create({
-          data: {
-            name: INTERNAL_CONFIG.ORGANIZATION.name,
-            slug: INTERNAL_CONFIG.ORGANIZATION.slug,
-            createdById: tonyUser.id
-          }
+        console.log('🏢 Creating Veblen organization with raw SQL...');
+        
+        // Use raw SQL to avoid foreign key constraint issues
+        const orgId = `org_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await prisma.$executeRaw`
+          INSERT INTO organizations (id, name, slug, createdAt, updatedAt)
+          VALUES (
+            ${orgId},
+            ${INTERNAL_CONFIG.ORGANIZATION.name}, 
+            ${INTERNAL_CONFIG.ORGANIZATION.slug}, 
+            NOW(), 
+            NOW()
+          )
+        `;
+        
+        // Fetch the created organization
+        veblenOrg = await prisma.organization.findUnique({
+          where: { slug: INTERNAL_CONFIG.ORGANIZATION.slug }
         });
+        
         console.log('✅ Created organization:', veblenOrg.name, 'ID:', veblenOrg.id);
       } else {
         console.log('✅ Found organization:', veblenOrg.name, 'ID:', veblenOrg.id);
