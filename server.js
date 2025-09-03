@@ -477,6 +477,89 @@ app.get('/fix-tony-membership-raw', async (req, res) => {
   }
 });
 
+// ==================== MINIMAL FIX - JUST CREATE MEMBERSHIP ====================
+app.get('/fix-tony-minimal', async (req, res) => {
+  try {
+    console.log('🔧 MINIMAL: Just creating Tony\'s membership...');
+    
+    const { PrismaClient } = await import('@prisma/client');
+    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    
+    const prisma = new PrismaClient();
+    
+    try {
+      // Step 1: Create a simple organization record with minimal data
+      console.log('📝 Creating minimal organization...');
+      
+      const orgId = `org_${Date.now()}`;
+      
+      await prisma.$executeRaw`
+        INSERT IGNORE INTO organizations (id, name, slug, createdById, createdAt, updatedAt) 
+        VALUES (
+          ${orgId},
+          'Veblen', 
+          'veblen', 
+          'system-created',
+          NOW(), 
+          NOW()
+        )
+      `;
+      
+      // Step 2: Create membership directly
+      console.log('👑 Creating membership...');
+      
+      const membershipId = `mem_${Date.now()}`;
+      
+      await prisma.$executeRaw`
+        INSERT IGNORE INTO memberships (id, userId, orgId, role, createdAt, updatedAt)
+        VALUES (
+          ${membershipId},
+          ${INTERNAL_CONFIG.ORGANIZATION.ownerId},
+          (SELECT id FROM organizations WHERE slug = 'veblen' LIMIT 1),
+          'OWNER',
+          NOW(),
+          NOW()
+        )
+      `;
+      
+      // Step 3: Verify by checking if we can fetch organizations now
+      const organizations = await prisma.membership.findMany({
+        where: { userId: INTERNAL_CONFIG.ORGANIZATION.ownerId },
+        include: {
+          org: { select: { name: true, slug: true } }
+        }
+      });
+      
+      const result = {
+        success: true,
+        message: 'Minimal fix complete! Refresh the page.',
+        memberships: organizations.map(m => ({
+          role: m.role,
+          organization: m.org.name,
+          slug: m.org.slug
+        })),
+        debug: {
+          membershipCount: organizations.length,
+          userId: INTERNAL_CONFIG.ORGANIZATION.ownerId
+        }
+      };
+      
+      console.log('🎉 MINIMAL SUCCESS:', result);
+      res.json(result);
+      
+    } finally {
+      await prisma.$disconnect();
+    }
+    
+  } catch (error) {
+    console.error('❌ Minimal fix failed:', error);
+    res.status(500).json({ 
+      error: 'Minimal fix failed', 
+      details: error.message 
+    });
+  }
+});
+
 // ==================== DIAGNOSTIC ENDPOINT ====================
 app.get('/debug-tony-user', async (req, res) => {
   try {
