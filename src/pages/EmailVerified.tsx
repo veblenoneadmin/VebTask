@@ -108,9 +108,9 @@ export function EmailVerified() {
             {status !== 'loading' && (
               <div className="space-y-3">
                 {status === 'success' && (
-                  <Link to="/login" className="block">
+                  <Link to="/onboarding" className="block">
                     <Button className="w-full bg-gradient-success hover:bg-gradient-success/90 text-white shadow-glow transition-all duration-300">
-                      Sign In to Your Account
+                      Continue to Setup
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>

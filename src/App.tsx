@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSession } from './lib/auth-client';
+import { useState, useEffect } from 'react';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ForgotPassword } from './pages/ForgotPassword';
@@ -27,8 +28,33 @@ initializeWidgets();
 
 function App() {
   const { data: session, isPending } = useSession();
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
-  if (isPending) {
+  // Check if user needs onboarding when session is available
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (session?.user?.id) {
+        try {
+          const { userNeedsOnboarding } = await import('./lib/wizard.js');
+          const needs = await userNeedsOnboarding(session.user.id);
+          setNeedsOnboarding(needs);
+        } catch (error) {
+          console.error('Error checking onboarding status:', error);
+          setNeedsOnboarding(true); // Default to requiring onboarding
+        }
+      }
+      setCheckingOnboarding(false);
+    };
+
+    if (session) {
+      checkOnboardingStatus();
+    } else {
+      setCheckingOnboarding(false);
+    }
+  }, [session]);
+
+  if (isPending || (session && checkingOnboarding)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-surface to-surface-elevated">
         <div className="flex flex-col items-center space-y-6 animate-fade-in">
@@ -79,7 +105,11 @@ function App() {
           />
           <Route 
             path="/*" 
-            element={session ? <MainLayout /> : <Navigate to="/login" replace />}
+            element={
+              session ? 
+                (needsOnboarding ? <Navigate to="/onboarding" replace /> : <MainLayout />) :
+                <Navigate to="/login" replace />
+            }
           >
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="brain-dump" element={<BrainDump />} />
@@ -97,7 +127,9 @@ function App() {
           <Route 
             path="/" 
             element={
-              session ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+              session ? 
+                (needsOnboarding ? <Navigate to="/onboarding" replace /> : <Navigate to="/dashboard" replace />) :
+                <Navigate to="/login" replace />
             } 
           />
           </Routes>
