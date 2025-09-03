@@ -140,6 +140,16 @@ export function Login() {
                 </div>
               </div>
 
+              {/* Forgot Password Link */}
+              <div className="text-right">
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm text-primary hover:text-primary/80 transition-colors"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+
               {/* Error Message */}
               {error && (
                 <div className="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm">

@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useSession } from './lib/auth-client';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 import { EmailVerified } from './pages/EmailVerified';
 import { Onboarding } from './pages/Onboarding';
 import { Dashboard } from './pages/Dashboard';
@@ -58,6 +60,14 @@ function App() {
           <Route 
             path="/register" 
             element={session ? <Navigate to="/dashboard" replace /> : <Register />} 
+          />
+          <Route 
+            path="/forgot-password" 
+            element={session ? <Navigate to="/dashboard" replace /> : <ForgotPassword />} 
+          />
+          <Route 
+            path="/reset-password" 
+            element={session ? <Navigate to="/dashboard" replace /> : <ResetPassword />} 
           />
           <Route 
             path="/email-verified" 

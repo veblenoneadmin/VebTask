@@ -12,11 +12,13 @@ import { useAuthConfig } from '../hooks/useAuthConfig';
 export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const navigate = useNavigate();
@@ -29,6 +31,12 @@ export function Register() {
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
@@ -195,8 +203,40 @@ export function Register() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </div>
+
+              {/* Confirm Password Input */}
+              <div className="space-y-2">
+                <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-white/80 z-10" />
+                  <Input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 pr-10 glass-surface"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-3 text-white/80 hover:text-white z-10 transition-colors"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Password must be at least 6 characters long
+                  {password.length > 0 && confirmPassword.length > 0 && password !== confirmPassword ? (
+                    <span className="text-red-400">❌ Passwords do not match</span>
+                  ) : password.length > 0 && confirmPassword.length > 0 && password === confirmPassword ? (
+                    <span className="text-green-400">✅ Passwords match</span>
+                  ) : (
+                    'Password must be at least 6 characters long'
+                  )}
                 </p>
               </div>
 
