@@ -382,6 +382,73 @@ app.get('/fix-tony-membership', async (req, res) => {
   }
 });
 
+// ==================== CHECK DATABASE STRUCTURE ====================
+app.get('/debug-database-structure', async (req, res) => {
+  try {
+    console.log('🔍 Checking database structure...');
+    
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    try {
+      // Check table names
+      const tables = await prisma.$queryRaw`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = DATABASE()
+      `;
+      
+      // Check user table structure
+      const userTableStructure = await prisma.$queryRaw`
+        DESCRIBE user
+      `;
+      
+      // Check organizations table structure if it exists
+      let orgTableStructure = null;
+      try {
+        orgTableStructure = await prisma.$queryRaw`
+          DESCRIBE organizations
+        `;
+      } catch (e) {
+        console.log('Organizations table does not exist');
+      }
+      
+      // Check foreign key constraints
+      const foreignKeys = await prisma.$queryRaw`
+        SELECT 
+          CONSTRAINT_NAME,
+          TABLE_NAME,
+          COLUMN_NAME,
+          REFERENCED_TABLE_NAME,
+          REFERENCED_COLUMN_NAME
+        FROM information_schema.KEY_COLUMN_USAGE 
+        WHERE REFERENCED_TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME IN ('organizations', 'memberships')
+      `;
+      
+      const result = {
+        tables,
+        userTableStructure,
+        orgTableStructure,
+        foreignKeys
+      };
+      
+      console.log('📊 Database Structure:', JSON.stringify(result, null, 2));
+      res.json(result);
+      
+    } finally {
+      await prisma.$disconnect();
+    }
+    
+  } catch (error) {
+    console.error('❌ Error checking database structure:', error);
+    res.status(500).json({ 
+      error: 'Failed to check database structure', 
+      details: error.message 
+    });
+  }
+});
+
 // ==================== SIMPLE FIX ENDPOINT (RAW SQL) ====================
 app.get('/fix-tony-membership-raw', async (req, res) => {
   try {

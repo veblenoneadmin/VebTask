@@ -23,21 +23,21 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-// Navigation items - for now we'll show all features to see the layout
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Brain Dump', href: '/brain-dump', icon: Brain },
-  { name: 'Timer', href: '/timer', icon: Timer },
-  { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-  { name: 'Calendar', href: '/calendar', icon: Calendar },
-  { name: 'Projects', href: '/projects', icon: Building2 },
-  { name: 'Time Logs', href: '/timesheets', icon: Clock },
-  { name: 'Clients', href: '/clients', icon: Users },
-  { name: 'Invoices', href: '/invoices', icon: FileText },
-  { name: 'Expenses', href: '/expenses', icon: DollarSign },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
-  { name: 'Administration', href: '/admin', icon: Shield },
-  { name: 'Settings', href: '/settings', icon: Settings },
+// Navigation items with role-based access control
+const getAllNavigationItems = () => [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
+  { name: 'Brain Dump', href: '/brain-dump', icon: Brain, roles: ['OWNER', 'ADMIN', 'STAFF'] },
+  { name: 'Timer', href: '/timer', icon: Timer, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
+  { name: 'My Tasks', href: '/tasks', icon: CheckSquare, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
+  { name: 'Calendar', href: '/calendar', icon: Calendar, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
+  { name: 'Projects', href: '/projects', icon: Building2, roles: ['OWNER', 'ADMIN', 'STAFF'] },
+  { name: 'Time Logs', href: '/timesheets', icon: Clock, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
+  { name: 'Clients', href: '/clients', icon: Users, roles: ['OWNER', 'ADMIN', 'STAFF'] },
+  { name: 'Invoices', href: '/invoices', icon: FileText, roles: ['OWNER', 'ADMIN', 'STAFF'] },
+  { name: 'Expenses', href: '/expenses', icon: DollarSign, roles: ['OWNER', 'ADMIN', 'STAFF'] },
+  { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['OWNER', 'ADMIN', 'STAFF'] },
+  { name: 'Administration', href: '/admin', icon: Shield, roles: ['OWNER', 'ADMIN'] },
+  { name: 'Settings', href: '/settings', icon: Settings, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
 ];
 
 const Sidebar: React.FC = () => {
@@ -117,13 +117,14 @@ const Sidebar: React.FC = () => {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {navigation
+          {getAllNavigationItems()
             .filter(item => {
               // Show admin navigation only to admins/owners
               if (item.name === 'Administration') {
                 return hasAdminAccess(userRole);
               }
-              return true;
+              // Filter based on user role
+              return item.roles.includes(userRole);
             })
             .map((item) => {
             const Icon = item.icon;

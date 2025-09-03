@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 import { 
   Users, 
   UserPlus, 
@@ -204,95 +207,101 @@ export function Admin() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Administration</h1>
-          <p className="text-gray-600">Manage users, permissions, and system settings</p>
+          <h1 className="text-3xl font-bold gradient-text">Administration</h1>
+          <p className="text-muted-foreground">Manage users, permissions, and system settings</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Building2 className="w-5 h-5 text-blue-600" />
-          <span className="font-medium text-gray-900">Veblen Organization</span>
+          <Building2 className="w-5 h-5 text-primary" />
+          <span className="font-medium text-foreground">Veblen Organization</span>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="glass p-6 shadow-elevation">
           <div className="flex items-center">
-            <Users className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+            <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow mr-4">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+              <p className="text-2xl font-bold text-foreground">{users.length}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="glass p-6 shadow-elevation">
           <div className="flex items-center">
-            <Mail className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending Invites</p>
-              <p className="text-2xl font-bold text-gray-900">{invites.filter(i => i.status === 'PENDING').length}</p>
+            <div className="h-12 w-12 rounded-xl bg-gradient-success flex items-center justify-center shadow-glow mr-4">
+              <Mail className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Pending Invites</p>
+              <p className="text-2xl font-bold text-foreground">{invites.filter(i => i.status === 'PENDING').length}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="glass p-6 shadow-elevation">
           <div className="flex items-center">
-            <Clock className="w-8 h-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Sessions</p>
-              <p className="text-2xl font-bold text-gray-900">{users.filter(u => u.memberships.length > 0).length}</p>
+            <div className="h-12 w-12 rounded-xl bg-gradient-info flex items-center justify-center shadow-glow mr-4">
+              <Clock className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Active Sessions</p>
+              <p className="text-2xl font-bold text-foreground">{users.filter(u => u.memberships.length > 0).length}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="glass p-6 shadow-elevation">
           <div className="flex items-center">
-            <BarChart3 className="w-8 h-8 text-orange-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Tasks</p>
-              <p className="text-2xl font-bold text-gray-900">{users.reduce((acc, u) => acc + u._count.createdTasks, 0)}</p>
+            <div className="h-12 w-12 rounded-xl bg-gradient-warning flex items-center justify-center shadow-glow mr-4">
+              <BarChart3 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
+              <p className="text-2xl font-bold text-foreground">{users.reduce((acc, u) => acc + u._count.createdTasks, 0)}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'users'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Users className="w-4 h-4 inline-block mr-2" />
-            Users ({users.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('invites')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'invites'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Mail className="w-4 h-4 inline-block mr-2" />
-            Invitations ({invites.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'settings'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Settings className="w-4 h-4 inline-block mr-2" />
-            System Settings
-          </button>
-        </nav>
+      <div className="flex space-x-1 glass p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center ${
+            activeTab === 'users'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground hover:bg-surface-elevated'
+          }`}
+        >
+          <Users className="w-4 h-4 mr-2" />
+          Users ({users.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('invites')}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center ${
+            activeTab === 'invites'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground hover:bg-surface-elevated'
+          }`}
+        >
+          <Mail className="w-4 h-4 mr-2" />
+          Invitations ({invites.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center ${
+            activeTab === 'settings'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground hover:bg-surface-elevated'
+          }`}
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          System Settings
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -310,29 +319,36 @@ export function Admin() {
           </div>
 
           {/* Users Table */}
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Activity
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+          <Card className="glass shadow-elevation">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2 h-5 w-5" />
+                Organization Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-surface-elevated/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Activity
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="glass divide-y divide-border">
                   {users.map((user) => (
                     <tr key={user.id}>
                       <td className="px-6 py-4 whitespace-nowrap">

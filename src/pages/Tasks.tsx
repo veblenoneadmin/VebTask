@@ -131,7 +131,35 @@ export function Tasks() {
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
+  const [userRole, setUserRole] = useState<string>('CLIENT');
   console.log('New task form visible:', showNewTaskForm);
+
+  // Fetch user role
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch('/api/organizations');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.organizations && data.organizations.length > 0) {
+              const role = data.organizations[0].role || 'CLIENT';
+              setUserRole(role);
+            } else {
+              setUserRole('CLIENT');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch user role:', error);
+          setUserRole('CLIENT');
+        }
+      }
+    };
+    
+    if (session) {
+      fetchUserRole();
+    }
+  }, [session]);
 
   // Fetch tasks from API
   useEffect(() => {
@@ -172,7 +200,12 @@ export function Tasks() {
     const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
     const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
     
-    return matchesSearch && matchesStatus && matchesPriority;
+    // If user is CLIENT, only show tasks assigned to them
+    const matchesAssignment = userRole !== 'CLIENT' || 
+                             task.assignee === 'Current User' || 
+                             task.assignee === session?.user?.email;
+    
+    return matchesSearch && matchesStatus && matchesPriority && matchesAssignment;
   });
 
   const getPriorityColor = (priority: string) => {
@@ -244,16 +277,24 @@ export function Tasks() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Task Management</h1>
-          <p className="text-muted-foreground mt-2">Organize, prioritize, and track your work</p>
+          <h1 className="text-3xl font-bold gradient-text">
+            {userRole === 'CLIENT' ? 'My Tasks' : 'Task Management'}
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            {userRole === 'CLIENT' 
+              ? 'View and track tasks assigned to you' 
+              : 'Organize, prioritize, and track your work'}
+          </p>
         </div>
-        <Button 
-          onClick={() => setShowNewTaskForm(true)}
-          className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow transition-all duration-300"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Task
-        </Button>
+        {userRole !== 'CLIENT' && (
+          <Button 
+            onClick={() => setShowNewTaskForm(true)}
+            className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow transition-all duration-300"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Task
+          </Button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -482,31 +523,40 @@ export function Tasks() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 ml-4">
-                  <select
-                    value={task.status}
-                    onChange={(e) => handleStatusUpdate(task.id, e.target.value as Task['status'])}
-                    className="px-2 py-1 text-xs glass-surface border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="not_started">Not Started</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="on_hold">On Hold</option>
-                  </select>
-                  
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                  
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 w-8 p-0 text-error hover:text-error"
-                    onClick={() => handleDeleteTask(task.id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
+                {userRole !== 'CLIENT' && (
+                  <div className="flex items-center gap-2 ml-4">
+                    <select
+                      value={task.status}
+                      onChange={(e) => handleStatusUpdate(task.id, e.target.value as Task['status'])}
+                      className="px-2 py-1 text-xs glass-surface border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="not_started">Not Started</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="on_hold">On Hold</option>
+                    </select>
+                    
+                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-8 w-8 p-0 text-error hover:text-error"
+                      onClick={() => handleDeleteTask(task.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+                {userRole === 'CLIENT' && (
+                  <div className="flex items-center gap-2 ml-4">
+                    <Badge variant="outline" className="text-xs">
+                      Read-only
+                    </Badge>
+                  </div>
+                )}
               </div>
               ))
             )}

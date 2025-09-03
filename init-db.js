@@ -1,7 +1,7 @@
 import mysql from 'mysql2/promise';
 
 const connectionString = process.env.DATABASE_URL || 
-  "mysql://root:jgKlAQjykDEZvgFlUkmfKhJPyIdTvDIW@mysql.railway.internal:3306/railway";
+  "mysql://root:password@localhost:3306/vebtask";
 
 async function initDatabase() {
   try {
