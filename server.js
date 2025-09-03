@@ -382,6 +382,119 @@ app.get('/fix-tony-membership', async (req, res) => {
   }
 });
 
+// ==================== QUICK RAILWAY MEMBERSHIP FIX ====================
+app.get('/quick-fix-membership', async (req, res) => {
+  try {
+    console.log('🚀 Quick membership fix triggered...');
+    
+    const { PrismaClient } = await import('@prisma/client');
+    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    
+    const prisma = new PrismaClient();
+    
+    try {
+      // Find Tony's user
+      const tonyUser = await prisma.user.findUnique({
+        where: { email: INTERNAL_CONFIG.ORGANIZATION.ownerEmail },
+        include: { memberships: { include: { org: true } } }
+      });
+      
+      if (!tonyUser) {
+        throw new Error(`Tony's user (${INTERNAL_CONFIG.ORGANIZATION.ownerEmail}) not found`);
+      }
+      
+      console.log('✅ Found Tony:', tonyUser.email, 'ID:', tonyUser.id);
+      
+      // Find or create Veblen organization
+      let veblenOrg = await prisma.organization.findUnique({
+        where: { slug: INTERNAL_CONFIG.ORGANIZATION.slug }
+      });
+      
+      if (!veblenOrg) {
+        console.log('🏢 Creating Veblen organization...');
+        veblenOrg = await prisma.organization.create({
+          data: {
+            name: INTERNAL_CONFIG.ORGANIZATION.name,
+            slug: INTERNAL_CONFIG.ORGANIZATION.slug,
+            createdById: tonyUser.id
+          }
+        });
+        console.log('✅ Created organization:', veblenOrg.name, 'ID:', veblenOrg.id);
+      } else {
+        console.log('✅ Found organization:', veblenOrg.name, 'ID:', veblenOrg.id);
+      }
+      
+      // Check if membership exists
+      const existingMembership = await prisma.membership.findFirst({
+        where: {
+          userId: tonyUser.id,
+          orgId: veblenOrg.id
+        }
+      });
+      
+      if (existingMembership) {
+        if (existingMembership.role !== 'OWNER') {
+          console.log('🔄 Updating role to OWNER...');
+          await prisma.membership.update({
+            where: { id: existingMembership.id },
+            data: { role: 'OWNER' }
+          });
+          console.log('✅ Role updated to OWNER');
+        } else {
+          console.log('✅ Already has OWNER role');
+        }
+      } else {
+        console.log('👑 Creating OWNER membership...');
+        await prisma.membership.create({
+          data: {
+            userId: tonyUser.id,
+            orgId: veblenOrg.id,
+            role: 'OWNER'
+          }
+        });
+        console.log('✅ OWNER membership created');
+      }
+      
+      // Verification
+      const verification = await prisma.user.findUnique({
+        where: { email: INTERNAL_CONFIG.ORGANIZATION.ownerEmail },
+        include: {
+          memberships: {
+            include: { org: true }
+          }
+        }
+      });
+      
+      const result = {
+        success: true,
+        message: 'Tony\'s membership fixed successfully! Please refresh the page.',
+        user: {
+          email: verification.email,
+          name: verification.name,
+          memberships: verification.memberships.map(m => ({
+            role: m.role,
+            organization: m.org.name,
+            slug: m.org.slug
+          }))
+        }
+      };
+      
+      console.log('🎉 SUCCESS:', result);
+      res.json(result);
+      
+    } finally {
+      await prisma.$disconnect();
+    }
+    
+  } catch (error) {
+    console.error('❌ Error fixing membership:', error);
+    res.status(500).json({ 
+      error: 'Failed to fix membership', 
+      details: error.message 
+    });
+  }
+});
+
 // ==================== CHECK DATABASE STRUCTURE ====================
 app.get('/debug-database-structure', async (req, res) => {
   try {
