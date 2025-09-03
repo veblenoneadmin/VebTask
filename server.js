@@ -245,25 +245,45 @@ app.get('/fix-tony-membership', async (req, res) => {
       
       console.log(`✅ Found Tony: ${tonyUser.email} (${tonyUser.id})`);
       
+      // Look for ANY existing organization first
+      const existingOrgs = await prisma.organization.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      console.log(`📊 Found ${existingOrgs.length} existing organizations:`, existingOrgs.map(o => `${o.name} (${o.slug})`));
+      
       // Find or create Veblen organization
       let veblenOrg = await prisma.organization.findUnique({
         where: { slug: INTERNAL_CONFIG.ORGANIZATION.slug }
       });
       
       if (!veblenOrg) {
-        console.log('🏢 Creating Veblen organization...');
-        console.log('Using actual Tony user ID:', tonyUser.id, 'from database, not config ID:', INTERNAL_CONFIG.ORGANIZATION.ownerId);
+        console.log('🏢 Attempting to create Veblen organization...');
+        console.log('Tony user details:', { id: tonyUser.id, email: tonyUser.email, emailVerified: tonyUser.emailVerified });
         
-        veblenOrg = await prisma.organization.create({
-          data: {
-            name: INTERNAL_CONFIG.ORGANIZATION.name,
-            slug: INTERNAL_CONFIG.ORGANIZATION.slug,
-            createdById: tonyUser.id  // Use the actual user ID from database
+        try {
+          veblenOrg = await prisma.organization.create({
+            data: {
+              name: INTERNAL_CONFIG.ORGANIZATION.name,
+              slug: INTERNAL_CONFIG.ORGANIZATION.slug,
+              createdById: tonyUser.id
+            }
+          });
+          console.log(`✅ Created organization: ${veblenOrg.name} (${veblenOrg.id})`);
+        } catch (orgCreateError) {
+          console.error('❌ Failed to create organization:', orgCreateError);
+          
+          // Try to use an existing organization if creation fails
+          if (existingOrgs.length > 0) {
+            veblenOrg = existingOrgs[0];
+            console.log(`🔄 Using existing organization instead: ${veblenOrg.name} (${veblenOrg.slug})`);
+          } else {
+            throw new Error(`Cannot create organization and no existing orgs found: ${orgCreateError.message}`);
           }
-        });
-        console.log(`✅ Created organization: ${veblenOrg.name} (${veblenOrg.id})`);
+        }
       } else {
-        console.log(`✅ Found organization: ${veblenOrg.name} (${veblenOrg.id})`);
+        console.log(`✅ Found existing organization: ${veblenOrg.name} (${veblenOrg.id})`);
       }
       
       // Check if membership already exists
