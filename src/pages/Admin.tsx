@@ -404,7 +404,8 @@ export function Admin() {
                 </tbody>
               </table>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
