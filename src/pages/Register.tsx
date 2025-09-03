@@ -74,9 +74,9 @@ export function Register() {
     } catch (err) {
       console.error('❌ Caught registration error:', err);
       console.error('Error details:', {
-        message: err.message,
-        stack: err.stack,
-        name: err.name
+        message: (err as Error).message || 'Unknown error',
+        stack: (err as Error).stack,
+        name: (err as Error).name
       });
       setError('An error occurred during registration');
     } finally {
