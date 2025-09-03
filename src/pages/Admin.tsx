@@ -12,7 +12,6 @@ import {
   UserCog,
   Building2,
   Clock,
-  DollarSign,
   BarChart3
 } from 'lucide-react';
 
@@ -50,7 +49,6 @@ interface Invite {
 }
 
 export function Admin() {
-  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState('users');
   const [users, setUsers] = useState<User[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
