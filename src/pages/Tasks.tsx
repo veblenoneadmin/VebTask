@@ -48,7 +48,7 @@ const mockTasks: Task[] = [
     estimatedHours: 8,
     actualHours: 3.5,
     dueDate: '2024-01-15',
-    assignee: 'John Doe',
+    assignee: 'Current User',
     project: 'Finance Review',
     isBillable: true,
     hourlyRate: 95,

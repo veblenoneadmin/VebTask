@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -23,16 +23,22 @@ export function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
   
-  // Form states
+  // Extract real user data from session
+  const userName = session?.user?.name || '';
+  const nameWords = userName.split(' ');
+  const firstName = nameWords[0] || '';
+  const lastName = nameWords.slice(1).join(' ') || '';
+  
+  // Form states with real user data
   const [profile, setProfile] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: session?.user?.email || 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    bio: 'Senior Product Manager with 8+ years of experience in tech startups.',
-    timezone: 'America/Los_Angeles',
-    hourlyRate: 95
+    firstName: firstName,
+    lastName: lastName,
+    email: session?.user?.email || '',
+    phone: '',
+    location: '',
+    bio: '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    hourlyRate: 0
   });
 
   const [notifications, setNotifications] = useState({
@@ -43,8 +49,24 @@ export function Settings() {
     marketingEmails: false
   });
 
-  // Preferences will be implemented later
-  console.log('Settings page loaded');
+  // Update profile data when session changes
+  useEffect(() => {
+    if (session?.user) {
+      const userName = session.user.name || '';
+      const nameWords = userName.split(' ');
+      const firstName = nameWords[0] || '';
+      const lastName = nameWords.slice(1).join(' ') || '';
+      
+      setProfile(prev => ({
+        ...prev,
+        firstName: firstName,
+        lastName: lastName,
+        email: session.user.email || '',
+      }));
+    }
+  }, [session]);
+
+  console.log('Settings page loaded with user:', session?.user?.name);
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },

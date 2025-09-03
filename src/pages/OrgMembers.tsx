@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSession } from '../lib/auth-client';
 import { Plus, Mail, MoreHorizontal, Shield, UserX } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -48,39 +49,7 @@ interface Invite {
   };
 }
 
-// Mock data - replace with actual API calls
-const mockMembers: Member[] = [
-  {
-    id: '1',
-    role: 'OWNER',
-    joinedAt: '2024-01-15T00:00:00Z',
-    user: {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com'
-    },
-    stats: {
-      totalHours: 120.5,
-      totalSessions: 45
-    },
-    canModify: false
-  },
-  {
-    id: '2', 
-    role: 'ADMIN',
-    joinedAt: '2024-02-01T00:00:00Z',
-    user: {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com'
-    },
-    stats: {
-      totalHours: 85.2,
-      totalSessions: 32
-    },
-    canModify: true
-  }
-];
+// Mock invites data
 
 const mockInvites: Invite[] = [
   {
@@ -97,7 +66,43 @@ const mockInvites: Invite[] = [
 ];
 
 export function OrgMembers() {
-  const [members] = useState<Member[]>(mockMembers);
+  const { data: session } = useSession();
+  
+  // Generate mock data with real user info
+  const getMockMembers = (): Member[] => [
+    {
+      id: session?.user?.id || '1',
+      role: 'OWNER',
+      joinedAt: '2024-01-15T00:00:00Z',
+      user: {
+        id: session?.user?.id || '1',
+        name: session?.user?.name || 'Current User',
+        email: session?.user?.email || 'user@example.com'
+      },
+      stats: {
+        totalHours: 0,
+        totalSessions: 0
+      },
+      canModify: false
+    },
+    {
+      id: '2', 
+      role: 'ADMIN',
+      joinedAt: '2024-02-01T00:00:00Z',
+      user: {
+        id: '2',
+        name: 'Jane Smith',
+        email: 'jane@example.com'
+      },
+      stats: {
+        totalHours: 85.2,
+        totalSessions: 32
+      },
+      canModify: true
+    }
+  ];
+  
+  const [members] = useState<Member[]>(getMockMembers());
   const [invites] = useState<Invite[]>(mockInvites);
   const [searchQuery, setSearchQuery] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
