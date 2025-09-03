@@ -560,6 +560,77 @@ app.get('/fix-tony-minimal', async (req, res) => {
   }
 });
 
+// ==================== FINAL DIAGNOSTIC - CHECK DATABASE STATE ====================
+app.get('/debug-database-state', async (req, res) => {
+  try {
+    console.log('🔍 FINAL DIAGNOSTIC: Checking entire database state...');
+    
+    const { PrismaClient } = await import('@prisma/client');
+    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    
+    const prisma = new PrismaClient();
+    
+    try {
+      // Check organizations
+      const orgs = await prisma.organization.findMany({
+        select: { id: true, name: true, slug: true, createdById: true, createdAt: true }
+      });
+      
+      // Check memberships
+      const memberships = await prisma.membership.findMany({
+        include: {
+          user: { select: { email: true, name: true } },
+          org: { select: { name: true, slug: true } }
+        }
+      });
+      
+      // Check Tony's user specifically
+      const tony = await prisma.user.findUnique({
+        where: { id: INTERNAL_CONFIG.ORGANIZATION.ownerId },
+        select: { id: true, email: true, name: true }
+      });
+      
+      // Check raw counts
+      const counts = {
+        users: await prisma.user.count(),
+        organizations: await prisma.organization.count(),
+        memberships: await prisma.membership.count()
+      };
+      
+      const result = {
+        config: {
+          targetUserId: INTERNAL_CONFIG.ORGANIZATION.ownerId,
+          targetEmail: INTERNAL_CONFIG.ORGANIZATION.ownerEmail,
+          targetOrgSlug: INTERNAL_CONFIG.ORGANIZATION.slug
+        },
+        tony: tony,
+        organizations: orgs,
+        memberships: memberships,
+        counts: counts,
+        analysis: {
+          hasOrganizations: orgs.length > 0,
+          hasMemberships: memberships.length > 0,
+          tonyExists: !!tony,
+          veblenOrgExists: orgs.some(o => o.slug === 'veblen')
+        }
+      };
+      
+      console.log('🎯 DATABASE STATE:', result);
+      res.json(result);
+      
+    } finally {
+      await prisma.$disconnect();
+    }
+    
+  } catch (error) {
+    console.error('❌ Database state check failed:', error);
+    res.status(500).json({ 
+      error: 'Database state check failed', 
+      details: error.message 
+    });
+  }
+});
+
 // ==================== DIAGNOSTIC ENDPOINT ====================
 app.get('/debug-tony-user', async (req, res) => {
   try {
