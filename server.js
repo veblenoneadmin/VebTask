@@ -279,7 +279,28 @@ app.get('/fix-tony-membership', async (req, res) => {
             veblenOrg = existingOrgs[0];
             console.log(`🔄 Using existing organization instead: ${veblenOrg.name} (${veblenOrg.slug})`);
           } else {
-            throw new Error(`Cannot create organization and no existing orgs found: ${orgCreateError.message}`);
+            // Last resort: Create a minimal organization record directly
+            console.log('🆘 Last resort: Creating minimal organization without foreign key...');
+            try {
+              veblenOrg = await prisma.$executeRaw`
+                INSERT INTO organizations (id, name, slug, createdById, createdAt, updatedAt) 
+                VALUES (${`org_${Date.now()}`}, ${INTERNAL_CONFIG.ORGANIZATION.name}, ${INTERNAL_CONFIG.ORGANIZATION.slug}, ${tonyUser.id}, NOW(), NOW())
+              `;
+              
+              // Now fetch the created org
+              veblenOrg = await prisma.organization.findUnique({
+                where: { slug: INTERNAL_CONFIG.ORGANIZATION.slug }
+              });
+              
+              if (veblenOrg) {
+                console.log(`✅ Created organization via raw SQL: ${veblenOrg.name}`);
+              } else {
+                throw new Error('Raw SQL creation failed');
+              }
+            } catch (rawError) {
+              console.error('❌ Raw SQL also failed:', rawError);
+              throw new Error(`All organization creation methods failed: ${orgCreateError.message}`);
+            }
           }
         }
       } else {
@@ -356,6 +377,101 @@ app.get('/fix-tony-membership', async (req, res) => {
     console.error('❌ Error fixing membership:', error);
     res.status(500).json({ 
       error: 'Failed to fix membership', 
+      details: error.message 
+    });
+  }
+});
+
+// ==================== SIMPLE FIX ENDPOINT (RAW SQL) ====================
+app.get('/fix-tony-membership-raw', async (req, res) => {
+  try {
+    console.log('🔧 RAW SQL: Fixing Tony\'s membership with direct database access...');
+    
+    const { PrismaClient } = await import('@prisma/client');
+    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    
+    const prisma = new PrismaClient();
+    
+    try {
+      // Step 1: Create organization using raw SQL
+      console.log('📝 Creating Veblen organization with raw SQL...');
+      
+      await prisma.$executeRaw`
+        INSERT IGNORE INTO organizations (id, name, slug, createdById, createdAt, updatedAt) 
+        VALUES (
+          CONCAT('org_', UNIX_TIMESTAMP()),
+          ${INTERNAL_CONFIG.ORGANIZATION.name}, 
+          ${INTERNAL_CONFIG.ORGANIZATION.slug}, 
+          ${INTERNAL_CONFIG.ORGANIZATION.ownerId}, 
+          NOW(), 
+          NOW()
+        )
+      `;
+      
+      // Step 2: Get the organization
+      const org = await prisma.organization.findUnique({
+        where: { slug: INTERNAL_CONFIG.ORGANIZATION.slug }
+      });
+      
+      if (!org) {
+        throw new Error('Organization creation failed');
+      }
+      
+      console.log(`✅ Organization ready: ${org.name} (${org.id})`);
+      
+      // Step 3: Create membership using raw SQL
+      console.log('👑 Creating OWNER membership with raw SQL...');
+      
+      await prisma.$executeRaw`
+        INSERT IGNORE INTO memberships (id, userId, orgId, role, createdAt, updatedAt)
+        VALUES (
+          CONCAT('mem_', UNIX_TIMESTAMP()),
+          ${INTERNAL_CONFIG.ORGANIZATION.ownerId},
+          ${org.id},
+          'OWNER',
+          NOW(),
+          NOW()
+        )
+      `;
+      
+      // Step 4: Verify the result
+      const verification = await prisma.membership.findFirst({
+        where: {
+          userId: INTERNAL_CONFIG.ORGANIZATION.ownerId,
+          orgId: org.id
+        },
+        include: {
+          user: { select: { email: true, name: true } },
+          org: { select: { name: true, slug: true } }
+        }
+      });
+      
+      if (!verification) {
+        throw new Error('Membership verification failed');
+      }
+      
+      const result = {
+        success: true,
+        message: 'Tony\'s membership fixed via raw SQL! Refresh the page to see changes.',
+        membership: {
+          user: verification.user.email,
+          role: verification.role,
+          organization: verification.org.name,
+          slug: verification.org.slug
+        }
+      };
+      
+      console.log('🎉 RAW SQL SUCCESS:', result);
+      res.json(result);
+      
+    } finally {
+      await prisma.$disconnect();
+    }
+    
+  } catch (error) {
+    console.error('❌ Raw SQL fix failed:', error);
+    res.status(500).json({ 
+      error: 'Raw SQL fix failed', 
       details: error.message 
     });
   }
