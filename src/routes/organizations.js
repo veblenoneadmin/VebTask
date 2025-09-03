@@ -107,7 +107,7 @@ router.post('/', requireAuth, async (req, res) => {
           id: req.user.id,
           name: req.user.name || '',
           email: req.user.email,
-          emailVerified: new Date(), // Assume verified from Better Auth
+          emailVerified: true, // Assume verified from Better Auth
           image: req.user.image
         }
       });

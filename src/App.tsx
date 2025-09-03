@@ -36,9 +36,13 @@ function App() {
     const checkOnboardingStatus = async () => {
       if (session?.user?.id) {
         try {
-          const { userNeedsOnboarding } = await import('./lib/wizard.js');
-          const needs = await userNeedsOnboarding(session.user.id);
-          setNeedsOnboarding(needs);
+          const response = await fetch('/api/onboarding/status');
+          if (response.ok) {
+            const data = await response.json();
+            setNeedsOnboarding(data.needsOnboarding);
+          } else {
+            setNeedsOnboarding(true); // Default to requiring onboarding
+          }
         } catch (error) {
           console.error('Error checking onboarding status:', error);
           setNeedsOnboarding(true); // Default to requiring onboarding
