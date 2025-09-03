@@ -14,6 +14,10 @@ import statsRoutes from './src/api/stats.js';
 import timersRoutes from './src/api/timers.js';
 import tasksRoutes from './src/api/tasks.js';
 import calendarRoutes from './src/api/calendar.js';
+import invoicesRoutes from './src/api/invoices.js';
+import projectsRoutes from './src/api/projects.js';
+import clientsRoutes from './src/api/clients.js';
+import expensesRoutes from './src/api/expenses.js';
 import passwordResetRoutes from './src/routes/password-reset.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -199,6 +203,10 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/timers', timersRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/invoices', invoicesRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/clients', clientsRoutes);
+app.use('/api/expenses', expensesRoutes);
 app.use('/api/auth', passwordResetRoutes);
 
 // Additional custom auth routes (password reset, etc.)

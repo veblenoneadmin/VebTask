@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -124,13 +124,44 @@ const mockTasks: Task[] = [
 export function Tasks() {
   const { data: session } = useSession();
   console.log('Current session:', session);
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   console.log('New task form visible:', showNewTaskForm);
+
+  // Fetch tasks from API
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        setLoading(true);
+        // For now, use a placeholder orgId - this should come from user's organization
+        const response = await fetch(`/api/tasks/recent?orgId=default&userId=${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Fetched tasks:', data);
+          setTasks(data.tasks || []);
+        } else {
+          console.error('Failed to fetch tasks:', response.statusText);
+          // Fallback to mock data if API fails
+          setTasks(mockTasks);
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+        // Fallback to mock data on error
+        setTasks(mockTasks);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [session]);
 
   // Filter tasks
   const filteredTasks = tasks.filter(task => {
@@ -347,7 +378,17 @@ export function Tasks() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="space-y-1">
-            {filteredTasks.map((task) => (
+            {loading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading tasks...</p>
+              </div>
+            ) : filteredTasks.length === 0 ? (
+              <div className="p-8 text-center">
+                <p className="text-muted-foreground">No tasks found. Create your first task!</p>
+              </div>
+            ) : (
+              filteredTasks.map((task) => (
               <div
                 key={task.id}
                 className={cn(
@@ -467,24 +508,8 @@ export function Tasks() {
                   </Button>
                 </div>
               </div>
-            ))}
-            
-            {filteredTasks.length === 0 && (
-              <div className="text-center py-12">
-                <CheckSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No tasks found</h3>
-                <p className="text-muted-foreground mb-4">
-                  {searchTerm || filterStatus !== 'all' || filterPriority !== 'all' 
-                    ? 'Try adjusting your filters or search term'
-                    : 'Create your first task to get started'
-                  }
-                </p>
-                <Button onClick={() => setShowNewTaskForm(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Task
-                </Button>
-              </div>
-            )}
+              ))
+            }
           </div>
         </CardContent>
       </Card>

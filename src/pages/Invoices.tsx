@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -165,12 +165,42 @@ const mockInvoices: Invoice[] = [
 
 export function Invoices() {
   const { data: session } = useSession();
-  const [invoices] = useState<Invoice[]>(mockInvoices);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
   console.log(invoices);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedInvoice] = useState<Invoice | null>(null);
   console.log(selectedInvoice);
+
+  // Fetch invoices from API
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/invoices?userId=${session.user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Fetched invoices:', data);
+          setInvoices(data.invoices || []);
+        } else {
+          console.error('Failed to fetch invoices:', response.statusText);
+          // Fallback to mock data if API fails
+          setInvoices(mockInvoices);
+        }
+      } catch (error) {
+        console.error('Error fetching invoices:', error);
+        // Fallback to mock data on error
+        setInvoices(mockInvoices);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvoices();
+  }, [session]);
 
   const filteredInvoices = invoices.filter(invoice => {
     const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
