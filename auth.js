@@ -87,10 +87,10 @@ export const auth = betterAuth({
       generateId: () => crypto.randomUUID()
     },
     cookies: {
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: "lax",
       httpOnly: true,
-      domain: process.env.NODE_ENV === 'production' ? 'vebtask.com' : undefined
+      domain: process.env.NODE_ENV === 'production' ? '.vebtask.com' : undefined
     }
   },
   
@@ -296,18 +296,32 @@ Veblen Group
       query: request.query,
       hasAuthHeader: !!request.headers?.authorization,
       hasCookies: !!request.headers?.cookie,
+      cookieDetails: request.headers?.cookie?.substring(0, 200),
+      contentType: request.headers?.['content-type'],
       userAgent: request.headers?.['user-agent']?.substring(0, 50)
     });
+    
+    // Log sign-in attempts specifically
+    if (request.url?.includes('/sign-in/email')) {
+      console.log('📧 Email sign-in attempt:', {
+        body: request.body ? Object.keys(request.body) : 'no-body',
+        hasEmail: !!(request.body?.email),
+        hasPassword: !!(request.body?.password)
+      });
+    }
   },
 
   async onResponse(request, response) {
-    // Log responses, especially for OAuth callbacks
-    if (request.url?.includes('/callback/')) {
+    // Log responses, especially for sign-in attempts and OAuth callbacks
+    if (request.url?.includes('/sign-in/') || request.url?.includes('/callback/')) {
       console.log('🔐 Auth Response:', {
         url: request.url,
+        method: request.method,
         status: response?.status || 'no-status',
         hasSetCookie: !!response?.headers?.['set-cookie'],
+        setCookieCount: response?.headers?.['set-cookie']?.length || 0,
         location: response?.headers?.location,
+        contentType: response?.headers?.['content-type'],
         responseHeaders: Object.keys(response?.headers || {})
       });
     }
