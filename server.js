@@ -560,6 +560,85 @@ app.get('/fix-tony-minimal', async (req, res) => {
   }
 });
 
+// ==================== MANUAL DATA INSERT - FORCE CREATE RECORDS ====================
+app.get('/force-create-membership', async (req, res) => {
+  try {
+    console.log('🔧 FORCE: Manually inserting organization and membership...');
+    
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    try {
+      const orgId = 'veblen_org_' + Date.now();
+      const membershipId = 'membership_' + Date.now();
+      const tonyId = '53ebe8d8-4700-43b0-aae7-f30608cd3b66';
+      
+      console.log('Creating organization with ID:', orgId);
+      console.log('Creating membership with ID:', membershipId);
+      console.log('Tony ID:', tonyId);
+      
+      // Step 1: Insert organization directly with raw SQL
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO organizations (id, name, slug, createdById, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, NOW(), NOW())
+      `, orgId, 'Veblen', 'veblen', tonyId);
+      
+      console.log('✅ Organization inserted');
+      
+      // Step 2: Insert membership directly with raw SQL
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO memberships (id, userId, orgId, role, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, NOW(), NOW())
+      `, membershipId, tonyId, orgId, 'OWNER');
+      
+      console.log('✅ Membership inserted');
+      
+      // Step 3: Verify what we created
+      const finalCheck = await prisma.organization.findMany({
+        include: {
+          memberships: {
+            include: {
+              user: { select: { email: true, name: true } }
+            }
+          }
+        }
+      });
+      
+      const result = {
+        success: true,
+        message: 'Records force-created! Refresh the page to see changes.',
+        created: {
+          organizationId: orgId,
+          membershipId: membershipId,
+          userId: tonyId
+        },
+        verification: finalCheck.map(org => ({
+          org: org.name,
+          slug: org.slug,
+          members: org.memberships.map(m => ({
+            user: m.user.email,
+            role: m.role
+          }))
+        }))
+      };
+      
+      console.log('🎉 FORCE SUCCESS:', result);
+      res.json(result);
+      
+    } finally {
+      await prisma.$disconnect();
+    }
+    
+  } catch (error) {
+    console.error('❌ Force creation failed:', error);
+    res.status(500).json({ 
+      error: 'Force creation failed', 
+      details: error.message,
+      code: error.code
+    });
+  }
+});
+
 // ==================== FINAL DIAGNOSTIC - CHECK DATABASE STATE ====================
 app.get('/debug-database-state', async (req, res) => {
   try {
