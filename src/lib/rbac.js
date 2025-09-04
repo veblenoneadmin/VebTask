@@ -46,6 +46,92 @@ export function withOrgScope(req, res, next) {
 }
 
 /**
+ * Optional organization scope middleware that doesn't require orgId
+ * Used for endpoints that can work without organization context
+ */
+export function withOptionalOrgScope(req, res, next) {
+  // Try to get orgId from multiple sources
+  const orgId = 
+    req.headers['x-org-id'] ||
+    req.body.orgId ||
+    req.params.orgId ||
+    req.query.orgId ||
+    req.user?.activeOrgId;
+
+  req.orgId = orgId || null;
+  next();
+}
+
+/**
+ * Auto-create organization for specific users if they don't have one
+ */
+export async function ensureUserHasOrganization(req, res, next) {
+  if (!req.user?.id) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  try {
+    // Check if user has any organizations
+    const memberships = await prisma.membership.findMany({
+      where: { userId: req.user.id },
+      include: { org: true }
+    });
+
+    if (memberships.length === 0) {
+      // Check if this is an internal admin user
+      const internalEmails = [
+        'tony@opusautomations.com',
+        // Add other internal emails as needed
+      ];
+
+      if (internalEmails.includes(req.user.email)) {
+        console.log(`🔧 Auto-creating organization for internal user: ${req.user.email}`);
+        
+        // Create organization for internal user
+        const organization = await prisma.organization.upsert({
+          where: { slug: 'veblen' },
+          update: {
+            name: 'Veblen',
+            createdById: req.user.id
+          },
+          create: {
+            name: 'Veblen',
+            slug: 'veblen',
+            createdById: req.user.id
+          }
+        });
+
+        // Create owner membership
+        await prisma.membership.upsert({
+          where: {
+            userId_orgId: {
+              userId: req.user.id,
+              orgId: organization.id
+            }
+          },
+          update: {
+            role: 'OWNER'
+          },
+          create: {
+            userId: req.user.id,
+            orgId: organization.id,
+            role: 'OWNER'
+          }
+        });
+
+        console.log(`✅ Auto-created organization and OWNER membership for ${req.user.email}`);
+        req.autoCreatedOrg = organization.id;
+      }
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error in ensureUserHasOrganization:', error);
+    next(); // Continue even if auto-creation fails
+  }
+}
+
+/**
  * Middleware to require specific role or higher
  */
 export function requireRole(minRole) {

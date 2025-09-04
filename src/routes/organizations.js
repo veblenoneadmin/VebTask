@@ -10,7 +10,8 @@ import {
   generateOrgSlug,
   isValidOrgSlug,
   getUserOrganizations,
-  canModifyMember
+  canModifyMember,
+  ensureUserHasOrganization
 } from '../lib/rbac.js';
 
 const router = express.Router();
@@ -34,7 +35,7 @@ const transferOwnershipSchema = z.object({
  * GET /api/organizations
  * List all organizations for the current user
  */
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, ensureUserHasOrganization, async (req, res) => {
   try {
     const organizations = await getUserOrganizations(req.user.id);
     
