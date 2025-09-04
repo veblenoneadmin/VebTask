@@ -254,3 +254,121 @@ export const requireStaff = requireRole('STAFF');
 export function requireOrgRole(minRole) {
   return [requireAuth, withOrgScope, requireRole(minRole)];
 }
+
+/**
+ * Middleware to validate resource ownership for tasks
+ */
+export function requireTaskOwnership(req, res, next) {
+  const checkOwnership = async () => {
+    const { taskId } = req.params;
+    const orgId = req.orgId;
+    
+    if (!taskId) {
+      return res.status(400).json({ error: 'Task ID is required' });
+    }
+
+    try {
+      const task = await prisma.macroTask.findUnique({
+        where: { id: taskId },
+        select: { orgId: true, userId: true }
+      });
+
+      if (!task) {
+        return res.status(404).json({ error: 'Task not found' });
+      }
+
+      if (task.orgId !== orgId) {
+        return res.status(403).json({ 
+          error: 'Access denied: Task belongs to different organization' 
+        });
+      }
+
+      req.resourceOwnership = { taskOrgId: task.orgId, taskUserId: task.userId };
+      next();
+    } catch (error) {
+      console.error('Error checking task ownership:', error);
+      return res.status(500).json({ error: 'Failed to validate resource access' });
+    }
+  };
+
+  checkOwnership();
+}
+
+/**
+ * Middleware to validate resource ownership for timers
+ */
+export function requireTimerOwnership(req, res, next) {
+  const checkOwnership = async () => {
+    const { timerId } = req.params;
+    const orgId = req.orgId;
+    
+    if (!timerId) {
+      return res.status(400).json({ error: 'Timer ID is required' });
+    }
+
+    try {
+      const timer = await prisma.timer.findUnique({
+        where: { id: timerId },
+        select: { orgId: true, userId: true }
+      });
+
+      if (!timer) {
+        return res.status(404).json({ error: 'Timer not found' });
+      }
+
+      if (timer.orgId !== orgId) {
+        return res.status(403).json({ 
+          error: 'Access denied: Timer belongs to different organization' 
+        });
+      }
+
+      req.resourceOwnership = { timerOrgId: timer.orgId, timerUserId: timer.userId };
+      next();
+    } catch (error) {
+      console.error('Error checking timer ownership:', error);
+      return res.status(500).json({ error: 'Failed to validate resource access' });
+    }
+  };
+
+  checkOwnership();
+}
+
+/**
+ * Generic middleware factory to validate resource ownership
+ */
+export function requireResourceOwnership(model, idParam = 'id') {
+  return async (req, res, next) => {
+    const resourceId = req.params[idParam];
+    const orgId = req.orgId;
+    
+    if (!resourceId) {
+      return res.status(400).json({ error: `${model} ID is required` });
+    }
+
+    try {
+      const resource = await prisma[model].findUnique({
+        where: { id: resourceId },
+        select: { orgId: true, userId: true }
+      });
+
+      if (!resource) {
+        return res.status(404).json({ error: `${model} not found` });
+      }
+
+      if (resource.orgId !== orgId) {
+        return res.status(403).json({ 
+          error: `Access denied: ${model} belongs to different organization` 
+        });
+      }
+
+      req.resourceOwnership = { 
+        [`${model}OrgId`]: resource.orgId, 
+        [`${model}UserId`]: resource.userId 
+      };
+      next();
+    } catch (error) {
+      console.error(`Error checking ${model} ownership:`, error);
+      return res.status(500).json({ error: 'Failed to validate resource access' });
+    }
+  };
+}

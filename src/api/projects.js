@@ -1,10 +1,12 @@
 // Project management API endpoints
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
+import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
+import { validateBody, validateQuery, commonSchemas, projectSchemas } from '../lib/validation.js';
 const router = express.Router();
 
 // Get all projects for a user/organization
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
     const { userId, orgId, status, limit = 50 } = req.query;
     
@@ -29,7 +31,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create new project
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, withOrgScope, validateBody(projectSchemas.create), async (req, res) => {
   try {
     const { userId, name, description, clientName, budget, deadline, priority } = req.body;
     
@@ -66,7 +68,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update project
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('project'), validateBody(projectSchemas.update), async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -84,7 +86,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete project
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('project'), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -101,7 +103,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Get project statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
     const { userId, orgId } = req.query;
     

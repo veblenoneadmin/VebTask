@@ -1,10 +1,12 @@
 // Invoice management API endpoints
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
+import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
+import { validateBody, validateQuery, commonSchemas, invoiceSchemas } from '../lib/validation.js';
 const router = express.Router();
 
 // Get all invoices for a user
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
     const { userId, orgId, status, limit = 50 } = req.query;
     
@@ -29,7 +31,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create new invoice
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, withOrgScope, validateBody(invoiceSchemas.create), async (req, res) => {
   try {
     const { userId, clientName, amount, description, dueDate } = req.body;
     
@@ -63,7 +65,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update invoice status
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', requireAuth, withOrgScope, requireResourceOwnership('invoice'), validateBody(invoiceSchemas.statusUpdate), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -85,7 +87,7 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 // Delete invoice
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('invoice'), async (req, res) => {
   try {
     const { id } = req.params;
     

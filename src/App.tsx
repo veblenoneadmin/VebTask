@@ -22,6 +22,7 @@ import { Settings } from './pages/Settings';
 import { Admin } from './pages/Admin';
 import MainLayout from './components/Layout/MainLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { OrganizationProvider } from './contexts/OrganizationContext';
 import { initializeWidgets } from './lib/widgets/widgetRegistry';
 
 // Initialize widgets on app load
@@ -81,8 +82,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Router>
-        <div className="app">
+      <OrganizationProvider>
+        <Router>
+          <div className="app">
           <Routes>
           <Route 
             path="/login" 
@@ -140,7 +142,8 @@ function App() {
           />
           </Routes>
         </div>
-      </Router>
+        </Router>
+      </OrganizationProvider>
     </ErrorBoundary>
   );
 }

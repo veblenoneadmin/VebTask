@@ -31,7 +31,17 @@ export const auth = betterAuth({
   }),
   baseURL: process.env.BETTER_AUTH_URL || "https://vebtask.com",
   basePath: "/api/auth",
-  secret: process.env.BETTER_AUTH_SECRET || "test-secret-key-for-debugging",
+  secret: (() => {
+    const secret = process.env.BETTER_AUTH_SECRET;
+    if (!secret) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('BETTER_AUTH_SECRET environment variable is required in production');
+      }
+      console.warn('⚠️  Using fallback secret for development. Set BETTER_AUTH_SECRET in production!');
+      return "test-secret-key-for-debugging";
+    }
+    return secret;
+  })(),
   
   // Authentication providers
   socialProviders: process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? {

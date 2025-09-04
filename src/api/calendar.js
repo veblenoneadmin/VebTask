@@ -1,10 +1,11 @@
 // Calendar events API endpoints
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
+import { requireAuth, withOrgScope } from '../lib/rbac.js';
 const router = express.Router();
 
 // Get calendar events for a user
-router.get('/events/:userId', async (req, res) => {
+router.get('/events/:userId', requireAuth, withOrgScope, async (req, res) => {
   try {
     const { userId } = req.params;
     const { startDate, endDate, type, orgId } = req.query;
@@ -82,7 +83,7 @@ router.get('/events/:userId', async (req, res) => {
 });
 
 // Get calendar overview/stats for a user
-router.get('/overview/:userId', async (req, res) => {
+router.get('/overview/:userId', requireAuth, withOrgScope, async (req, res) => {
   try {
     const { userId } = req.params;
     const { month, year, orgId } = req.query;
@@ -235,7 +236,7 @@ router.get('/overview/:userId', async (req, res) => {
 });
 
 // Create a new calendar event
-router.post('/events', async (req, res) => {
+router.post('/events', requireAuth, withOrgScope, async (req, res) => {
   try {
     const {
       userId,
@@ -294,7 +295,7 @@ router.post('/events', async (req, res) => {
 });
 
 // Update a calendar event
-router.patch('/events/:eventId', async (req, res) => {
+router.patch('/events/:eventId', requireAuth, withOrgScope, async (req, res) => {
   try {
     const { eventId } = req.params;
     const { updateRecurring, ...updates } = req.body;
@@ -327,7 +328,7 @@ router.patch('/events/:eventId', async (req, res) => {
 });
 
 // Delete a calendar event
-router.delete('/events/:eventId', async (req, res) => {
+router.delete('/events/:eventId', requireAuth, withOrgScope, async (req, res) => {
   try {
     const { eventId } = req.params;
     const { deleteRecurring } = req.query;

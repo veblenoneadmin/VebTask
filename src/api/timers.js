@@ -1,10 +1,12 @@
 // Timer management API endpoints
 import express from 'express';
 import { timerService } from '../services/TimerService.js';
+import { requireAuth, withOrgScope, requireTimerOwnership } from '../lib/rbac.js';
+import { validateBody, validateQuery, commonSchemas, timerSchemas } from '../lib/validation.js';
 const router = express.Router();
 
 // Get active timers
-router.get('/active', async (req, res) => {
+router.get('/active', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
     const { orgId, userId } = req.query;
     
@@ -39,7 +41,7 @@ router.get('/active', async (req, res) => {
 });
 
 // Start a new timer
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, withOrgScope, validateBody(timerSchemas.create), async (req, res) => {
   try {
     const { taskId, description, category, timezone, userId, orgId } = req.body;
     
@@ -75,7 +77,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update timer details (description, category, etc.)
-router.put('/:timerId', async (req, res) => {
+router.put('/:timerId', requireAuth, withOrgScope, requireTimerOwnership, validateBody(timerSchemas.update), async (req, res) => {
   try {
     const { timerId } = req.params;
     const { userId } = req.body;
@@ -112,7 +114,7 @@ router.put('/:timerId', async (req, res) => {
 });
 
 // Stop timer
-router.post('/:timerId/stop', async (req, res) => {
+router.post('/:timerId/stop', requireAuth, withOrgScope, requireTimerOwnership, async (req, res) => {
   try {
     const { timerId } = req.params;
     const { userId } = req.body;
@@ -146,7 +148,7 @@ router.post('/:timerId/stop', async (req, res) => {
 });
 
 // Restart timer (create new one based on existing)
-router.post('/:timerId/restart', async (req, res) => {
+router.post('/:timerId/restart', requireAuth, withOrgScope, requireTimerOwnership, async (req, res) => {
   try {
     const { timerId } = req.params;
     const { userId, orgId } = req.body;
@@ -178,7 +180,7 @@ router.post('/:timerId/restart', async (req, res) => {
 });
 
 // Get timer statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
     const { userId, orgId } = req.query;
     
@@ -196,7 +198,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // Get recent time entries
-router.get('/recent', async (req, res) => {
+router.get('/recent', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
     const { userId, orgId, limit = 10 } = req.query;
     
@@ -226,7 +228,7 @@ router.get('/recent', async (req, res) => {
 });
 
 // Delete timer
-router.delete('/:timerId', async (req, res) => {
+router.delete('/:timerId', requireAuth, withOrgScope, requireTimerOwnership, async (req, res) => {
   try {
     const { timerId } = req.params;
     const { userId } = req.body;

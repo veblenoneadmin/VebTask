@@ -1,10 +1,12 @@
 // Client management API endpoints
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
+import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
+import { validateBody, validateQuery, commonSchemas, clientSchemas } from '../lib/validation.js';
 const router = express.Router();
 
 // Get all clients for a user/organization
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
     const { userId, orgId, limit = 50 } = req.query;
     
@@ -28,7 +30,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create new client
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, withOrgScope, validateBody(clientSchemas.create), async (req, res) => {
   try {
     const { userId, name, email, company, phone, address, hourlyRate } = req.body;
     
@@ -65,7 +67,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update client
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('client'), validateBody(clientSchemas.update), async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -83,7 +85,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete client
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('client'), async (req, res) => {
   try {
     const { id } = req.params;
     

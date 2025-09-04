@@ -204,6 +204,7 @@ app.use('/api/wizard', wizardRoutes);
 // Widget API routes
 app.use('/api/stats', statsRoutes);
 app.use('/api/timers', timersRoutes);
+app.use('/api/time-logs', timersRoutes); // Add time-logs alias for Timer component
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/invoices', invoicesRoutes);

@@ -1,10 +1,12 @@
 // Task management API endpoints
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
+import { requireAuth, withOrgScope, requireTaskOwnership } from '../lib/rbac.js';
+import { validateBody, validateQuery, commonSchemas, taskSchemas } from '../lib/validation.js';
 const router = express.Router();
 
 // Get recent tasks
-router.get('/recent', async (req, res) => {
+router.get('/recent', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
     const { orgId, userId, limit = 10 } = req.query;
     
@@ -85,7 +87,7 @@ router.get('/recent', async (req, res) => {
 });
 
 // Get task details
-router.get('/:taskId', async (req, res) => {
+router.get('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (req, res) => {
   try {
     const { taskId } = req.params;
     
@@ -162,7 +164,7 @@ router.get('/:taskId', async (req, res) => {
 });
 
 // Create new task
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, withOrgScope, validateBody(taskSchemas.create), async (req, res) => {
   try {
     const { 
       title, 
@@ -217,7 +219,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update task
-router.put('/:taskId', async (req, res) => {
+router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, validateBody(taskSchemas.update), async (req, res) => {
   try {
     const { taskId } = req.params;
     const updates = req.body;
@@ -271,7 +273,7 @@ router.put('/:taskId', async (req, res) => {
 });
 
 // Update task status
-router.patch('/:taskId/status', async (req, res) => {
+router.patch('/:taskId/status', requireAuth, withOrgScope, requireTaskOwnership, validateBody(taskSchemas.statusUpdate), async (req, res) => {
   try {
     const { taskId } = req.params;
     const { status } = req.body;
@@ -310,7 +312,7 @@ router.patch('/:taskId/status', async (req, res) => {
 });
 
 // Delete task
-router.delete('/:taskId', async (req, res) => {
+router.delete('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (req, res) => {
   try {
     const { taskId } = req.params;
     
@@ -331,7 +333,7 @@ router.delete('/:taskId', async (req, res) => {
 });
 
 // Get tasks by organization
-router.get('/org/:orgId', async (req, res) => {
+router.get('/org/:orgId', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
     const { orgId } = req.params;
     const { status, priority, userId, limit = 50, offset = 0 } = req.query;

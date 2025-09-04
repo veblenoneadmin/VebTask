@@ -1,10 +1,12 @@
 // Expense management API endpoints
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
+import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
+import { validateBody, validateQuery, commonSchemas, expenseSchemas } from '../lib/validation.js';
 const router = express.Router();
 
 // Get all expenses for a user/organization
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination.merge(commonSchemas.dateRange)), async (req, res) => {
   try {
     const { userId, orgId, startDate, endDate, category, limit = 50 } = req.query;
     
@@ -29,7 +31,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create new expense
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, withOrgScope, validateBody(expenseSchemas.create), async (req, res) => {
   try {
     const { userId, title, amount, category, date, description, receipt } = req.body;
     
@@ -64,7 +66,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update expense
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('expense'), validateBody(expenseSchemas.update), async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -82,7 +84,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete expense
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('expense'), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -99,7 +101,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Get expense statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', requireAuth, withOrgScope, validateQuery(commonSchemas.dateRange), async (req, res) => {
   try {
     const { userId, orgId, startDate, endDate } = req.query;
     

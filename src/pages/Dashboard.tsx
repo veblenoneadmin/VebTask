@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '../lib/auth-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -20,56 +21,20 @@ import {
 
 export function Dashboard() {
   const { data: session } = useSession();
+  const { currentOrg, isLoading: orgLoading } = useOrganization();
   const [widgets, setWidgets] = useState<any[]>([]);
   const [widgetData, setWidgetData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   
-  // Get user's role from organization membership
-  const [userRole, setUserRole] = useState<string>('ADMIN');
-  const [orgId, setOrgId] = useState<string>('default');
-  
-  // If user is a CLIENT, show the client-specific dashboard
-  if (userRole === 'CLIENT') {
-    return <ClientDashboard />;
-  }
-
-  const userName = session?.user?.email?.split('@')[0]?.replace(/[^a-zA-Z]/g, '') || 'User';
-  const displayName = userName.charAt(0).toUpperCase() + userName.slice(1);
-  
-  // Fetch user's organization and role
-  useEffect(() => {
-    const fetchUserOrgInfo = async () => {
-      if (!session?.user?.id) return;
-      
-      try {
-        const response = await fetch(`/api/organizations?userId=${session.user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.organizations && data.organizations.length > 0) {
-            const org = data.organizations[0]; // Use first organization
-            setOrgId(org.id);
-            setUserRole(org.role || 'ADMIN');
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch user organization info:', error);
-      }
-    };
-
-    if (session?.user?.id) {
-      fetchUserOrgInfo();
-    }
-  }, [session]);
-
   // Initialize dashboard widgets
   useEffect(() => {
     const initializeDashboard = async () => {
       try {
         // Use layout based on user role
-        const defaultLayout = userRole === 'ADMIN' || userRole === 'OWNER' 
+        const defaultLayout = currentOrg?.role === 'ADMIN' || currentOrg?.role === 'OWNER' 
           ? defaultDashboardLayouts.standard 
-          : userRole === 'STAFF'
+          : currentOrg?.role === 'STAFF'
           ? defaultDashboardLayouts.minimal
           : defaultDashboardLayouts.minimal;
         setWidgets(defaultLayout);
@@ -83,13 +48,13 @@ export function Dashboard() {
       }
     };
 
-    if (session?.user && orgId !== 'default') {
+    if (session?.user && currentOrg?.id) {
       initializeDashboard();
     }
-  }, [session, userRole, orgId]);
+  }, [session, currentOrg, loadWidgetData]);
 
   // Load data for widgets
-  const loadWidgetData = async (widgetInstances: any[]) => {
+  const loadWidgetData = useCallback(async (widgetInstances: any[]) => {
     if (!session?.user?.id) return;
 
     const data: Record<string, any> = {};
@@ -98,7 +63,7 @@ export function Dashboard() {
       try {
         const fetcher = (widgetDataFetchers as any)[instance.widgetId];
         if (fetcher) {
-          data[instance.instanceId] = await fetcher(orgId, session.user.id);
+          data[instance.instanceId] = await fetcher(currentOrg?.id, session.user.id);
         }
       } catch (error) {
         console.error(`Failed to load data for widget ${instance.widgetId}:`, error);
@@ -107,7 +72,7 @@ export function Dashboard() {
     }
     
     setWidgetData(data);
-  };
+  }, [session?.user?.id, currentOrg?.id]);
 
   const handleWidgetRefresh = async (instanceId: string, widgetId: string) => {
     if (!session?.user?.id) return;
@@ -115,7 +80,7 @@ export function Dashboard() {
     
     if (fetcher) {
       try {
-        const newData = await fetcher(orgId, session.user.id);
+        const newData = await fetcher(currentOrg?.id, session.user.id);
         setWidgetData(prev => ({
           ...prev,
           [instanceId]: newData
@@ -149,7 +114,7 @@ export function Dashboard() {
           loading={!data && !hasError}
           error={hasError ? data.error : null}
           onRefresh={() => handleWidgetRefresh(instance.instanceId, instance.widgetId)}
-          orgId={orgId}
+          orgId={currentOrg?.id}
           userId={session?.user?.id || ''}
         />
       </div>
@@ -166,6 +131,36 @@ export function Dashboard() {
     { name: 'Add Task', icon: CheckSquare, href: '/tasks', color: 'warning' },
     { name: 'Calendar', icon: Calendar, href: '/calendar', color: 'info' },
   ];
+
+  // Early returns after all hooks
+  // If user is a CLIENT, show the client-specific dashboard
+  if (currentOrg?.role === 'CLIENT') {
+    return <ClientDashboard />;
+  }
+
+  // Wait for both session and org to load
+  if (!session || orgLoading || !currentOrg) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-surface to-surface-elevated">
+        <div className="flex flex-col items-center space-y-6 animate-fade-in">
+          <div className="relative">
+            <img 
+              src="/veblen-logo.png" 
+              alt="Veblen" 
+              className="w-32 h-32 object-contain animate-pulse-glow"
+            />
+          </div>
+          <div className="flex flex-col items-center space-y-2">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-lg font-medium text-muted-foreground">Loading Dashboard...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const userName = session?.user?.email?.split('@')[0]?.replace(/[^a-zA-Z]/g, '') || 'User';
+  const displayName = userName.charAt(0).toUpperCase() + userName.slice(1);
 
   if (loading) {
     return (
