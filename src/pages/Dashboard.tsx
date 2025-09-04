@@ -27,6 +27,27 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   
+  // Load data for widgets
+  const loadWidgetData = useCallback(async (widgetInstances: any[]) => {
+    if (!session?.user?.id) return;
+
+    const data: Record<string, any> = {};
+    
+    for (const instance of widgetInstances) {
+      try {
+        const fetcher = (widgetDataFetchers as any)[instance.widgetId];
+        if (fetcher) {
+          data[instance.instanceId] = await fetcher(currentOrg?.id, session.user.id);
+        }
+      } catch (error) {
+        console.error(`Failed to load data for widget ${instance.widgetId}:`, error);
+        data[instance.instanceId] = { error: 'Failed to load data' };
+      }
+    }
+    
+    setWidgetData(data);
+  }, [session?.user?.id, currentOrg?.id]);
+
   // Initialize dashboard widgets
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -52,27 +73,6 @@ export function Dashboard() {
       initializeDashboard();
     }
   }, [session, currentOrg, loadWidgetData]);
-
-  // Load data for widgets
-  const loadWidgetData = useCallback(async (widgetInstances: any[]) => {
-    if (!session?.user?.id) return;
-
-    const data: Record<string, any> = {};
-    
-    for (const instance of widgetInstances) {
-      try {
-        const fetcher = (widgetDataFetchers as any)[instance.widgetId];
-        if (fetcher) {
-          data[instance.instanceId] = await fetcher(currentOrg?.id, session.user.id);
-        }
-      } catch (error) {
-        console.error(`Failed to load data for widget ${instance.widgetId}:`, error);
-        data[instance.instanceId] = { error: 'Failed to load data' };
-      }
-    }
-    
-    setWidgetData(data);
-  }, [session?.user?.id, currentOrg?.id]);
 
   const handleWidgetRefresh = async (instanceId: string, widgetId: string) => {
     if (!session?.user?.id) return;
@@ -114,7 +114,7 @@ export function Dashboard() {
           loading={!data && !hasError}
           error={hasError ? data.error : null}
           onRefresh={() => handleWidgetRefresh(instance.instanceId, instance.widgetId)}
-          orgId={currentOrg?.id}
+          orgId={currentOrg?.id || ''}
           userId={session?.user?.id || ''}
         />
       </div>
