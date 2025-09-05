@@ -254,7 +254,7 @@ export function ClientProgressWidget({ config = {}, onConfigure }: ClientProgres
           <div className="pt-2 border-t">
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" size="sm" className="flex items-center space-x-1">
-                <Eye className="h-3 w-3" />
+                <Target className="h-3 w-3" />
                 <span>View Details</span>
               </Button>
               <Button variant="outline" size="sm" className="flex items-center space-x-1">

@@ -77,11 +77,11 @@ export function useTimer() {
       console.error('Error fetching active timer:', err);
       setError(err.message);
       setActiveTimer(null);
-      clearInterval();
+      clearTimerInterval();
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, apiClient, startTimerInterval, clearInterval]);
+  }, [session?.user?.id, apiClient, startTimerInterval, clearTimerInterval]);
 
   // Start a new timer
   const startTimer = useCallback(async (taskId: string, description?: string, category: string = 'work') => {
@@ -117,7 +117,7 @@ export function useTimer() {
       setError(err.message);
       throw err;
     }
-  }, [session?.user?.id, session?.user?.orgId, apiClient, startTimerInterval]);
+  }, [session?.user?.id, currentOrg?.id, apiClient, startTimerInterval]);
 
   // Stop the active timer
   const stopTimer = useCallback(async () => {
