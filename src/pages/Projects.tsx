@@ -144,12 +144,12 @@ const mockProjects: Project[] = [
 ];
 
 export function Projects() {
-  const { data: session } = useSession();
-  const { currentOrg } = useOrganization();
-  const apiClient = useApiClient();
+  // const { data: session } = useSession();
+  // const { currentOrg } = useOrganization();
+  // const apiClient = useApiClient();
   const [projects] = useState<Project[]>(mockProjects);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  // const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  // const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -171,14 +171,14 @@ export function Projects() {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-error';
-      case 'medium': return 'text-warning';
-      case 'low': return 'text-info';
-      default: return 'text-muted-foreground';
-    }
-  };
+  // const getPriorityColor = (priority: string) => {
+  //   switch (priority) {
+  //     case 'high': return 'text-error';
+  //     case 'medium': return 'text-warning';
+  //     case 'low': return 'text-info';
+  //     default: return 'text-muted-foreground';
+  //   }
+  // };
   
   // Use the function to prevent unused warning
 
@@ -231,7 +231,7 @@ export function Projects() {
             </button>
           </div>
           <Button 
-            onClick={() => setShowNewProjectModal(true)}
+            onClick={() => console.log('Project creation coming soon')}
             className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -480,7 +480,7 @@ export function Projects() {
                 : 'Create your first project to get started'
               }
             </p>
-            <Button onClick={() => setShowNewProjectModal(true)}>
+            <Button onClick={() => console.log('Project creation coming soon')}>
               <Plus className="h-4 w-4 mr-2" />
               Create Project
             </Button>

@@ -175,7 +175,7 @@ export function Invoices() {
   const [newInvoiceLoading, setNewInvoiceLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [selectedInvoice] = useState<Invoice | null>(null);
+  // const [selectedInvoice] = useState<Invoice | null>(null);
 
   // Fetch invoices from API
   useEffect(() => {

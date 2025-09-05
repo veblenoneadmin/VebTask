@@ -160,11 +160,11 @@ const expenseCategories = [
 ];
 
 export function Expenses() {
-  const { data: session } = useSession();
-  const { currentOrg } = useOrganization();
-  const apiClient = useApiClient();
+  // const { data: session } = useSession();
+  // const { currentOrg } = useOrganization();
+  // const apiClient = useApiClient();
   const [expenses] = useState<Expense[]>(mockExpenses);
-  const [showNewExpenseModal, setShowNewExpenseModal] = useState(false);
+  // const [showNewExpenseModal, setShowNewExpenseModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -234,7 +234,7 @@ export function Expenses() {
             Export
           </Button>
           <Button 
-            onClick={() => setShowNewExpenseModal(true)}
+            onClick={() => console.log('Expense creation coming soon')}
             className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -437,7 +437,7 @@ export function Expenses() {
                       : 'Add your first expense to get started'
                     }
                   </p>
-                  <Button onClick={() => setShowNewExpenseModal(true)}>
+                  <Button onClick={() => console.log('Expense creation coming soon')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Expense
                   </Button>
