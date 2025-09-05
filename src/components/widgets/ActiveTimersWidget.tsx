@@ -67,14 +67,6 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
-  const { data } = props;
-  const { data: session } = useSession();
-  const apiClient = useApiClient();
-  const [localTimers, setLocalTimers] = useState<ActiveTimer[]>([]);
-
-  // ... (existing useEffect hooks remain the same) ...
-
   const handleStopTimer = async (timerId: string) => {
     try {
       if (!session?.user?.id) {
@@ -101,7 +93,6 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
     }
   };
 
-
   const totalRunningTime = localTimers
     .filter(timer => timer.status === 'running')
     .reduce((total, timer) => total + timer.duration, 0);
@@ -109,16 +100,28 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
   return (
     <BaseWidget {...props}>
       <div className="space-y-4">
+        {/* Summary */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium">Active Timers</span>
+            <Clock className="h-5 w-5 text-primary" />
+            <span className="font-semibold">Active Timers</span>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {localTimers.filter(t => t.status === 'running').length} running
+          <Badge variant="outline" className="glass-surface">
+            {localTimers.length} running
           </Badge>
         </div>
 
+        {/* Total Time */}
+        <div className="text-center p-4 glass-surface rounded-lg">
+          <div className="text-2xl font-bold text-primary mb-1">
+            {formatDuration(totalRunningTime)}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Total Active Time
+          </div>
+        </div>
+
+        {/* Timer List */}
         {localTimers.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -126,23 +129,11 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Total time summary */}
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <span className="text-sm font-medium">Total Active Time</span>
-              <span className="text-lg font-mono font-bold text-blue-600">
-                {formatDuration(totalRunningTime)}
-              </span>
-            </div>
-
-            {/* Individual timers */}
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {localTimers.map(timer => (
-                <div
-                  key={timer.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
+            {localTimers.map((timer) => (
+              <div key={timer.id} className="glass-surface p-3 rounded-lg">
+                <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
+                    <p className="font-medium text-sm truncate">
                       {timer.taskTitle}
                     </p>
                     {timer.projectName && (
@@ -150,20 +141,20 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
                         {timer.projectName}
                       </p>
                     )}
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge 
-                        variant={timer.status === 'running' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {timer.status}
-                      </Badge>
-                      <span className="text-xs font-mono">
-                        {formatDuration(timer.duration)}
-                      </span>
-                    </div>
                   </div>
                   
-                  <div className="flex items-center space-x-1 ml-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        timer.status === 'running' 
+                          ? 'border-success text-success' 
+                          : 'border-warning text-warning'
+                      }`}
+                    >
+                      {formatDuration(timer.duration)}
+                    </Badge>
+                    
                     <Button
                       variant="outline"
                       size="sm"
@@ -174,8 +165,8 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
                     </Button>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
