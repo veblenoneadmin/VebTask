@@ -384,4 +384,107 @@ router.get('/org/:orgId', requireAuth, withOrgScope, validateQuery(commonSchemas
   }
 });
 
+// Get tasks for the entire team/organization (admin view)
+router.get('/team', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
+  try {
+    const { orgId, status, priority, limit = 50, assignedTo } = req.query;
+    
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    const where = { orgId };
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
+    if (assignedTo) where.userId = assignedTo;
+    
+    const tasks = await prisma.macroTask.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        timeLogs: {
+          select: {
+            begin: true,
+            end: true,
+            duration: true,
+            userId: true,
+            user: {
+              select: {
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            begin: 'desc'
+          },
+          take: 1
+        },
+        _count: {
+          select: {
+            timeLogs: true
+          }
+        }
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { dueDate: 'asc' },
+        { updatedAt: 'desc' }
+      ],
+      take: parseInt(limit)
+    });
+    
+    // Calculate total time and last worked for each task
+    const tasksWithStats = await Promise.all(tasks.map(async (task) => {
+      // Get total time worked on this task by all users
+      const timeStats = await prisma.timeLog.aggregate({
+        where: {
+          taskId: task.id,
+          end: { not: null } // Only completed time entries
+        },
+        _sum: {
+          duration: true
+        }
+      });
+      
+      const totalTime = timeStats._sum.duration || 0;
+      const lastWorked = task.timeLogs.length > 0 ? task.timeLogs[0].begin : null;
+      const lastWorkedBy = task.timeLogs.length > 0 ? task.timeLogs[0].user?.name : null;
+      
+      return {
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        category: task.category,
+        dueDate: task.dueDate,
+        assignedTo: task.user,
+        lastWorked: lastWorked,
+        lastWorkedBy: lastWorkedBy,
+        totalTime: totalTime,
+        estimatedHours: task.estimatedHours,
+        actualHours: task.actualHours,
+        completedAt: task.completedAt,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt
+      };
+    }));
+    
+    res.json({
+      success: true,
+      tasks: tasksWithStats,
+      total: tasksWithStats.length
+    });
+  } catch (error) {
+    console.error('Error fetching team tasks:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch team tasks' });
+  }
+});
+
 export default router;

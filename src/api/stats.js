@@ -141,33 +141,27 @@ router.get('/active-projects', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'orgId is required' });
     }
     
-    // Count distinct categories with active tasks (used as projects proxy)
-    const result = await prisma.macroTask.findMany({
+    // Count active projects
+    const activeCount = await prisma.project.count({
       where: {
         orgId,
         status: {
-          not: 'completed'
+          in: ['active', 'planning', 'in_progress']
         }
-      },
-      select: {
-        category: true
-      },
-      distinct: ['category']
+      }
     });
     
-    const activeCount = result.length;
-    
-    // Count tasks due this week
+    // Count projects with deadlines this week
     const today = new Date();
     const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
     
-    const dueSoon = await prisma.macroTask.count({
+    const dueSoon = await prisma.project.count({
       where: {
         orgId,
         status: {
-          not: 'completed'
+          in: ['active', 'planning', 'in_progress']
         },
-        dueDate: {
+        endDate: {
           gte: today,
           lte: weekFromNow
         }

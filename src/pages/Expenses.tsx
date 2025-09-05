@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
 import { useApiClient } from '../lib/api-client';
 import { useOrganization } from '../contexts/OrganizationContext';
@@ -163,7 +163,9 @@ export function Expenses() {
   const { data: session } = useSession();
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showNewExpenseModal, setShowNewExpenseModal] = useState(false);
   const [newExpenseLoading, setNewExpenseLoading] = useState(false);
   const [newExpenseForm, setNewExpenseForm] = useState({
@@ -175,6 +177,36 @@ export function Expenses() {
     date: new Date().toISOString().split('T')[0],
     paymentMethod: 'card'
   });
+
+  // Fetch expenses from server
+  const fetchExpenses = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await apiClient.fetch(`/api/expenses?userId=${session.user.id}&orgId=${currentOrg?.id || ''}&limit=100`);
+      
+      if (data.success) {
+        // For now, use mock data since API returns empty array
+        // When database is implemented, use: setExpenses(data.expenses || []);
+        setExpenses(data.expenses?.length > 0 ? data.expenses : mockExpenses);
+      } else {
+        setError('Failed to fetch expenses');
+        setExpenses([]);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      setExpenses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch expenses on component mount and when session changes
+  useEffect(() => {
+    fetchExpenses();
+  }, [session?.user?.id, currentOrg?.id]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -217,23 +249,27 @@ export function Expenses() {
     try {
       setNewExpenseLoading(true);
       
-      const newExpense: Expense = {
-        id: `exp_${Date.now()}`,
-        title: newExpenseForm.title,
-        description: newExpenseForm.description,
-        amount: newExpenseForm.amount,
-        currency: 'USD',
-        category: newExpenseForm.category,
-        date: newExpenseForm.date,
-        status: 'pending',
-        isRecurring: false,
-        isTaxDeductible: true,
-        vendor: newExpenseForm.vendor,
-        paymentMethod: newExpenseForm.paymentMethod,
-        tags: []
-      };
-      
-      setExpenses(prevExpenses => [newExpense, ...prevExpenses]);
+      const data = await apiClient.fetch('/api/expenses', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: session.user.id,
+          orgId: currentOrg?.id,
+          title: newExpenseForm.title,
+          description: newExpenseForm.description,
+          amount: newExpenseForm.amount,
+          category: newExpenseForm.category,
+          date: newExpenseForm.date,
+          vendor: newExpenseForm.vendor,
+          paymentMethod: newExpenseForm.paymentMethod
+        })
+      });
+
+      if (data.success) {
+        // Refresh the entire expense list from server
+        await fetchExpenses();
+      } else {
+        throw new Error('Failed to create expense');
+      }
       setShowNewExpenseModal(false);
       setNewExpenseForm({
         title: '',

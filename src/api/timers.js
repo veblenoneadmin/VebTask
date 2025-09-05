@@ -1,5 +1,6 @@
 // Timer management API endpoints
 import express from 'express';
+import { prisma } from '../lib/prisma.js';
 import { timerService } from '../services/TimerService.js';
 import { requireAuth, withOrgScope, requireTimerOwnership } from '../lib/rbac.js';
 import { validateBody, validateQuery, commonSchemas, timerSchemas } from '../lib/validation.js';
@@ -248,6 +249,82 @@ router.delete('/:timerId', requireAuth, withOrgScope, requireTimerOwnership, asy
   } catch (error) {
     console.error('Error deleting timer:', error);
     res.status(500).json({ error: 'Failed to delete timer' });
+  }
+});
+
+// Get team-wide timer activity (admin view)
+router.get('/team', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
+  try {
+    const { orgId, limit = 50, startDate, endDate } = req.query;
+    
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    const where = { orgId };
+    
+    // Add date filter if provided
+    if (startDate && endDate) {
+      where.begin = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      };
+    }
+    
+    const timeLogs = await prisma.timeLog.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        task: {
+          select: {
+            id: true,
+            title: true
+          }
+        }
+      },
+      orderBy: {
+        begin: 'desc'
+      },
+      take: parseInt(limit)
+    });
+    
+    // Group by user for team overview
+    const userSummaries = {};
+    timeLogs.forEach(log => {
+      const userId = log.userId;
+      if (!userSummaries[userId]) {
+        userSummaries[userId] = {
+          user: log.user,
+          totalTime: 0,
+          totalEntries: 0,
+          activeTimer: null,
+          recentEntries: []
+        };
+      }
+      
+      if (log.end) {
+        userSummaries[userId].totalTime += log.duration;
+        userSummaries[userId].totalEntries++;
+        userSummaries[userId].recentEntries.push(log);
+      } else {
+        userSummaries[userId].activeTimer = log;
+      }
+    });
+    
+    res.json({
+      success: true,
+      teamActivity: Object.values(userSummaries),
+      totalLogs: timeLogs.length
+    });
+  } catch (error) {
+    console.error('Error fetching team timer activity:', error);
+    res.status(500).json({ error: 'Failed to fetch team timer activity' });
   }
 });
 

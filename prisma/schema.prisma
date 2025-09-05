@@ -55,6 +55,7 @@ model User {
   brainDumps       BrainDump[]
   timeLogs         TimeLog[]
   calendarEvents   CalendarEvent[]
+  expenses         Expense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,6 +79,10 @@ model Organization {
   brainDumps     BrainDump[]
   timeLogs       TimeLog[]
   calendarEvents CalendarEvent[]
+  clients        Client[]
+  projects       Project[]
+  invoices       Invoice[]
+  expenses       Expense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -322,60 +327,112 @@ model CalendarEvent {
 // Future business models (placeholders for upcoming features)
 // These will be implemented in subsequent phases
 
-// model Client {
-//   id          String @id @default(cuid())
-//   orgId       String @db.VarChar(191)
-//   name        String @db.VarChar(255)
-//   email       String @db.VarChar(255)
-//   company     String? @db.VarChar(255)
-//   phone       String? @db.VarChar(50)
-//   address     String? @db.Text
-//   notes       String? @db.Text
-//   
-//   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-//   
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-//   
-//   @@index([orgId])
-//   @@map("clients")
-// }
+model Client {
+  id          String @id @default(cuid())
+  orgId       String @db.VarChar(191)
+  name        String @db.VarChar(255)
+  email       String @db.VarChar(255)
+  company     String? @db.VarChar(255)
+  phone       String? @db.VarChar(50)
+  address     String? @db.Text
+  notes       String? @db.Text
+  contactPerson String? @db.VarChar(255)
+  industry    String? @db.VarChar(255)
+  hourlyRate  Decimal? @db.Decimal(8, 2)
+  priority    String @default("medium") @db.VarChar(20)
+  status      String @default("potential") @db.VarChar(20)
+  
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projects Project[]
+  invoices Invoice[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([orgId])
+  @@map("clients")
+}
 
-// model Invoice {
-//   id          String @id @default(cuid())
-//   orgId       String @db.VarChar(191)
-//   clientId    String?
-//   number      String @db.VarChar(50)
-//   status      String @default("draft") @db.VarChar(20)
-//   amount      Decimal @db.Decimal(10, 2)
-//   taxAmount   Decimal @default(0) @db.Decimal(10, 2)
-//   totalAmount Decimal @db.Decimal(10, 2)
-//   dueDate     DateTime
-//   issuedAt    DateTime?
-//   paidAt      DateTime?
-//   
-//   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-//   
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-//   
-//   @@index([orgId])
-//   @@index([number])
-//   @@map("invoices")
-// }
+model Invoice {
+  id          String @id @default(cuid())
+  orgId       String @db.VarChar(191)
+  clientId    String?
+  number      String @db.VarChar(50)
+  clientName  String @db.VarChar(255)
+  description String? @db.Text
+  status      String @default("draft") @db.VarChar(20)
+  amount      Decimal @db.Decimal(10, 2)
+  taxAmount   Decimal @default(0) @db.Decimal(10, 2)
+  totalAmount Decimal @db.Decimal(10, 2)
+  dueDate     DateTime
+  issuedAt    DateTime?
+  paidAt      DateTime?
+  
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([orgId])
+  @@index([number])
+  @@map("invoices")
+}
 
-// model Expense {
-//   id          String @id @default(cuid())
-//   orgId       String @db.VarChar(191)
-//   userId      String @db.VarChar(36)
-//   category    String @db.VarChar(100)
-//   description String @db.VarChar(500)
-//   amount      Decimal @db.Decimal(10, 2)
-//   receiptUrl  String? @db.VarChar(500)
-//   expenseDate DateTime
-//   
-//   org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-//   user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Expense {
+  id          String @id @default(cuid())
+  orgId       String @db.VarChar(191)
+  userId      String @db.VarChar(36)
+  title       String @db.VarChar(255)
+  category    String @db.VarChar(100)
+  description String? @db.Text
+  amount      Decimal @db.Decimal(10, 2)
+  vendor      String? @db.VarChar(255)
+  paymentMethod String @default("card") @db.VarChar(50)
+  receiptUrl  String? @db.VarChar(500)
+  expenseDate DateTime
+  status      String @default("pending") @db.VarChar(20)
+  isTaxDeductible Boolean @default(false)
+  isRecurring Boolean @default(false)
+  
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([orgId])
+  @@index([userId])
+  @@map("expenses")
+}
+
+model Project {
+  id          String @id @default(cuid())
+  orgId       String @db.VarChar(191)
+  clientId    String?
+  name        String @db.VarChar(255)
+  description String? @db.Text
+  status      String @default("planning") @db.VarChar(20)
+  priority    String @default("medium") @db.VarChar(20)
+  budget      Decimal? @db.Decimal(10, 2)
+  spent       Decimal @default(0) @db.Decimal(10, 2)
+  progress    Int @default(0)
+  estimatedHours Int @default(0)
+  hoursLogged Int @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  color       String @default("bg-primary") @db.VarChar(50)
+  
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([orgId])
+  @@index([clientId])
+  @@map("projects")
+}
 //   
 //   createdAt DateTime @default(now())
 //   updatedAt DateTime @updatedAt

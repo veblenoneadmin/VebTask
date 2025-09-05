@@ -252,7 +252,8 @@ export function Invoices() {
           }]
         };
         
-        setInvoices(prevInvoices => [newInvoice, ...prevInvoices]);
+        // Refresh the entire invoice list from server
+        await fetchInvoices();
         setShowNewInvoiceModal(false);
       } else {
         console.error('Failed to create invoice: API did not return success');

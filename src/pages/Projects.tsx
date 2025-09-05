@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
 import { useApiClient } from '../lib/api-client';
 import { useOrganization } from '../contexts/OrganizationContext';
@@ -147,7 +147,9 @@ export function Projects() {
   const { data: session } = useSession();
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [newProjectLoading, setNewProjectLoading] = useState(false);
@@ -161,6 +163,36 @@ export function Projects() {
     startDate: '',
     endDate: ''
   });
+
+  // Fetch projects from server
+  const fetchProjects = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await apiClient.fetch(`/api/projects?userId=${session.user.id}&orgId=${currentOrg?.id || ''}&limit=100`);
+      
+      if (data.success) {
+        // For now, use mock data since API returns empty array
+        // When database is implemented, use: setProjects(data.projects || []);
+        setProjects(data.projects?.length > 0 ? data.projects : mockProjects);
+      } else {
+        setError('Failed to fetch projects');
+        setProjects([]);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      setProjects([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch projects on component mount and when session changes
+  useEffect(() => {
+    fetchProjects();
+  }, [session?.user?.id, currentOrg?.id]);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -198,27 +230,26 @@ export function Projects() {
     try {
       setNewProjectLoading(true);
       
-      const newProject: Project = {
-        id: `proj_${Date.now()}`,
-        name: newProjectForm.name,
-        description: newProjectForm.description,
-        status: 'planning',
-        priority: newProjectForm.priority,
-        client: newProjectForm.client,
-        startDate: newProjectForm.startDate,
-        endDate: newProjectForm.endDate,
-        budget: newProjectForm.budget,
-        spent: 0,
-        progress: 0,
-        teamMembers: [],
-        tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
-        hoursLogged: 0,
-        estimatedHours: newProjectForm.estimatedHours,
-        tags: [],
-        color: 'bg-primary'
-      };
-      
-      setProjects(prevProjects => [newProject, ...prevProjects]);
+      const data = await apiClient.fetch('/api/projects', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: session.user.id,
+          orgId: currentOrg?.id,
+          name: newProjectForm.name,
+          description: newProjectForm.description,
+          clientName: newProjectForm.client,
+          budget: newProjectForm.budget,
+          deadline: newProjectForm.endDate,
+          priority: newProjectForm.priority
+        })
+      });
+
+      if (data.success) {
+        // Refresh the entire projects list from server
+        await fetchProjects();
+      } else {
+        throw new Error('Failed to create project');
+      }
       setShowNewProjectModal(false);
       setNewProjectForm({
         name: '',

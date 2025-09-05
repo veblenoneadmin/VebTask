@@ -10,12 +10,18 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
   try {
     const { userId, orgId, limit = 50 } = req.query;
     
-    if (!userId && !orgId) {
-      return res.status(400).json({ error: 'userId or orgId is required' });
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
     }
     
-    // For now, return empty array since we don't have client table yet
-    const clients = [];
+    const clients = await prisma.client.findMany({
+      where: { orgId },
+      orderBy: [
+        { updatedAt: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      take: parseInt(limit)
+    });
     
     res.json({ 
       success: true, 
@@ -32,30 +38,32 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
 // Create new client
 router.post('/', requireAuth, withOrgScope, validateBody(clientSchemas.create), async (req, res) => {
   try {
-    const { userId, name, email, company, phone, address, hourlyRate } = req.body;
+    const { orgId, name, email, company, phone, address, hourlyRate, contactPerson, industry, priority, notes } = req.body;
     
-    if (!userId || !name || !email) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!orgId || !name || !email) {
+      return res.status(400).json({ error: 'Missing required fields: orgId, name, and email are required' });
     }
     
-    // For now, return mock response
-    const client = {
-      id: `client_${Date.now()}`,
-      name,
-      email,
-      company: company || '',
-      phone: phone || '',
-      address: address || '',
-      hourlyRate: hourlyRate ? parseFloat(hourlyRate) : 0,
-      status: 'active',
-      totalProjects: 0,
-      totalHours: 0,
-      totalRevenue: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    const client = await prisma.client.create({
+      data: {
+        orgId,
+        name,
+        email,
+        company: company || null,
+        phone: phone || null,
+        address: address || null,
+        hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+        contactPerson: contactPerson || null,
+        industry: industry || null,
+        priority: priority || 'medium',
+        notes: notes || null,
+        status: 'active'
+      }
+    });
     
-    res.json({ 
+    console.log(`✅ Created new client: ${name}`);
+    
+    res.status(201).json({ 
       success: true, 
       client 
     });
@@ -72,9 +80,27 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('client
     const { id } = req.params;
     const updates = req.body;
     
-    // For now, return mock response
+    // Remove fields that shouldn't be updated directly
+    delete updates.id;
+    delete updates.createdAt;
+    delete updates.updatedAt;
+    delete updates.orgId;
+    
+    // Handle numeric fields
+    if (updates.hourlyRate !== undefined) {
+      updates.hourlyRate = updates.hourlyRate ? parseFloat(updates.hourlyRate) : null;
+    }
+    
+    const client = await prisma.client.update({
+      where: { id },
+      data: updates
+    });
+    
+    console.log(`📝 Updated client ${id}`);
+    
     res.json({ 
       success: true, 
+      client,
       message: 'Client updated successfully' 
     });
     
@@ -89,7 +115,12 @@ router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('clien
   try {
     const { id } = req.params;
     
-    // For now, return mock response
+    await prisma.client.delete({
+      where: { id }
+    });
+    
+    console.log(`🗑️ Deleted client ${id}`);
+    
     res.json({ 
       success: true, 
       message: 'Client deleted successfully' 

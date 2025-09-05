@@ -67,13 +67,79 @@ router.get('/financial', requireAuth, async (req, res) => {
         }
       });
 
-      // Mock data for features not yet implemented
-      const invoiceStats = { _sum: { total: 0 }, _count: 0 };
-      const expenseStats = { _sum: { amount: 0 } };
-      const projectsCompleted = 0;
-      const activeClients = [];
+      // Get real invoice data
+      const invoiceStats = await prisma.invoice.aggregate({
+        where: {
+          orgId: orgId,
+          createdAt: {
+            gte: start,
+            lte: end
+          },
+          status: { in: ['sent', 'paid'] }
+        },
+        _sum: {
+          totalAmount: true
+        },
+        _count: true
+      });
+      
+      // Get real expense data
+      const expenseStats = await prisma.expense.aggregate({
+        where: {
+          orgId: orgId,
+          expenseDate: {
+            gte: start,
+            lte: end
+          }
+        },
+        _sum: {
+          amount: true
+        }
+      });
+      
+      // Get projects completed in this period
+      const projectsCompleted = await prisma.project.count({
+        where: {
+          orgId: orgId,
+          status: 'completed',
+          updatedAt: {
+            gte: start,
+            lte: end
+          }
+        }
+      });
+      
+      // Get active clients (clients with activity in this period)
+      const activeClients = await prisma.client.findMany({
+        where: {
+          orgId: orgId,
+          OR: [
+            {
+              projects: {
+                some: {
+                  updatedAt: {
+                    gte: start,
+                    lte: end
+                  }
+                }
+              }
+            },
+            {
+              invoices: {
+                some: {
+                  createdAt: {
+                    gte: start,
+                    lte: end
+                  }
+                }
+              }
+            }
+          ]
+        },
+        select: { id: true }
+      });
 
-      const revenue = invoiceStats._sum.total || 0;
+      const revenue = invoiceStats._sum.totalAmount || 0;
       const expenses = expenseStats._sum.amount || 0;
       const profit = revenue - expenses;
       const hoursTracked = Math.round((hoursStats._sum.duration || 0) / 3600); // Convert to hours
@@ -87,7 +153,7 @@ router.get('/financial', requireAuth, async (req, res) => {
         hoursTracked,
         projectsCompleted,
         clientsActive: activeClients.length,
-        invoicesSent: invoiceStats._count,
+        invoicesSent: invoiceStats._count || 0,
         averageHourlyRate
       });
     }
@@ -114,27 +180,34 @@ router.get('/projects', requireAuth, async (req, res) => {
     const { orgId = 'default', limit = '10' } = req.query;
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
 
-    // Mock project data since projects table doesn't exist yet
-    const projectPerformance = [
-      {
-        name: "Demo Project A",
-        completion: 75,
-        budget: 5000,
-        spent: 3750,
-        status: 'on-track',
-        hoursTracked: 38,
-        estimatedHours: 50
+    // Get real project data
+    const projects = await prisma.project.findMany({
+      where: { orgId },
+      include: {
+        client: {
+          select: {
+            name: true
+          }
+        }
       },
-      {
-        name: "Demo Project B", 
-        completion: 40,
-        budget: 8000,
-        spent: 4800,
-        status: 'behind-schedule',
-        hoursTracked: 48,
-        estimatedHours: 80
-      }
-    ];
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      take: limitNum
+    });
+    
+    const projectPerformance = projects.map(project => ({
+      name: project.name,
+      client: project.client?.name || 'No Client',
+      completion: project.progress || 0,
+      budget: parseFloat(project.budget || 0),
+      spent: parseFloat(project.spent || 0),
+      status: project.status,
+      hoursTracked: project.hoursLogged || 0,
+      estimatedHours: project.estimatedHours || 0,
+      startDate: project.startDate,
+      endDate: project.endDate
+    }));
 
     res.json({
       success: true,
@@ -162,30 +235,50 @@ router.get('/clients', requireAuth, async (req, res) => {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-    // Mock client data since clients table doesn't exist yet  
-    const clientMetrics = [
-      {
-        name: "Demo Client A",
-        revenue: 12500,
-        hours: 125,
-        projects: 3,
-        satisfaction: 4.8
+    // Get real client data
+    const clients = await prisma.client.findMany({
+      where: { orgId },
+      include: {
+        projects: {
+          select: {
+            id: true,
+            spent: true,
+            hoursLogged: true
+          }
+        },
+        invoices: {
+          where: {
+            createdAt: {
+              gte: oneYearAgo
+            }
+          },
+          select: {
+            totalAmount: true
+          }
+        }
       },
-      {
-        name: "Demo Client B",
-        revenue: 8750,
-        hours: 87,
-        projects: 2,
-        satisfaction: 4.2
+      orderBy: {
+        updatedAt: 'desc'
       },
-      {
-        name: "Demo Client C",
-        revenue: 15600,
-        hours: 156,
-        projects: 4,
-        satisfaction: 4.9
-      }
-    ];
+      take: limitNum
+    });
+    
+    const clientMetrics = clients.map(client => {
+      const totalRevenue = client.invoices.reduce((sum, invoice) => sum + parseFloat(invoice.totalAmount), 0);
+      const totalHours = client.projects.reduce((sum, project) => sum + (project.hoursLogged || 0), 0);
+      const projectCount = client.projects.length;
+      
+      return {
+        name: client.name,
+        company: client.company,
+        revenue: totalRevenue,
+        hours: totalHours,
+        projects: projectCount,
+        status: client.status,
+        priority: client.priority,
+        hourlyRate: parseFloat(client.hourlyRate || 0)
+      };
+    });
 
     res.json({
       success: true,
@@ -229,18 +322,42 @@ router.get('/summary', requireAuth, async (req, res) => {
       })
     ]);
 
-    // Mock data for features not implemented yet
-    const currentRevenue = { _sum: { total: 0 } };
-    const currentExpenses = { _sum: { amount: 0 } };
-    const currentProjects = 0;
-    const lastRevenue = { _sum: { total: 0 } };
-    const lastExpenses = { _sum: { amount: 0 } };
-    const lastProjects = 0;
+    // Get real data for all metrics
+    const [currentRevenue, currentExpenses, currentProjects, lastRevenue, lastExpenses, lastProjects] = await Promise.all([
+      // Current month revenue
+      prisma.invoice.aggregate({
+        where: { orgId, createdAt: { gte: monthStart, lte: monthEnd }, status: { in: ['sent', 'paid'] }},
+        _sum: { totalAmount: true }
+      }),
+      // Current month expenses
+      prisma.expense.aggregate({
+        where: { orgId, expenseDate: { gte: monthStart, lte: monthEnd }},
+        _sum: { amount: true }
+      }),
+      // Current active projects
+      prisma.project.count({
+        where: { orgId, status: { in: ['active', 'planning', 'in_progress'] }}
+      }),
+      // Last month revenue
+      prisma.invoice.aggregate({
+        where: { orgId, createdAt: { gte: lastMonthStart, lte: lastMonthEnd }, status: { in: ['sent', 'paid'] }},
+        _sum: { totalAmount: true }
+      }),
+      // Last month expenses
+      prisma.expense.aggregate({
+        where: { orgId, expenseDate: { gte: lastMonthStart, lte: lastMonthEnd }},
+        _sum: { amount: true }
+      }),
+      // Projects completed last month
+      prisma.project.count({
+        where: { orgId, status: 'completed', updatedAt: { gte: lastMonthStart, lte: lastMonthEnd }}
+      })
+    ]);
 
-    const currentRevenueValue = currentRevenue._sum.total || 0;
+    const currentRevenueValue = currentRevenue._sum.totalAmount || 0;
     const currentExpenseValue = currentExpenses._sum.amount || 0;
     const currentHoursValue = Math.round((currentHours._sum.duration || 0) / 3600);
-    const lastRevenueValue = lastRevenue._sum.total || 0;
+    const lastRevenueValue = lastRevenue._sum.totalAmount || 0;
     const lastExpenseValue = lastExpenses._sum.amount || 0;
     const lastHoursValue = Math.round((lastHours._sum.duration || 0) / 3600);
 
@@ -275,8 +392,8 @@ router.get('/summary', requireAuth, async (req, res) => {
           trend: Math.abs(hoursTrend),
           direction: hoursTrend >= 0 ? 'up' : 'down'
         },
-        activeProjects: currentProjects,
-        completedLastMonth: lastProjects
+        activeProjects: currentProjects || 0,
+        completedLastMonth: lastProjects || 0
       }
     });
   } catch (error) {

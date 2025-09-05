@@ -10,13 +10,31 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
   try {
     const { userId, orgId, status, limit = 50 } = req.query;
     
-    if (!userId && !orgId) {
-      return res.status(400).json({ error: 'userId or orgId is required' });
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
     }
     
-    // For now, return empty array since we don't have invoice table yet
-    // This will be implemented when invoice schema is added
-    const invoices = [];
+    const where = { orgId };
+    if (status) where.status = status;
+    
+    const invoices = await prisma.invoice.findMany({
+      where,
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            company: true
+          }
+        }
+      },
+      orderBy: [
+        { createdAt: 'desc' },
+        { number: 'desc' }
+      ],
+      take: parseInt(limit)
+    });
     
     res.json({ 
       success: true, 
@@ -33,27 +51,46 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
 // Create new invoice
 router.post('/', requireAuth, withOrgScope, validateBody(invoiceSchemas.create), async (req, res) => {
   try {
-    const { userId, clientName, amount, description, dueDate } = req.body;
+    const { orgId, clientId, clientName, amount, taxAmount, description, dueDate } = req.body;
     
-    if (!userId || !clientName || !amount) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!orgId || !clientName || !amount) {
+      return res.status(400).json({ error: 'Missing required fields: orgId, clientName, and amount are required' });
     }
     
-    // For now, return mock response
-    // This will be implemented when invoice schema is added
-    const invoice = {
-      id: `inv_${Date.now()}`,
-      invoiceNumber: `INV-${String(Date.now()).slice(-6)}`,
-      clientName,
-      amount: parseFloat(amount),
-      description: description || '',
-      status: 'draft',
-      dueDate: dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    // Generate invoice number
+    const invoiceCount = await prisma.invoice.count({ where: { orgId } });
+    const number = `INV-${String(invoiceCount + 1).padStart(6, '0')}`;
     
-    res.json({ 
+    const totalAmount = parseFloat(amount) + (taxAmount ? parseFloat(taxAmount) : 0);
+    
+    const invoice = await prisma.invoice.create({
+      data: {
+        orgId,
+        clientId: clientId || null,
+        number,
+        clientName,
+        description: description || null,
+        amount: parseFloat(amount),
+        taxAmount: taxAmount ? parseFloat(taxAmount) : 0,
+        totalAmount,
+        dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        status: 'draft'
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            company: true
+          }
+        }
+      }
+    });
+    
+    console.log(`✅ Created new invoice: ${number}`);
+    
+    res.status(201).json({ 
       success: true, 
       invoice 
     });
@@ -74,9 +111,35 @@ router.patch('/:id/status', requireAuth, withOrgScope, requireResourceOwnership(
       return res.status(400).json({ error: 'Invalid status' });
     }
     
-    // For now, return mock response
+    const updateData = { status };
+    
+    // Set timestamps based on status
+    if (status === 'sent' && !updateData.issuedAt) {
+      updateData.issuedAt = new Date();
+    } else if (status === 'paid') {
+      updateData.paidAt = new Date();
+    }
+    
+    const invoice = await prisma.invoice.update({
+      where: { id },
+      data: updateData,
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            company: true
+          }
+        }
+      }
+    });
+    
+    console.log(`📝 Updated invoice ${id} status to: ${status}`);
+    
     res.json({ 
       success: true, 
+      invoice,
       message: 'Invoice status updated successfully' 
     });
     
@@ -91,7 +154,12 @@ router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('invoi
   try {
     const { id } = req.params;
     
-    // For now, return mock response
+    await prisma.invoice.delete({
+      where: { id }
+    });
+    
+    console.log(`🗑️ Deleted invoice ${id}`);
+    
     res.json({ 
       success: true, 
       message: 'Invoice deleted successfully' 

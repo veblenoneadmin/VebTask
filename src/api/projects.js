@@ -10,13 +10,30 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
   try {
     const { userId, orgId, status, limit = 50 } = req.query;
     
-    if (!userId && !orgId) {
-      return res.status(400).json({ error: 'userId or orgId is required' });
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
     }
     
-    // For now, return empty array since we don't have project table yet
-    // This will be implemented when project schema is added
-    const projects = [];
+    const where = { orgId };
+    if (status) where.status = status;
+    
+    const projects = await prisma.project.findMany({
+      where,
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: [
+        { updatedAt: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      take: parseInt(limit)
+    });
     
     res.json({ 
       success: true, 
@@ -33,30 +50,39 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
 // Create new project
 router.post('/', requireAuth, withOrgScope, validateBody(projectSchemas.create), async (req, res) => {
   try {
-    const { userId, name, description, clientName, budget, deadline, priority } = req.body;
+    const { orgId, name, description, clientId, budget, estimatedHours, startDate, endDate, priority } = req.body;
     
-    if (!userId || !name) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!orgId || !name) {
+      return res.status(400).json({ error: 'Missing required fields: orgId and name are required' });
     }
     
-    // For now, return mock response
-    const project = {
-      id: `proj_${Date.now()}`,
-      name,
-      description: description || '',
-      clientName: clientName || '',
-      budget: budget ? parseFloat(budget) : 0,
-      deadline: deadline || null,
-      priority: priority || 'medium',
-      status: 'active',
-      progress: 0,
-      hoursSpent: 0,
-      hoursEstimated: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    const project = await prisma.project.create({
+      data: {
+        orgId,
+        name,
+        description: description || null,
+        clientId: clientId || null,
+        budget: budget ? parseFloat(budget) : null,
+        estimatedHours: estimatedHours ? parseInt(estimatedHours) : 0,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        priority: priority || 'medium',
+        status: 'planning'
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
     
-    res.json({ 
+    console.log(`✅ Created new project: ${name}`);
+    
+    res.status(201).json({ 
       success: true, 
       project 
     });
@@ -73,9 +99,56 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('projec
     const { id } = req.params;
     const updates = req.body;
     
-    // For now, return mock response
+    // Remove fields that shouldn't be updated directly
+    delete updates.id;
+    delete updates.createdAt;
+    delete updates.updatedAt;
+    delete updates.orgId;
+    
+    // Handle numeric fields
+    if (updates.budget !== undefined) {
+      updates.budget = updates.budget ? parseFloat(updates.budget) : null;
+    }
+    if (updates.estimatedHours !== undefined) {
+      updates.estimatedHours = updates.estimatedHours ? parseInt(updates.estimatedHours) : 0;
+    }
+    if (updates.hoursLogged !== undefined) {
+      updates.hoursLogged = updates.hoursLogged ? parseInt(updates.hoursLogged) : 0;
+    }
+    if (updates.progress !== undefined) {
+      updates.progress = updates.progress ? parseInt(updates.progress) : 0;
+    }
+    if (updates.spent !== undefined) {
+      updates.spent = updates.spent ? parseFloat(updates.spent) : 0;
+    }
+    
+    // Handle date fields
+    if (updates.startDate) {
+      updates.startDate = new Date(updates.startDate);
+    }
+    if (updates.endDate) {
+      updates.endDate = new Date(updates.endDate);
+    }
+    
+    const project = await prisma.project.update({
+      where: { id },
+      data: updates,
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+    
+    console.log(`📝 Updated project ${id}`);
+    
     res.json({ 
       success: true, 
+      project,
       message: 'Project updated successfully' 
     });
     
@@ -90,7 +163,12 @@ router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('proje
   try {
     const { id } = req.params;
     
-    // For now, return mock response
+    await prisma.project.delete({
+      where: { id }
+    });
+    
+    console.log(`🗑️ Deleted project ${id}`);
+    
     res.json({ 
       success: true, 
       message: 'Project deleted successfully' 
@@ -107,18 +185,32 @@ router.get('/stats', requireAuth, withOrgScope, validateQuery(commonSchemas.pagi
   try {
     const { userId, orgId } = req.query;
     
-    if (!userId && !orgId) {
-      return res.status(400).json({ error: 'userId or orgId is required' });
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
     }
     
-    // Mock stats for now
+    const projects = await prisma.project.findMany({
+      where: { orgId },
+      select: {
+        status: true,
+        budget: true,
+        spent: true,
+        hoursLogged: true,
+        estimatedHours: true,
+        endDate: true
+      }
+    });
+    
+    const now = new Date();
     const stats = {
-      total: 0,
-      active: 0,
-      completed: 0,
-      overdue: 0,
-      totalBudget: 0,
-      totalHours: 0
+      total: projects.length,
+      active: projects.filter(p => p.status === 'active').length,
+      completed: projects.filter(p => p.status === 'completed').length,
+      overdue: projects.filter(p => p.endDate && new Date(p.endDate) < now && p.status !== 'completed').length,
+      totalBudget: projects.reduce((sum, p) => sum + (p.budget || 0), 0),
+      totalSpent: projects.reduce((sum, p) => sum + (p.spent || 0), 0),
+      totalHours: projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0),
+      totalEstimatedHours: projects.reduce((sum, p) => sum + (p.estimatedHours || 0), 0)
     };
     
     res.json({ 

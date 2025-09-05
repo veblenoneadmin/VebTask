@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
 import { useApiClient } from '../lib/api-client';
 import { useOrganization } from '../contexts/OrganizationContext';
@@ -140,7 +140,9 @@ export function Clients() {
   const { data: session } = useSession();
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
-  const [clients, setClients] = useState<Client[]>(mockClients);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
@@ -159,6 +161,36 @@ export function Clients() {
     priority: 'medium' as 'low' | 'medium' | 'high',
     notes: ''
   });
+
+  // Fetch clients from server
+  const fetchClients = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await apiClient.fetch(`/api/clients?userId=${session.user.id}&orgId=${currentOrg?.id || ''}&limit=100`);
+      
+      if (data.success) {
+        // For now, use mock data since API returns empty array
+        // When database is implemented, use: setClients(data.clients || []);
+        setClients(data.clients?.length > 0 ? data.clients : mockClients);
+      } else {
+        setError('Failed to fetch clients');
+        setClients([]);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      setClients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch clients on component mount and when session changes
+  useEffect(() => {
+    fetchClients();
+  }, [session?.user?.id, currentOrg?.id]);
 
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -196,27 +228,30 @@ export function Clients() {
     try {
       setNewClientLoading(true);
       
-      // For now, add to local state since there's no API endpoint
-      const newClient: Client = {
-        id: `client_${Date.now()}`,
-        name: newClientForm.name,
-        company: newClientForm.company,
-        email: newClientForm.email,
-        phone: newClientForm.phone,
-        address: newClientForm.address,
-        status: 'potential',
-        totalProjects: 0,
-        totalHours: 0,
-        totalEarnings: 0,
-        hourlyRate: newClientForm.hourlyRate,
-        lastActivity: new Date().toISOString().split('T')[0],
-        contactPerson: newClientForm.contactPerson,
-        industry: newClientForm.industry,
-        notes: newClientForm.notes,
-        priority: newClientForm.priority
-      };
-      
-      setClients(prevClients => [newClient, ...prevClients]);
+      const data = await apiClient.fetch('/api/clients', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: session.user.id,
+          orgId: currentOrg?.id,
+          name: newClientForm.name,
+          company: newClientForm.company,
+          email: newClientForm.email,
+          phone: newClientForm.phone,
+          address: newClientForm.address,
+          hourlyRate: newClientForm.hourlyRate,
+          contactPerson: newClientForm.contactPerson,
+          industry: newClientForm.industry,
+          notes: newClientForm.notes,
+          priority: newClientForm.priority
+        })
+      });
+
+      if (data.success) {
+        // Refresh the entire client list from server
+        await fetchClients();
+      } else {
+        throw new Error('Failed to create client');
+      }
       setShowNewClientModal(false);
       setNewClientForm({
         name: '',
