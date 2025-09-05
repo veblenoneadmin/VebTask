@@ -5,6 +5,9 @@ import type { Widget } from './WidgetInterface';
 import { StatWidget } from '../../components/widgets/StatWidget';
 import { ActiveTimersWidget } from '../../components/widgets/ActiveTimersWidget';
 import { RecentTasksWidget } from '../../components/widgets/RecentTasksWidget';
+import { TimerWidget } from '../../components/widgets/TimerWidget';
+import { ClientProgressWidget } from '../../components/widgets/ClientProgressWidget';
+import { ClientNotificationsWidget } from '../../components/widgets/ClientNotificationsWidget';
 
 // Define all available widgets
 const widgets: Widget[] = [
@@ -162,6 +165,55 @@ const widgets: Widget[] = [
     },
     isConfigurable: true,
     permissions: ['view_tasks']
+  },
+  
+  // Timer Widget - Direct access to timer functionality
+  {
+    id: 'timer-widget',
+    name: 'Timer Widget',
+    description: 'Start, stop, and manage time tracking',
+    category: 'productivity',
+    component: TimerWidget as any,
+    defaultConfig: {
+      title: 'Time Tracker',
+      showTaskSelection: true,
+      compact: false,
+      refreshInterval: 1 // 1 second for real-time updates
+    },
+    isConfigurable: true,
+    permissions: ['manage_time_logs']
+  },
+  
+  // Client Progress Widget - Unique for CLIENT role users
+  {
+    id: 'client-progress',
+    name: 'Client Progress',
+    description: 'Personal progress overview for clients',
+    category: 'overview',
+    component: ClientProgressWidget as any,
+    defaultConfig: {
+      title: 'Your Progress',
+      showDetails: true,
+      refreshInterval: 300 // 5 minutes
+    },
+    isConfigurable: true,
+    permissions: ['view_tasks', 'view_time_logs']
+  },
+  
+  // Client Notifications Widget - Updates and milestones for clients
+  {
+    id: 'client-notifications',
+    name: 'Client Notifications',
+    description: 'Project updates and notifications for clients',
+    category: 'communication',
+    component: ClientNotificationsWidget as any,
+    defaultConfig: {
+      title: 'Updates & Notifications',
+      maxNotifications: 5,
+      refreshInterval: 300 // 5 minutes
+    },
+    isConfigurable: true,
+    permissions: ['view_tasks']
   }
 ];
 
@@ -178,7 +230,7 @@ export function initializeWidgets() {
 export const defaultDashboardLayouts = {
   // Standard layout for most users
   standard: [
-    { widgetId: 'active-timers', instanceId: 'timer-1', position: { x: 0, y: 0, width: 2, height: 2 } },
+    { widgetId: 'timer-widget', instanceId: 'timer-1', position: { x: 0, y: 0, width: 2, height: 2 } },
     { widgetId: 'tasks-completed-today', instanceId: 'completed-1', position: { x: 2, y: 0, width: 1, height: 1 } },
     { widgetId: 'total-time-today', instanceId: 'time-1', position: { x: 3, y: 0, width: 1, height: 1 } },
     { widgetId: 'recent-tasks', instanceId: 'tasks-1', position: { x: 0, y: 2, width: 2, height: 2 } },
@@ -186,10 +238,20 @@ export const defaultDashboardLayouts = {
     { widgetId: 'weekly-hours', instanceId: 'weekly-1', position: { x: 3, y: 1, width: 1, height: 1 } },
   ],
   
-  // Minimal layout for clients or limited users
+  // Minimal layout for staff or limited users
   minimal: [
-    { widgetId: 'active-timers', instanceId: 'timer-1', position: { x: 0, y: 0, width: 2, height: 2 } },
+    { widgetId: 'timer-widget', instanceId: 'timer-1', position: { x: 0, y: 0, width: 2, height: 2 } },
     { widgetId: 'recent-tasks', instanceId: 'tasks-1', position: { x: 2, y: 0, width: 2, height: 2 } },
+  ],
+  
+  // CLIENT specific layout - unique dashboard experience
+  client: [
+    { widgetId: 'client-progress', instanceId: 'progress-1', position: { x: 0, y: 0, width: 2, height: 3 } },
+    { widgetId: 'timer-widget', instanceId: 'timer-1', position: { x: 2, y: 0, width: 2, height: 2 } },
+    { widgetId: 'client-notifications', instanceId: 'notifications-1', position: { x: 4, y: 0, width: 2, height: 3 } },
+    { widgetId: 'tasks-completed-today', instanceId: 'completed-1', position: { x: 2, y: 2, width: 1, height: 1 } },
+    { widgetId: 'total-time-today', instanceId: 'time-1', position: { x: 3, y: 2, width: 1, height: 1 } },
+    { widgetId: 'recent-tasks', instanceId: 'tasks-1', position: { x: 0, y: 3, width: 6, height: 2 } },
   ],
   
   // Manager layout with team overview
@@ -198,7 +260,7 @@ export const defaultDashboardLayouts = {
     { widgetId: 'active-projects', instanceId: 'projects-1', position: { x: 1, y: 0, width: 1, height: 1 } },
     { widgetId: 'productivity-score', instanceId: 'productivity-1', position: { x: 2, y: 0, width: 1, height: 1 } },
     { widgetId: 'overdue-tasks', instanceId: 'overdue-1', position: { x: 3, y: 0, width: 1, height: 1 } },
-    { widgetId: 'active-timers', instanceId: 'timer-1', position: { x: 0, y: 1, width: 2, height: 2 } },
+    { widgetId: 'timer-widget', instanceId: 'timer-1', position: { x: 0, y: 1, width: 2, height: 2 } },
     { widgetId: 'recent-tasks', instanceId: 'tasks-1', position: { x: 2, y: 1, width: 2, height: 2 } },
   ]
 };
@@ -363,6 +425,45 @@ export const widgetDataFetchers = {
     } catch (error) {
       console.error('Failed to fetch overdue tasks:', error);
       return { value: 0, label: 'Overdue', format: 'number' };
+    }
+  },
+  
+  'timer-widget': async (orgId: string, userId: string) => {
+    try {
+      // Timer widget manages its own data through useTimer hook
+      return {
+        initialized: true,
+        message: 'Timer widget is self-managed'
+      };
+    } catch (error) {
+      console.error('Failed to initialize timer widget:', error);
+      return { initialized: false, message: 'Timer widget initialization failed' };
+    }
+  },
+  
+  'client-progress': async (orgId: string, userId: string) => {
+    try {
+      // Client progress widget manages its own data through internal API calls
+      return {
+        initialized: true,
+        message: 'Client progress widget is self-managed'
+      };
+    } catch (error) {
+      console.error('Failed to initialize client progress widget:', error);
+      return { initialized: false, message: 'Client progress widget initialization failed' };
+    }
+  },
+  
+  'client-notifications': async (orgId: string, userId: string) => {
+    try {
+      // Client notifications widget manages its own data through internal API calls
+      return {
+        initialized: true,
+        message: 'Client notifications widget is self-managed'
+      };
+    } catch (error) {
+      console.error('Failed to initialize client notifications widget:', error);
+      return { initialized: false, message: 'Client notifications widget initialization failed' };
     }
   }
 };

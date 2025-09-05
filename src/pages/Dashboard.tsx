@@ -54,10 +54,12 @@ export function Dashboard() {
       try {
         // Use layout based on user role
         const defaultLayout = currentOrg?.role === 'ADMIN' || currentOrg?.role === 'OWNER' 
-          ? defaultDashboardLayouts.standard 
+          ? defaultDashboardLayouts.manager 
           : currentOrg?.role === 'STAFF'
           ? defaultDashboardLayouts.minimal
-          : defaultDashboardLayouts.minimal;
+          : currentOrg?.role === 'CLIENT'
+          ? defaultDashboardLayouts.client
+          : defaultDashboardLayouts.standard;
         setWidgets(defaultLayout);
         
         // Load initial data for all widgets
