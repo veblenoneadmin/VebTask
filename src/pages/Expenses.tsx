@@ -160,11 +160,21 @@ const expenseCategories = [
 ];
 
 export function Expenses() {
-  // const { data: session } = useSession();
-  // const { currentOrg } = useOrganization();
-  // const apiClient = useApiClient();
-  const [expenses] = useState<Expense[]>(mockExpenses);
-  // const [showNewExpenseModal, setShowNewExpenseModal] = useState(false);
+  const { data: session } = useSession();
+  const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
+  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
+  const [showNewExpenseModal, setShowNewExpenseModal] = useState(false);
+  const [newExpenseLoading, setNewExpenseLoading] = useState(false);
+  const [newExpenseForm, setNewExpenseForm] = useState({
+    title: '',
+    description: '',
+    amount: 0,
+    category: 'business',
+    vendor: '',
+    date: new Date().toISOString().split('T')[0],
+    paymentMethod: 'card'
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -198,6 +208,47 @@ export function Expenses() {
   const getCategoryColor = (category: string) => {
     const categoryData = expenseCategories.find(cat => cat.name === category);
     return categoryData ? categoryData.color : 'bg-gray-500';
+  };
+
+  const handleCreateExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.user?.id) return;
+
+    try {
+      setNewExpenseLoading(true);
+      
+      const newExpense: Expense = {
+        id: `exp_${Date.now()}`,
+        title: newExpenseForm.title,
+        description: newExpenseForm.description,
+        amount: newExpenseForm.amount,
+        currency: 'USD',
+        category: newExpenseForm.category,
+        date: newExpenseForm.date,
+        status: 'pending',
+        isRecurring: false,
+        isTaxDeductible: true,
+        vendor: newExpenseForm.vendor,
+        paymentMethod: newExpenseForm.paymentMethod,
+        tags: []
+      };
+      
+      setExpenses(prevExpenses => [newExpense, ...prevExpenses]);
+      setShowNewExpenseModal(false);
+      setNewExpenseForm({
+        title: '',
+        description: '',
+        amount: 0,
+        category: 'business',
+        vendor: '',
+        date: new Date().toISOString().split('T')[0],
+        paymentMethod: 'card'
+      });
+    } catch (error: any) {
+      console.error('Error creating expense:', error);
+    } finally {
+      setNewExpenseLoading(false);
+    }
   };
 
   const expenseStats = {
@@ -234,7 +285,7 @@ export function Expenses() {
             Export
           </Button>
           <Button 
-            onClick={() => console.log('Expense creation coming soon')}
+            onClick={() => setShowNewExpenseModal(true)}
             className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -437,7 +488,7 @@ export function Expenses() {
                       : 'Add your first expense to get started'
                     }
                   </p>
-                  <Button onClick={() => console.log('Expense creation coming soon')}>
+                  <Button onClick={() => setShowNewExpenseModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Expense
                   </Button>
@@ -515,6 +566,116 @@ export function Expenses() {
           </Card>
         </div>
       </div>
+
+      {/* New Expense Modal */}
+      {showNewExpenseModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Add New Expense</h2>
+              <button className="modal-close" onClick={() => setShowNewExpenseModal(false)}>
+                <Plus className="rotate-45" size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateExpense} className="modal-form">
+              <div className="form-group">
+                <label>Title *</label>
+                <input
+                  type="text"
+                  value={newExpenseForm.title}
+                  onChange={(e) => setNewExpenseForm(prev => ({ ...prev, title: e.target.value }))}
+                  required
+                  placeholder="Expense title"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  value={newExpenseForm.description}
+                  onChange={(e) => setNewExpenseForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                  placeholder="Expense description..."
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Amount *</label>
+                  <input
+                    type="number"
+                    value={newExpenseForm.amount}
+                    onChange={(e) => setNewExpenseForm(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                    required
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Category</label>
+                  <select
+                    value={newExpenseForm.category}
+                    onChange={(e) => setNewExpenseForm(prev => ({ ...prev, category: e.target.value }))}
+                  >
+                    <option value="Business">Business</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Meals">Meals</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Software">Software</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Vendor *</label>
+                  <input
+                    type="text"
+                    value={newExpenseForm.vendor}
+                    onChange={(e) => setNewExpenseForm(prev => ({ ...prev, vendor: e.target.value }))}
+                    required
+                    placeholder="Vendor/merchant name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Payment Method</label>
+                  <select
+                    value={newExpenseForm.paymentMethod}
+                    onChange={(e) => setNewExpenseForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                  >
+                    <option value="card">Credit Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank Transfer</option>
+                    <option value="paypal">PayPal</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  value={newExpenseForm.date}
+                  onChange={(e) => setNewExpenseForm(prev => ({ ...prev, date: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="secondary-btn" onClick={() => setShowNewExpenseModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="primary-btn" disabled={newExpenseLoading}>
+                  {newExpenseLoading ? 'Adding...' : 'Add Expense'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

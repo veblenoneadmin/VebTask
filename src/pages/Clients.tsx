@@ -138,8 +138,8 @@ const mockClients: Client[] = [
 
 export function Clients() {
   const { data: session } = useSession();
-  // const { currentOrg } = useOrganization();
-  // const apiClient = useApiClient();
+  const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
   const [clients, setClients] = useState<Client[]>(mockClients);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -280,7 +280,7 @@ export function Clients() {
             </button>
           </div>
           <Button 
-            onClick={() => console.log('Client creation coming soon')}
+            onClick={() => setShowNewClientModal(true)}
             className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -559,7 +559,7 @@ export function Clients() {
                     : 'Add your first client to get started'
                   }
                 </p>
-                <Button onClick={() => console.log('Client creation coming soon')}>
+                <Button onClick={() => setShowNewClientModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Client
                 </Button>
