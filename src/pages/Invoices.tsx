@@ -178,31 +178,31 @@ export function Invoices() {
   // const [selectedInvoice] = useState<Invoice | null>(null);
 
   // Fetch invoices from API
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      if (!session?.user?.id) return;
-      
-      try {
-        setLoading(true);
-        const data = await apiClient.fetch(`/api/invoices?userId=${session.user.id}`);
-        if (data.success && data.invoices) {
-          setInvoices(data.invoices || []);
-        } else {
-          console.error('Failed to fetch invoices: API returned no success');
-          // Fallback to mock data if API fails
-          setInvoices(mockInvoices);
-        }
-      } catch (error) {
-        console.error('Error fetching invoices:', error);
-        // Fallback to mock data on error
+  const fetchInvoices = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      setLoading(true);
+      const data = await apiClient.fetch(`/api/invoices?userId=${session.user.id}`);
+      if (data.success && data.invoices) {
+        setInvoices(data.invoices || []);
+      } else {
+        console.error('Failed to fetch invoices: API returned no success');
+        // Fallback to mock data if API fails
         setInvoices(mockInvoices);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      // Fallback to mock data on error
+      setInvoices(mockInvoices);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchInvoices();
-  }, [session, apiClient]);
+  }, [session?.user?.id, apiClient]);
 
   const handleCreateInvoice = async (invoiceData: {
     clientName: string;
