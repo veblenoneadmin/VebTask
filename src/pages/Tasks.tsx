@@ -46,7 +46,6 @@ export function Tasks() {
   const { data: session } = useSession();
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
-  console.log('Current session:', session);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
@@ -64,7 +63,6 @@ export function Tasks() {
     tags: ''
   });
   const [taskFormLoading, setTaskFormLoading] = useState(false);
-  console.log('New task form visible:', showNewTaskForm);
 
   // Fetch user role
   useEffect(() => {
@@ -100,7 +98,6 @@ export function Tasks() {
     try {
       setLoading(true);
       const data = await apiClient.fetch(`/api/tasks/recent?userId=${session.user.id}&limit=50`);
-      console.log('Fetched tasks:', data);
       if (data.success) {
         setTasks(data.tasks || []);
       } else {

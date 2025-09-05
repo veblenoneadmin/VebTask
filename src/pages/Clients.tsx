@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useSession } from '../lib/auth-client';
+import { useApiClient } from '../lib/api-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -136,14 +138,27 @@ const mockClients: Client[] = [
 
 export function Clients() {
   const { data: session } = useSession();
-  const [clients] = useState<Client[]>(mockClients);
-  console.log(clients);
+  const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
+  const [clients, setClients] = useState<Client[]>(mockClients);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedClient] = useState<Client | null>(null);
-  console.log(selectedClient);
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [newClientLoading, setNewClientLoading] = useState(false);
+  const [newClientForm, setNewClientForm] = useState({
+    name: '',
+    company: '',
+    email: '',
+    phone: '',
+    address: '',
+    contactPerson: '',
+    industry: '',
+    hourlyRate: 95,
+    priority: 'medium' as 'low' | 'medium' | 'high',
+    notes: ''
+  });
 
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -174,6 +189,54 @@ export function Clients() {
     }
   };
 
+  const handleCreateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.user?.id) return;
+
+    try {
+      setNewClientLoading(true);
+      
+      // For now, add to local state since there's no API endpoint
+      const newClient: Client = {
+        id: `client_${Date.now()}`,
+        name: newClientForm.name,
+        company: newClientForm.company,
+        email: newClientForm.email,
+        phone: newClientForm.phone,
+        address: newClientForm.address,
+        status: 'potential',
+        totalProjects: 0,
+        totalHours: 0,
+        totalEarnings: 0,
+        hourlyRate: newClientForm.hourlyRate,
+        lastActivity: new Date().toISOString().split('T')[0],
+        contactPerson: newClientForm.contactPerson,
+        industry: newClientForm.industry,
+        notes: newClientForm.notes,
+        priority: newClientForm.priority
+      };
+      
+      setClients(prevClients => [newClient, ...prevClients]);
+      setShowNewClientModal(false);
+      setNewClientForm({
+        name: '',
+        company: '',
+        email: '',
+        phone: '',
+        address: '',
+        contactPerson: '',
+        industry: '',
+        hourlyRate: 95,
+        priority: 'medium',
+        notes: ''
+      });
+    } catch (error: any) {
+      console.error('Error creating client:', error);
+    } finally {
+      setNewClientLoading(false);
+    }
+  };
+
   const clientStats = {
     totalClients: clients.length,
     activeClients: clients.filter(c => c.status === 'active').length,
@@ -182,8 +245,6 @@ export function Clients() {
       ? Math.round(clients.reduce((sum, client) => sum + client.hourlyRate, 0) / clients.length)
       : 0
   };
-
-  console.log(session);
 
   return (
     <div className="space-y-8">
@@ -218,7 +279,10 @@ export function Clients() {
               List
             </button>
           </div>
-          <Button className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow">
+          <Button 
+            onClick={() => setShowNewClientModal(true)}
+            className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Client
           </Button>
@@ -495,7 +559,7 @@ export function Clients() {
                     : 'Add your first client to get started'
                   }
                 </p>
-                <Button>
+                <Button onClick={() => setShowNewClientModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Client
                 </Button>
@@ -503,6 +567,142 @@ export function Clients() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* New Client Modal */}
+      {showNewClientModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Add New Client</h2>
+              <button className="modal-close" onClick={() => setShowNewClientModal(false)}>
+                <Plus className="rotate-45" size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateClient} className="modal-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Client Name *</label>
+                  <input
+                    type="text"
+                    value={newClientForm.name}
+                    onChange={(e) => setNewClientForm(prev => ({ ...prev, name: e.target.value }))}
+                    required
+                    placeholder="Enter client name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Company</label>
+                  <input
+                    type="text"
+                    value={newClientForm.company}
+                    onChange={(e) => setNewClientForm(prev => ({ ...prev, company: e.target.value }))}
+                    placeholder="Company name"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Email *</label>
+                  <input
+                    type="email"
+                    value={newClientForm.email}
+                    onChange={(e) => setNewClientForm(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                    placeholder="client@company.com"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input
+                    type="tel"
+                    value={newClientForm.phone}
+                    onChange={(e) => setNewClientForm(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Address</label>
+                <input
+                  type="text"
+                  value={newClientForm.address}
+                  onChange={(e) => setNewClientForm(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="Client address"
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Contact Person *</label>
+                  <input
+                    type="text"
+                    value={newClientForm.contactPerson}
+                    onChange={(e) => setNewClientForm(prev => ({ ...prev, contactPerson: e.target.value }))}
+                    required
+                    placeholder="John Smith"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Industry</label>
+                  <input
+                    type="text"
+                    value={newClientForm.industry}
+                    onChange={(e) => setNewClientForm(prev => ({ ...prev, industry: e.target.value }))}
+                    placeholder="Technology, Finance, etc."
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Hourly Rate ($)</label>
+                  <input
+                    type="number"
+                    value={newClientForm.hourlyRate}
+                    onChange={(e) => setNewClientForm(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }))}
+                    min="0"
+                    step="5"
+                    placeholder="95"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Priority</label>
+                  <select
+                    value={newClientForm.priority}
+                    onChange={(e) => setNewClientForm(prev => ({ ...prev, priority: e.target.value as 'low' | 'medium' | 'high' }))}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Notes</label>
+                <textarea
+                  value={newClientForm.notes}
+                  onChange={(e) => setNewClientForm(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={3}
+                  placeholder="Additional notes about the client..."
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="secondary-btn" onClick={() => setShowNewClientModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="primary-btn" disabled={newClientLoading}>
+                  {newClientLoading ? 'Adding...' : 'Add Client'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

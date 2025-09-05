@@ -173,11 +173,9 @@ export function Invoices() {
   const [loading, setLoading] = useState(true);
   const [showNewInvoiceModal, setShowNewInvoiceModal] = useState(false);
   const [newInvoiceLoading, setNewInvoiceLoading] = useState(false);
-  console.log(invoices);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedInvoice] = useState<Invoice | null>(null);
-  console.log(selectedInvoice);
 
   // Fetch invoices from API
   useEffect(() => {
@@ -187,7 +185,6 @@ export function Invoices() {
       try {
         setLoading(true);
         const data = await apiClient.fetch(`/api/invoices?userId=${session.user.id}`);
-        console.log('Fetched invoices:', data);
         if (data.success && data.invoices) {
           setInvoices(data.invoices || []);
         } else {
@@ -220,7 +217,6 @@ export function Invoices() {
 
     try {
       setNewInvoiceLoading(true);
-      console.log('Creating invoice with data:', invoiceData);
       
       const data = await apiClient.fetch('/api/invoices', {
         method: 'POST',
@@ -232,7 +228,6 @@ export function Invoices() {
       });
 
       if (data.success && data.invoice) {
-        console.log('Invoice created successfully:', data.invoice);
         // For now, just add to local state since API returns mock data
         const newInvoice: Invoice = {
           id: data.invoice.id,

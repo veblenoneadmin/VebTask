@@ -31,7 +31,7 @@ export function useTimer() {
   // Clear the interval when component unmounts or timer stops
   const clearTimerInterval = useCallback(() => {
     if (timerInterval.current) {
-      clearTimeout(timerInterval.current);
+      clearInterval(timerInterval.current);
       timerInterval.current = null;
     }
   }, []);

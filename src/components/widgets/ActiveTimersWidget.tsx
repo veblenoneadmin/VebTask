@@ -4,6 +4,8 @@ import type { WidgetProps } from '../../lib/widgets/WidgetInterface';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Square, Clock } from 'lucide-react';
+import { useApiClient } from '../../lib/api-client';
+import { useSession } from '../../lib/auth-client';
 
 interface ActiveTimer {
   id: string;
@@ -25,6 +27,8 @@ interface ActiveTimersWidgetProps extends WidgetProps {
 
 export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
   const { data } = props;
+  const { data: session } = useSession();
+  const apiClient = useApiClient();
   const [localTimers, setLocalTimers] = useState<ActiveTimer[]>([]);
 
   // Update local timers when data changes
@@ -63,21 +67,27 @@ export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
+export function ActiveTimersWidget(props: ActiveTimersWidgetProps) {
+  const { data } = props;
+  const { data: session } = useSession();
+  const apiClient = useApiClient();
+  const [localTimers, setLocalTimers] = useState<ActiveTimer[]>([]);
+
+  // ... (existing useEffect hooks remain the same) ...
+
   const handleStopTimer = async (timerId: string) => {
     try {
-      // Get user context (you may need to adjust this based on your auth implementation)
-      const userId = localStorage.getItem('userId') || 'temp-user-id'; // Replace with actual user ID
+      if (!session?.user?.id) {
+        console.error('User not authenticated');
+        return;
+      }
       
-      const response = await fetch(`/api/timers/${timerId}/stop`, {
+      const data = await apiClient.fetch(`/api/timers/${timerId}/stop`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ userId })
+        body: JSON.stringify({ userId: session.user.id })
       });
 
-      if (response.ok) {
+      if (data.success) {
         // Remove stopped timer from local state
         setLocalTimers(prevTimers => 
           prevTimers.filter(timer => timer.id !== timerId)

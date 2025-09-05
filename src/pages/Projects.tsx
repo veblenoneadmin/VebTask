@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useSession } from '../lib/auth-client';
+import { useApiClient } from '../lib/api-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -143,11 +145,11 @@ const mockProjects: Project[] = [
 
 export function Projects() {
   const { data: session } = useSession();
-  console.log(session);
+  const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
   const [projects] = useState<Project[]>(mockProjects);
-  console.log(projects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  console.log(selectedProject);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -170,7 +172,6 @@ export function Projects() {
   };
 
   const getPriorityColor = (priority: string) => {
-    console.log(priority);
     switch (priority) {
       case 'high': return 'text-error';
       case 'medium': return 'text-warning';
@@ -180,7 +181,6 @@ export function Projects() {
   };
   
   // Use the function to prevent unused warning
-  console.log(getPriorityColor('high'));
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -230,7 +230,10 @@ export function Projects() {
               List
             </button>
           </div>
-          <Button className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow">
+          <Button 
+            onClick={() => setShowNewProjectModal(true)}
+            className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Project
           </Button>
@@ -477,7 +480,7 @@ export function Projects() {
                 : 'Create your first project to get started'
               }
             </p>
-            <Button>
+            <Button onClick={() => setShowNewProjectModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create Project
             </Button>

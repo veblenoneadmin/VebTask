@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useSession } from '../lib/auth-client';
+import { useApiClient } from '../lib/api-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -159,8 +161,10 @@ const expenseCategories = [
 
 export function Expenses() {
   const { data: session } = useSession();
+  const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
   const [expenses] = useState<Expense[]>(mockExpenses);
-  console.log(expenses);
+  const [showNewExpenseModal, setShowNewExpenseModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -211,7 +215,6 @@ export function Expenses() {
     count: filteredExpenses.filter(expense => expense.category === category.name).length
   })).filter(category => category.amount > 0);
 
-  console.log(session);
 
   return (
     <div className="space-y-8">
@@ -230,7 +233,10 @@ export function Expenses() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow">
+          <Button 
+            onClick={() => setShowNewExpenseModal(true)}
+            className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Expense
           </Button>
@@ -431,7 +437,7 @@ export function Expenses() {
                       : 'Add your first expense to get started'
                     }
                   </p>
-                  <Button>
+                  <Button onClick={() => setShowNewExpenseModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Expense
                   </Button>
