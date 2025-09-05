@@ -1,7 +1,13 @@
 import { useOrganization } from '../contexts/OrganizationContext';
 
 /**
+ * @typedef {Object} ApiClient
+ * @property {function(string, Object=): Promise<any>} fetch - Enhanced fetch with org context
+ */
+
+/**
  * Enhanced fetch wrapper that automatically includes organization context
+ * @returns {ApiClient}
  */
 export function createApiClient() {
   return {
@@ -42,6 +48,7 @@ export function createApiClient() {
 
 /**
  * Hook to get API client with organization context
+ * @returns {ApiClient}
  */
 export function useApiClient() {
   return createApiClient();
