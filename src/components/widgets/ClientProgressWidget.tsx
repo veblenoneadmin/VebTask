@@ -6,10 +6,7 @@ import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
 import { Button } from '../ui/button';
 import { 
-  CheckCircle2, 
-  Clock, 
   TrendingUp,
-  Eye,
   Settings,
   Calendar,
   Target,
@@ -39,6 +36,8 @@ interface ProjectStats {
     progress: number;
     status: string;
     dueDate?: string;
+    completedTasks: number;
+    totalTasks: number;
   }>;
 }
 
@@ -111,7 +110,8 @@ export function ClientProgressWidget({ config = {}, onConfigure }: ClientProgres
             progress: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
             status: data.completed === data.total ? 'completed' : 'active',
             completedTasks: data.completed,
-            totalTasks: data.total
+            totalTasks: data.total,
+            dueDate: undefined
           }));
 
           setStats({

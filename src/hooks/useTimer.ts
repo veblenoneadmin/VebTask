@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from '../lib/auth-client';
 import { useApiClient } from '../lib/api-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 export interface TimerSession {
   id: string;
@@ -16,6 +17,7 @@ export interface TimerSession {
 
 export function useTimer() {
   const { data: session } = useSession();
+  const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
   const [activeTimer, setActiveTimer] = useState<TimerSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export function useTimer() {
   const startTimeRef = useRef<Date | null>(null);
 
   // Clear the interval when component unmounts or timer stops
-  const clearInterval = useCallback(() => {
+  const clearTimerInterval = useCallback(() => {
     if (timerInterval.current) {
       clearTimeout(timerInterval.current);
       timerInterval.current = null;
@@ -44,10 +46,10 @@ export function useTimer() {
 
   // Start the timer interval
   const startTimerInterval = useCallback(() => {
-    clearInterval(); // Clear any existing interval
+    clearTimerInterval(); // Clear any existing interval
     updateElapsedTime(); // Update immediately
     timerInterval.current = setInterval(updateElapsedTime, 1000);
-  }, [clearInterval, updateElapsedTime]);
+  }, [clearTimerInterval, updateElapsedTime]);
 
   // Fetch active timer from API
   const fetchActiveTimer = useCallback(async () => {
@@ -68,7 +70,7 @@ export function useTimer() {
       } else {
         setActiveTimer(null);
         startTimeRef.current = null;
-        clearInterval();
+        clearTimerInterval();
         setElapsedTime(0);
       }
     } catch (err: any) {
@@ -95,7 +97,7 @@ export function useTimer() {
         method: 'POST',
         body: JSON.stringify({
           userId: session.user.id,
-          orgId: session.user.orgId,
+          orgId: currentOrg?.id,
           taskId,
           description,
           category,
@@ -135,7 +137,7 @@ export function useTimer() {
       if (data.timer) {
         setActiveTimer(null);
         startTimeRef.current = null;
-        clearInterval();
+        clearTimerInterval();
         setElapsedTime(0);
         return data.timer;
       }
@@ -191,9 +193,9 @@ export function useTimer() {
     
     return () => {
       clearInterval(syncInterval);
-      clearInterval();
+      clearTimerInterval();
     };
-  }, [fetchActiveTimer]);
+  }, [fetchActiveTimer, clearTimerInterval]);
 
   // Handle page visibility change to sync timer when tab becomes visible
   useEffect(() => {

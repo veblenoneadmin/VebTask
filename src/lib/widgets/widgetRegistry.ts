@@ -172,12 +172,10 @@ const widgets: Widget[] = [
     id: 'timer-widget',
     name: 'Timer Widget',
     description: 'Start, stop, and manage time tracking',
-    category: 'productivity',
+    category: 'overview',
     component: TimerWidget as any,
     defaultConfig: {
       title: 'Time Tracker',
-      showTaskSelection: true,
-      compact: false,
       refreshInterval: 1 // 1 second for real-time updates
     },
     isConfigurable: true,
@@ -193,7 +191,6 @@ const widgets: Widget[] = [
     component: ClientProgressWidget as any,
     defaultConfig: {
       title: 'Your Progress',
-      showDetails: true,
       refreshInterval: 300 // 5 minutes
     },
     isConfigurable: true,
@@ -205,11 +202,10 @@ const widgets: Widget[] = [
     id: 'client-notifications',
     name: 'Client Notifications',
     description: 'Project updates and notifications for clients',
-    category: 'communication',
+    category: 'overview',
     component: ClientNotificationsWidget as any,
     defaultConfig: {
       title: 'Updates & Notifications',
-      maxNotifications: 5,
       refreshInterval: 300 // 5 minutes
     },
     isConfigurable: true,
@@ -428,7 +424,7 @@ export const widgetDataFetchers = {
     }
   },
   
-  'timer-widget': async (orgId: string, userId: string) => {
+  'timer-widget': async (_orgId: string, _userId: string) => {
     try {
       // Timer widget manages its own data through useTimer hook
       return {
@@ -441,7 +437,7 @@ export const widgetDataFetchers = {
     }
   },
   
-  'client-progress': async (orgId: string, userId: string) => {
+  'client-progress': async (_orgId: string, _userId: string) => {
     try {
       // Client progress widget manages its own data through internal API calls
       return {
@@ -454,7 +450,7 @@ export const widgetDataFetchers = {
     }
   },
   
-  'client-notifications': async (orgId: string, userId: string) => {
+  'client-notifications': async (_orgId: string, _userId: string) => {
     try {
       // Client notifications widget manages its own data through internal API calls
       return {

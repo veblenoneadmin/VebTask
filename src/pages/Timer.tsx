@@ -11,8 +11,6 @@ import {
   Clock, 
   Target,
   DollarSign,
-  Coffee,
-  BarChart3,
   AlertCircle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -25,7 +23,6 @@ export function Timer() {
     activeTimer,
     loading: timerLoading,
     error: timerError,
-    elapsedTime,
     formattedElapsedTime,
     startTimer,
     stopTimer,
@@ -104,12 +101,6 @@ export function Timer() {
     return () => clearTimeout(timeoutId);
   }, [sessionNotes, activeTimer]);
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
 
   const currentTask = activeTasks.find(t => t.id === selectedTaskId) || activeTasks[0];
   const showLoading = tasksLoading || timerLoading;

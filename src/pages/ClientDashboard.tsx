@@ -9,9 +9,7 @@ import {
   Clock, 
   Calendar,
   TrendingUp,
-  Eye,
   FileText,
-  Users,
   BarChart3,
   AlertCircle,
   Loader2

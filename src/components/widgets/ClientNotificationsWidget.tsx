@@ -11,9 +11,7 @@ import {
   MessageSquare,
   Settings,
   Calendar,
-  Users,
-  FileText,
-  AlertCircle
+  FileText
 } from 'lucide-react';
 
 interface ClientNotificationsWidgetProps {
@@ -68,7 +66,7 @@ export function ClientNotificationsWidget({ config = {}, onConfigure }: ClientNo
           tasksResponse.tasks
             .filter((task: any) => task.status === 'completed')
             .slice(0, 3)
-            .forEach((task: any, index: number) => {
+            .forEach((task: any) => {
               generatedNotifications.push({
                 id: `task-completed-${task.id}`,
                 type: 'task_completed',
