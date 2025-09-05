@@ -37,89 +37,6 @@ interface Task {
   updatedAt: string;
 }
 
-// Mock tasks data
-const mockTasks: Task[] = [
-  {
-    id: '1',
-    title: 'Quarterly Financial Report',
-    description: 'Complete Q4 financial analysis and prepare executive summary for board meeting',
-    priority: 'High',
-    status: 'in_progress',
-    estimatedHours: 8,
-    actualHours: 3.5,
-    dueDate: '2024-01-15',
-    assignee: 'Current User',
-    project: 'Finance Review',
-    isBillable: true,
-    hourlyRate: 95,
-    tags: ['Finance', 'Reporting', 'Urgent'],
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-12'
-  },
-  {
-    id: '2',
-    title: 'Client Presentation Prep',
-    description: 'Design slides and prepare demo for tomorrow\'s client pitch meeting',
-    priority: 'High',
-    status: 'not_started',
-    estimatedHours: 4,
-    actualHours: 0,
-    dueDate: '2024-01-14',
-    assignee: 'Jane Smith',
-    project: 'Sales Pipeline',
-    isBillable: true,
-    hourlyRate: 85,
-    tags: ['Sales', 'Presentation', 'Client'],
-    createdAt: '2024-01-11',
-    updatedAt: '2024-01-11'
-  },
-  {
-    id: '3',
-    title: 'Code Review - Auth Module',
-    description: 'Review pull request for new authentication system implementation',
-    priority: 'Medium',
-    status: 'in_progress',
-    estimatedHours: 2,
-    actualHours: 1,
-    dueDate: '2024-01-16',
-    project: 'Development',
-    isBillable: false,
-    tags: ['Development', 'Security', 'Review'],
-    createdAt: '2024-01-09',
-    updatedAt: '2024-01-12'
-  },
-  {
-    id: '4',
-    title: 'Team Meeting Notes',
-    description: 'Document key decisions from weekly team sync and action items',
-    priority: 'Low',
-    status: 'completed',
-    estimatedHours: 0.5,
-    actualHours: 0.5,
-    dueDate: '2024-01-12',
-    project: 'Operations',
-    isBillable: false,
-    tags: ['Meeting', 'Documentation'],
-    createdAt: '2024-01-12',
-    updatedAt: '2024-01-12'
-  },
-  {
-    id: '5',
-    title: 'Website Performance Optimization',
-    description: 'Analyze and improve website loading speeds and user experience metrics',
-    priority: 'Medium',
-    status: 'on_hold',
-    estimatedHours: 6,
-    actualHours: 2,
-    dueDate: '2024-01-20',
-    project: 'Web Development',
-    isBillable: true,
-    hourlyRate: 75,
-    tags: ['Performance', 'Optimization', 'Web'],
-    createdAt: '2024-01-08',
-    updatedAt: '2024-01-10'
-  }
-];
 
 export function Tasks() {
   const { data: session } = useSession();
@@ -176,13 +93,15 @@ export function Tasks() {
           setTasks(data.tasks || []);
         } else {
           console.error('Failed to fetch tasks:', response.statusText);
-          // Fallback to mock data if API fails
-          setTasks(mockTasks);
+          // Set empty array if API fails
+          setTasks([]);
+          console.error('Tasks API failed, showing empty state');
         }
       } catch (error) {
         console.error('Error fetching tasks:', error);
-        // Fallback to mock data on error
-        setTasks(mockTasks);
+        // Set empty array on error
+        setTasks([]);
+        console.error('Tasks API error, showing empty state');
       } finally {
         setLoading(false);
       }

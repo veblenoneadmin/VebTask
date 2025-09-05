@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from '../lib/auth-client';
+import { useApiClient } from '../lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
@@ -10,7 +12,9 @@ import {
   Eye,
   FileText,
   Users,
-  BarChart3
+  BarChart3,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
 interface TaskSummary {
@@ -19,429 +23,342 @@ interface TaskSummary {
   description?: string;
   status: 'not_started' | 'in_progress' | 'completed' | 'cancelled';
   priority: 'Urgent' | 'High' | 'Medium' | 'Low';
-  estimatedHours: number;
-  actualHours: number;
+  estimatedHours?: number;
+  actualHours?: number;
   completedAt?: string;
-  assignee?: {
-    name?: string;
-    email: string;
-  };
-}
-
-interface ProjectOverview {
-  id: string;
-  name: string;
-  description?: string;
-  totalTasks: number;
-  completedTasks: number;
-  totalHours: number;
-  progress: number;
-  status: 'active' | 'completed' | 'on_hold';
-  dueDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  orgId: string;
 }
 
 interface TimeEntry {
   id: string;
+  taskId: string;
   taskTitle: string;
-  date: string;
+  begin: string;
+  end?: string;
   duration: number;
   description?: string;
-  assignee: string;
+  category: string;
   isBillable: boolean;
 }
 
-// Mock data - replace with actual API calls
-const mockTasks: TaskSummary[] = [
-  {
-    id: '1',
-    title: 'Website Header Design',
-    description: 'Design and implement the main header component',
-    status: 'completed',
-    priority: 'High',
-    estimatedHours: 8,
-    actualHours: 6.5,
-    completedAt: '2024-01-15T10:30:00Z',
-    assignee: { name: 'Sarah Wilson', email: 'sarah@company.com' }
-  },
-  {
-    id: '2',
-    title: 'User Authentication System',
-    description: 'Implement login and registration functionality',
-    status: 'in_progress',
-    priority: 'High',
-    estimatedHours: 16,
-    actualHours: 12,
-    assignee: { name: 'Mike Johnson', email: 'mike@company.com' }
-  },
-  {
-    id: '3',
-    title: 'Database Optimization',
-    description: 'Optimize database queries for better performance',
-    status: 'not_started',
-    priority: 'Medium',
-    estimatedHours: 12,
-    actualHours: 0,
-    assignee: { name: 'John Smith', email: 'john@company.com' }
-  }
-];
-
-const mockProjects: ProjectOverview[] = [
-  {
-    id: '1',
-    name: 'Website Redesign',
-    description: 'Complete overhaul of company website',
-    totalTasks: 15,
-    completedTasks: 8,
-    totalHours: 120,
-    progress: 53,
-    status: 'active',
-    dueDate: '2024-02-15'
-  },
-  {
-    id: '2',
-    name: 'Mobile App Development',
-    description: 'Native mobile application for iOS and Android',
-    totalTasks: 25,
-    completedTasks: 3,
-    totalHours: 200,
-    progress: 12,
-    status: 'active',
-    dueDate: '2024-03-30'
-  }
-];
-
-const mockTimeEntries: TimeEntry[] = [
-  {
-    id: '1',
-    taskTitle: 'Website Header Design',
-    date: '2024-01-15',
-    duration: 6.5,
-    description: 'Completed header design and responsive layout',
-    assignee: 'Sarah Wilson',
-    isBillable: true
-  },
-  {
-    id: '2',
-    taskTitle: 'User Authentication System',
-    date: '2024-01-14',
-    duration: 4,
-    description: 'Implemented login form validation',
-    assignee: 'Mike Johnson',
-    isBillable: true
-  },
-  {
-    id: '3',
-    taskTitle: 'User Authentication System',
-    date: '2024-01-13',
-    duration: 3.5,
-    description: 'Set up authentication middleware',
-    assignee: 'Mike Johnson',
-    isBillable: true
-  }
-];
+interface DashboardStats {
+  totalTasks: number;
+  completedTasks: number;
+  activeTasks: number;
+  totalHours: number;
+  thisWeekHours: number;
+  completionRate: number;
+}
 
 export function ClientDashboard() {
-  const [tasks] = useState<TaskSummary[]>(mockTasks);
-  const [projects] = useState<ProjectOverview[]>(mockProjects);
-  const [timeEntries] = useState<TimeEntry[]>(mockTimeEntries);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'tasks' | 'time'>('overview');
+  const { data: session } = useSession();
+  const apiClient = useApiClient();
+  const [tasks, setTasks] = useState<TaskSummary[]>([]);
+  const [recentTimeEntries, setRecentTimeEntries] = useState<TimeEntry[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalTasks: 0,
+    completedTasks: 0,
+    activeTasks: 0,
+    totalHours: 0,
+    thisWeekHours: 0,
+    completionRate: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed': return 'default';
-      case 'in_progress': return 'secondary';
-      case 'not_started': return 'outline';
-      case 'cancelled': return 'destructive';
-      default: return 'outline';
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch tasks
+        const tasksResponse = await apiClient.fetch(`/api/tasks/recent?userId=${session.user.id}&limit=50`);
+        if (tasksResponse.success) {
+          setTasks(tasksResponse.tasks || []);
+        }
+
+        // Fetch recent time entries
+        const timeResponse = await apiClient.fetch(`/api/timers/recent?userId=${session.user.id}&limit=10`);
+        if (timeResponse.entries) {
+          setRecentTimeEntries(timeResponse.entries.map((entry: any) => ({
+            id: entry.id,
+            taskId: entry.taskId,
+            taskTitle: entry.taskTitle || 'Untitled Task',
+            begin: entry.startTime,
+            end: entry.endTime,
+            duration: entry.duration || 0,
+            description: entry.description || '',
+            category: entry.category || 'work',
+            isBillable: false // Will be enhanced later
+          })));
+        }
+
+        // Calculate stats from tasks
+        if (tasksResponse.success && tasksResponse.tasks) {
+          const allTasks = tasksResponse.tasks;
+          const completed = allTasks.filter((t: TaskSummary) => t.status === 'completed').length;
+          const active = allTasks.filter((t: TaskSummary) => 
+            t.status === 'in_progress' || t.status === 'not_started'
+          ).length;
+          const totalHours = allTasks.reduce((sum: number, t: TaskSummary) => sum + (t.actualHours || 0), 0);
+          
+          // Calculate this week's hours from time entries
+          const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          const thisWeekEntries = timeResponse.entries?.filter((entry: any) => 
+            new Date(entry.startTime) >= oneWeekAgo
+          ) || [];
+          const thisWeekHours = thisWeekEntries.reduce((sum: number, entry: any) => 
+            sum + (entry.duration || 0), 0) / 3600; // Convert seconds to hours
+
+          setStats({
+            totalTasks: allTasks.length,
+            completedTasks: completed,
+            activeTasks: active,
+            totalHours,
+            thisWeekHours: Math.round(thisWeekHours * 10) / 10,
+            completionRate: allTasks.length > 0 ? Math.round((completed / allTasks.length) * 100) : 0
+          });
+        }
+
+      } catch (err: any) {
+        console.error('Error loading dashboard data:', err);
+        setError(err.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [session?.user?.id, apiClient]);
+
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
     }
+    return `${minutes}m`;
   };
 
-  const getPriorityBadgeVariant = (priority: string) => {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'Urgent': return 'destructive';
       case 'High': return 'destructive';
       case 'Medium': return 'secondary';
       case 'Low': return 'outline';
-      default: return 'outline';
+      default: return 'secondary';
     }
   };
 
-  const totalHoursLogged = timeEntries.reduce((sum, entry) => sum + entry.duration, 0);
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => t.status === 'completed').length;
-  const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'text-green-600';
+      case 'in_progress': return 'text-blue-600';
+      case 'not_started': return 'text-gray-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span>{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold gradient-text">Project Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Track the progress of your projects and tasks</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Eye className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Read-only view</span>
-        </div>
+        <h1 className="text-2xl font-bold">Client Dashboard</h1>
+        <Badge variant="outline">
+          {stats.activeTasks} Active Tasks
+        </Badge>
       </div>
 
-      {/* Overview Stats */}
+      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="glass">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
-                <p className="text-2xl font-bold text-foreground mt-2">{totalTasks}</p>
-                <p className="text-xs text-muted-foreground mt-1">Across all projects</p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center">
-                <FileText className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-foreground mt-2">{completedTasks}</p>
-                <p className="text-xs text-success mt-1">
-                  {Math.round((completedTasks / totalTasks) * 100)}% completion rate
-                </p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-gradient-success flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold text-foreground mt-2">{inProgressTasks}</p>
-                <p className="text-xs text-warning mt-1">Currently active</p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-gradient-warning flex items-center justify-center">
-                <Clock className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Hours Logged</p>
-                <p className="text-2xl font-bold text-foreground mt-2">{totalHoursLogged}h</p>
-                <p className="text-xs text-info mt-1">This period</p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-gradient-info flex items-center justify-center">
-                <BarChart3 className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-muted p-1 rounded-lg w-fit">
-        <button
-          onClick={() => setSelectedTab('overview')}
-          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-            selectedTab === 'overview' 
-              ? 'bg-background text-foreground shadow-sm' 
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Overview
-        </button>
-        <button
-          onClick={() => setSelectedTab('tasks')}
-          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-            selectedTab === 'tasks' 
-              ? 'bg-background text-foreground shadow-sm' 
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Tasks
-        </button>
-        <button
-          onClick={() => setSelectedTab('time')}
-          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-            selectedTab === 'time' 
-              ? 'bg-background text-foreground shadow-sm' 
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Time Logs
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      {selectedTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Project Overview */}
-          <Card className="glass">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <TrendingUp className="mr-2 h-5 w-5" />
-                Project Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {projects.map((project) => (
-                  <div key={project.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">{project.name}</h3>
-                        <p className="text-sm text-muted-foreground">{project.description}</p>
-                      </div>
-                      <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>
-                        {project.status}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span>{project.completedTasks} / {project.totalTasks} tasks</span>
-                      <span>{project.progress}%</span>
-                    </div>
-                    <Progress value={project.progress} className="h-2" />
-                    {project.dueDate && (
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="mr-1 h-4 w-4" />
-                        Due: {new Date(project.dueDate).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Team Activity */}
-          <Card className="glass">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="mr-2 h-5 w-5" />
-                Team Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {timeEntries.slice(0, 5).map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg bg-surface-elevated/50">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{entry.taskTitle}</p>
-                      <p className="text-xs text-muted-foreground">{entry.assignee}</p>
-                      {entry.description && (
-                        <p className="text-xs text-muted-foreground mt-1">{entry.description}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{entry.duration}h</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(entry.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {selectedTab === 'tasks' && (
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle>All Tasks</CardTitle>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {tasks.map((task) => (
-                <div key={task.id} className="p-4 border rounded-lg bg-surface-elevated/50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{task.title}</h3>
-                      {task.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                      )}
-                      <div className="flex items-center space-x-4 mt-2">
-                        <Badge variant={getStatusBadgeVariant(task.status)}>
-                          {task.status.replace('_', ' ')}
-                        </Badge>
-                        <Badge variant={getPriorityBadgeVariant(task.priority)}>
+            <div className="text-2xl font-bold">{stats.totalTasks}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.completedTasks} completed
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.completionRate}%</div>
+            <Progress value={stats.completionRate} className="mt-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalHours.toFixed(1)}h</div>
+            <p className="text-xs text-muted-foreground">
+              All time
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">This Week</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.thisWeekHours}h</div>
+            <p className="text-xs text-muted-foreground">
+              Last 7 days
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tasks and Time Entries */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Recent Tasks */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5" />
+              <span>Recent Tasks</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tasks.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No tasks found</p>
+                <p className="text-sm">Tasks will appear here once created</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {tasks.slice(0, 5).map((task) => (
+                  <div key={task.id} className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium truncate">{task.title}</h4>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant={getPriorityColor(task.priority)} className="text-xs">
                           {task.priority}
                         </Badge>
-                        {task.assignee && (
-                          <span className="text-sm text-muted-foreground">
-                            Assigned to: {task.assignee.name || task.assignee.email}
-                          </span>
-                        )}
+                        <span className={`text-xs ${getStatusColor(task.status)}`}>
+                          {task.status.replace('_', ' ')}
+                        </span>
                       </div>
                     </div>
-                    <div className="text-right space-y-1">
-                      <p className="text-sm">
-                        <span className="text-muted-foreground">Hours: </span>
-                        <span className="font-medium">
-                          {task.actualHours} / {task.estimatedHours}
+                    <div className="text-right">
+                      <div className="text-sm font-medium">
+                        {task.actualHours || 0}h / {task.estimatedHours || 0}h
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(task.updatedAt)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Time Entries */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5" />
+              <span>Recent Time Entries</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentTimeEntries.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No time entries found</p>
+                <p className="text-sm">Time tracking data will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentTimeEntries.map((entry) => (
+                  <div key={entry.id} className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium truncate">{entry.taskTitle}</h4>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {entry.category}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(entry.begin)}
                         </span>
-                      </p>
-                      {task.completedAt && (
-                        <p className="text-xs text-success">
-                          Completed {new Date(task.completedAt).toLocaleDateString()}
+                      </div>
+                      {entry.description && (
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                          {entry.description}
                         </p>
                       )}
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {selectedTab === 'time' && (
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle>Time Entries</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {timeEntries.map((entry) => (
-                <div key={entry.id} className="p-4 border rounded-lg bg-surface-elevated/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{entry.taskTitle}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {entry.assignee} • {new Date(entry.date).toLocaleDateString()}
-                      </p>
-                      {entry.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{entry.description}</p>
-                      )}
-                    </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold">{entry.duration}h</p>
-                      {entry.isBillable && (
-                        <Badge variant="outline" className="text-xs">
-                          Billable
-                        </Badge>
-                      )}
+                      <div className="text-sm font-medium">
+                        {formatDuration(entry.duration)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {entry.end ? 'Completed' : 'Running'}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   );
 }
