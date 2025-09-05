@@ -77,12 +77,13 @@ router.get('/recent', requireAuth, withOrgScope, validateQuery(commonSchemas.pag
     }));
     
     res.json({
+      success: true,
       tasks: tasksWithStats,
       total: tasksWithStats.length
     });
   } catch (error) {
     console.error('Error fetching recent tasks:', error);
-    res.status(500).json({ error: 'Failed to fetch recent tasks' });
+    res.status(500).json({ success: false, error: 'Failed to fetch recent tasks' });
   }
 });
 
