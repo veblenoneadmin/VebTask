@@ -228,30 +228,6 @@ export function Invoices() {
       });
 
       if (data.success && data.invoice) {
-        // For now, just add to local state since API returns mock data
-        const newInvoice: Invoice = {
-          id: data.invoice.id,
-          invoiceNumber: data.invoice.invoiceNumber,
-          clientName: data.invoice.clientName,
-          clientEmail: `${data.invoice.clientName.toLowerCase().replace(/\s+/g, '')}@example.com`,
-          projectName: data.invoice.description || 'General Services',
-          issueDate: data.invoice.createdAt ? new Date(data.invoice.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          dueDate: data.invoice.dueDate ? new Date(data.invoice.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          status: data.invoice.status as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled',
-          subtotal: data.invoice.amount,
-          tax: data.invoice.amount * 0.1,
-          total: data.invoice.amount * 1.1,
-          currency: 'USD',
-          paymentTerms: 'Net 30',
-          items: [{
-            id: '1',
-            description: data.invoice.description || 'Services Rendered',
-            hours: 1,
-            rate: data.invoice.amount,
-            amount: data.invoice.amount
-          }]
-        };
-        
         // Refresh the entire invoice list from server
         await fetchInvoices();
         setShowNewInvoiceModal(false);

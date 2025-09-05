@@ -164,8 +164,8 @@ export function Expenses() {
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setLoading] = useState(true);
+  const [, setError] = useState<string | null>(null);
   const [showNewExpenseModal, setShowNewExpenseModal] = useState(false);
   const [newExpenseLoading, setNewExpenseLoading] = useState(false);
   const [newExpenseForm, setNewExpenseForm] = useState({

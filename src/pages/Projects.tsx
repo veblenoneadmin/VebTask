@@ -148,9 +148,9 @@ export function Projects() {
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [, setLoading] = useState(true);
+  const [, setError] = useState<string | null>(null);
+  const [, setSelectedProject] = useState<Project | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [newProjectLoading, setNewProjectLoading] = useState(false);
   const [newProjectForm, setNewProjectForm] = useState({
@@ -214,14 +214,6 @@ export function Projects() {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-error';
-      case 'medium': return 'text-warning';
-      case 'low': return 'text-info';
-      default: return 'text-muted-foreground';
-    }
-  };
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
