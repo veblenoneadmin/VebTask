@@ -41,6 +41,10 @@ model User {
   createdOrgs      Organization[]  @relation("OrganizationCreator")
   invitesSent      Invite[]        @relation("InvitesSent")
   invitesAccepted  Invite[]        @relation("InvitesAccepted")
+  
+  // Internal invitation system
+  invitationsCreated  Invitation[]  @relation("InvitationsCreated")
+  invitationsApproved Invitation[]  @relation("InvitationsApproved")
 
   // Better Auth relationships
   accounts Account[]
@@ -67,6 +71,7 @@ model Organization {
   createdBy   User         @relation("OrganizationCreator", fields: [createdById], references: [id])
   memberships Membership[]
   invites     Invite[]
+  invitations Invitation[] // Internal invitation system
 
   // Business data (scoped to this org)
   macroTasks     MacroTask[]
@@ -379,3 +384,35 @@ model CalendarEvent {
 //   @@index([userId])
 //   @@map("expenses")
 // }
+
+// User invitation system for internal Veblen use
+model Invitation {
+  id           String    @id @default(cuid()) @db.VarChar(50)
+  email        String    @db.VarChar(255)
+  name         String?   @db.VarChar(255)
+  orgId        String    @db.VarChar(191)
+  invitedById  String    @db.VarChar(36)
+  role         String    @default("STAFF") @db.VarChar(20) // ADMIN, STAFF, CLIENT
+  status       String    @default("sent") @db.VarChar(20) // sent, pending_approval, approved, rejected, accepted, expired
+  message      String?   @db.Text
+  token        String    @unique @db.VarChar(100)
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  approvedAt   DateTime?
+  approvedById String?   @db.VarChar(36)
+  
+  // Relationships
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invitedBy  User         @relation("InvitationsCreated", fields: [invitedById], references: [id], onDelete: Cascade)
+  approvedBy User?        @relation("InvitationsApproved", fields: [approvedById], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([email])
+  @@index([orgId])
+  @@index([status])
+  @@index([token])
+  @@index([invitedById])
+  @@map("invitations")
+}

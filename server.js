@@ -22,6 +22,14 @@ import reportsRoutes from './src/api/reports.js';
 import onboardingRoutes from './src/api/onboarding.js';
 import adminRoutes from './src/api/admin.js';
 import passwordResetRoutes from './src/routes/password-reset.js';
+import invitationRoutes from './src/api/invitations.js';
+import { 
+  blockPublicRegistration, 
+  addInternalBranding, 
+  validateInvitationOnSignup,
+  enforceUserLimits,
+  getInternalSystemInfo 
+} from './src/middleware/internal-security.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -139,6 +147,17 @@ app.all("/api/auth/*", (req, res) => {
   return authHandler(req, res);
 });
 
+// ==================== INTERNAL SECURITY MIDDLEWARE ====================
+
+// Apply internal security middleware globally
+app.use(addInternalBranding);
+app.use(blockPublicRegistration);
+app.use(validateInvitationOnSignup);
+app.use(enforceUserLimits);
+
+// Internal system info endpoint
+app.get('/api/system/info', getInternalSystemInfo);
+
 // ==================== USER AUTHENTICATION MIDDLEWARE ====================
 
 // Middleware to extract user from Better Auth session
@@ -149,6 +168,8 @@ app.use('/api', async (req, res, next) => {
       '/api/auth/',
       '/api/invites/accept',
       '/api/invites/',
+      '/api/invitations/accept',
+      '/api/system/info',
       '/api/ai/',
       '/test'
     ];
@@ -215,6 +236,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', passwordResetRoutes);
+app.use('/api/invitations', invitationRoutes);
 
 // Additional custom auth routes (password reset, etc.)
 // Note: Better Auth routes are handled above

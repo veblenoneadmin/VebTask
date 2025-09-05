@@ -470,4 +470,45 @@ router.get('/stats', requireAuth, withOrgScope, requireAdmin, async (req, res) =
   }
 });
 
+/**
+ * GET /api/admin/system/status
+ * Get internal system status and configuration
+ */
+router.get('/system/status', requireAuth, withOrgScope, requireAdmin, async (req, res) => {
+  try {
+    const { INTERNAL_CONFIG } = await import('../config/internal.js');
+    
+    // Get user count
+    const userCount = await prisma.user.count();
+    
+    // Get pending invitations
+    const pendingInvitations = await prisma.invitation.count({
+      where: { 
+        orgId: req.orgId,
+        status: { in: ['pending_approval', 'sent'] }
+      }
+    });
+
+    res.json({
+      success: true,
+      system: {
+        mode: INTERNAL_CONFIG.MODE,
+        organization: INTERNAL_CONFIG.ORGANIZATION.name,
+        brandingName: INTERNAL_CONFIG.UI.brandingName,
+        inviteOnly: INTERNAL_CONFIG.FEATURES.inviteOnly,
+        maxUsers: INTERNAL_CONFIG.ADMIN.maxUsers,
+        currentUsers: userCount,
+        availableSlots: Math.max(0, INTERNAL_CONFIG.ADMIN.maxUsers - userCount),
+        pendingInvitations
+      }
+    });
+  } catch (error) {
+    console.error('Get system status error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch system status',
+      code: 'FETCH_SYSTEM_STATUS_ERROR'
+    });
+  }
+});
+
 export default router;
