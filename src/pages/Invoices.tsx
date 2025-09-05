@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
+import { useApiClient } from '../lib/api-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -165,8 +167,12 @@ const mockInvoices: Invoice[] = [
 
 export function Invoices() {
   const { data: session } = useSession();
+  const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showNewInvoiceModal, setShowNewInvoiceModal] = useState(false);
+  const [newInvoiceLoading, setNewInvoiceLoading] = useState(false);
   console.log(invoices);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -180,13 +186,12 @@ export function Invoices() {
       
       try {
         setLoading(true);
-        const response = await fetch(`/api/invoices?userId=${session.user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Fetched invoices:', data);
+        const data = await apiClient.fetch(`/api/invoices?userId=${session.user.id}`);
+        console.log('Fetched invoices:', data);
+        if (data.success && data.invoices) {
           setInvoices(data.invoices || []);
         } else {
-          console.error('Failed to fetch invoices:', response.statusText);
+          console.error('Failed to fetch invoices: API returned no success');
           // Fallback to mock data if API fails
           setInvoices(mockInvoices);
         }
@@ -200,7 +205,69 @@ export function Invoices() {
     };
 
     fetchInvoices();
-  }, [session]);
+  }, [session, apiClient]);
+
+  const handleCreateInvoice = async (invoiceData: {
+    clientName: string;
+    amount: number;
+    description: string;
+    dueDate: string;
+  }) => {
+    if (!session?.user?.id) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    try {
+      setNewInvoiceLoading(true);
+      console.log('Creating invoice with data:', invoiceData);
+      
+      const data = await apiClient.fetch('/api/invoices', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: session.user.id,
+          orgId: currentOrg?.id,
+          ...invoiceData
+        })
+      });
+
+      if (data.success && data.invoice) {
+        console.log('Invoice created successfully:', data.invoice);
+        // For now, just add to local state since API returns mock data
+        const newInvoice: Invoice = {
+          id: data.invoice.id,
+          invoiceNumber: data.invoice.invoiceNumber,
+          clientName: data.invoice.clientName,
+          clientEmail: `${data.invoice.clientName.toLowerCase().replace(/\s+/g, '')}@example.com`,
+          projectName: data.invoice.description || 'General Services',
+          issueDate: data.invoice.createdAt ? new Date(data.invoice.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          dueDate: data.invoice.dueDate ? new Date(data.invoice.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          status: data.invoice.status as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled',
+          subtotal: data.invoice.amount,
+          tax: data.invoice.amount * 0.1,
+          total: data.invoice.amount * 1.1,
+          currency: 'USD',
+          paymentTerms: 'Net 30',
+          items: [{
+            id: '1',
+            description: data.invoice.description || 'Services Rendered',
+            hours: 1,
+            rate: data.invoice.amount,
+            amount: data.invoice.amount
+          }]
+        };
+        
+        setInvoices(prevInvoices => [newInvoice, ...prevInvoices]);
+        setShowNewInvoiceModal(false);
+      } else {
+        console.error('Failed to create invoice: API did not return success');
+      }
+    } catch (error: any) {
+      console.error('Error creating invoice:', error);
+    } finally {
+      setNewInvoiceLoading(false);
+    }
+  };
 
   const filteredInvoices = invoices.filter(invoice => {
     const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -286,7 +353,10 @@ export function Invoices() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow">
+          <Button 
+            onClick={() => setShowNewInvoiceModal(true)}
+            className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Invoice
           </Button>
@@ -498,7 +568,7 @@ export function Invoices() {
                   : 'Create your first invoice to get started'
                 }
               </p>
-              <Button>
+              <Button onClick={() => setShowNewInvoiceModal(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Invoice
               </Button>
@@ -516,7 +586,7 @@ export function Invoices() {
             </div>
             <h3 className="font-semibold mb-2">Create Invoice</h3>
             <p className="text-sm text-muted-foreground mb-4">Generate a new invoice for your clients</p>
-            <Button className="w-full">
+            <Button onClick={() => setShowNewInvoiceModal(true)} className="w-full">
               Get Started
             </Button>
           </CardContent>
@@ -548,6 +618,81 @@ export function Invoices() {
           </CardContent>
         </Card>
       </div>
+
+      {/* New Invoice Modal */}
+      {showNewInvoiceModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Create New Invoice</h2>
+              <button className="modal-close" onClick={() => setShowNewInvoiceModal(false)}>
+                <XCircle size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const invoiceData = {
+                clientName: formData.get('clientName') as string,
+                amount: parseFloat(formData.get('amount') as string),
+                description: formData.get('description') as string,
+                dueDate: formData.get('dueDate') as string || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+              };
+              handleCreateInvoice(invoiceData);
+            }} className="modal-form">
+              <div className="form-group">
+                <label>Client Name *</label>
+                <input
+                  type="text"
+                  name="clientName"
+                  required
+                  placeholder="Enter client name"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Amount *</label>
+                <input
+                  type="number"
+                  name="amount"
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  rows={3}
+                  placeholder="Services description..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Due Date</label>
+                <input
+                  type="date"
+                  name="dueDate"
+                  defaultValue={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="secondary-btn" onClick={() => setShowNewInvoiceModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="primary-btn" disabled={newInvoiceLoading}>
+                  {newInvoiceLoading ? 'Creating...' : 'Create Invoice'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

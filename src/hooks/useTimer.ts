@@ -146,7 +146,7 @@ export function useTimer() {
       setError(err.message);
       throw err;
     }
-  }, [activeTimer, session?.user?.id, apiClient, clearInterval]);
+  }, [activeTimer, session?.user?.id, apiClient, clearTimerInterval]);
 
   // Update timer description or category
   const updateTimer = useCallback(async (updates: { description?: string; category?: string; taskId?: string }) => {
@@ -189,13 +189,15 @@ export function useTimer() {
     fetchActiveTimer();
     
     // Set up periodic refresh to sync with server (every 30 seconds)
-    const syncInterval = setInterval(fetchActiveTimer, 30000);
+    const syncInterval = setInterval(() => {
+      fetchActiveTimer();
+    }, 30000);
     
     return () => {
       clearInterval(syncInterval);
       clearTimerInterval();
     };
-  }, [fetchActiveTimer, clearTimerInterval]);
+  }, [session?.user?.id]); // Only depend on user ID, not the whole fetchActiveTimer function
 
   // Handle page visibility change to sync timer when tab becomes visible
   useEffect(() => {
@@ -211,7 +213,7 @@ export function useTimer() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [activeTimer, fetchActiveTimer]);
+  }, [activeTimer?.id]); // Only depend on activeTimer ID, not the fetchActiveTimer function
 
   // Handle beforeunload to warn user about active timer
   useEffect(() => {

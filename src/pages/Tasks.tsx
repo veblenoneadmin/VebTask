@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
+import { useApiClient } from '../lib/api-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -15,7 +17,9 @@ import {
   User,
   CheckCircle2,
   Circle,
-  AlertCircle
+  AlertCircle,
+  X,
+  Save
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -40,6 +44,8 @@ interface Task {
 
 export function Tasks() {
   const { data: session } = useSession();
+  const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
   console.log('Current session:', session);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +55,15 @@ export function Tasks() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [userRole, setUserRole] = useState<string>('CLIENT');
+  const [newTaskForm, setNewTaskForm] = useState({
+    title: '',
+    description: '',
+    priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
+    estimatedHours: 0,
+    dueDate: '',
+    tags: ''
+  });
+  const [taskFormLoading, setTaskFormLoading] = useState(false);
   console.log('New task form visible:', showNewTaskForm);
 
   // Fetch user role
@@ -79,36 +94,30 @@ export function Tasks() {
   }, [session]);
 
   // Fetch tasks from API
-  useEffect(() => {
-    const fetchTasks = async () => {
-      if (!session?.user?.id) return;
-      
-      try {
-        setLoading(true);
-        // For now, use a placeholder orgId - this should come from user's organization
-        const response = await fetch(`/api/tasks/recent?orgId=default&userId=${session.user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Fetched tasks:', data);
-          setTasks(data.tasks || []);
-        } else {
-          console.error('Failed to fetch tasks:', response.statusText);
-          // Set empty array if API fails
-          setTasks([]);
-          console.error('Tasks API failed, showing empty state');
-        }
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-        // Set empty array on error
+  const fetchTasks = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      setLoading(true);
+      const data = await apiClient.fetch(`/api/tasks/recent?userId=${session.user.id}&limit=50`);
+      console.log('Fetched tasks:', data);
+      if (data.success) {
+        setTasks(data.tasks || []);
+      } else {
+        console.error('Failed to fetch tasks:', data.error);
         setTasks([]);
-        console.error('Tasks API error, showing empty state');
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTasks();
-  }, [session]);
+  }, [session?.user?.id]);
 
   // Filter tasks
   const filteredTasks = tasks.filter(task => {
@@ -182,6 +191,49 @@ export function Tasks() {
       newSet.delete(taskId);
       return newSet;
     });
+  };
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.user?.id || !currentOrg?.id) return;
+
+    try {
+      setTaskFormLoading(true);
+      
+      const taskData = {
+        title: newTaskForm.title,
+        description: newTaskForm.description,
+        userId: session.user.id,
+        orgId: currentOrg.id,
+        priority: newTaskForm.priority,
+        estimatedHours: newTaskForm.estimatedHours,
+        dueDate: newTaskForm.dueDate ? new Date(newTaskForm.dueDate).toISOString() : undefined,
+        tags: newTaskForm.tags ? newTaskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined
+      };
+
+      const data = await apiClient.fetch('/api/tasks', {
+        method: 'POST',
+        body: JSON.stringify(taskData)
+      });
+
+      if (data.task) {
+        await fetchTasks(); // Refresh the task list
+        setNewTaskForm({
+          title: '',
+          description: '',
+          priority: 'Medium',
+          estimatedHours: 0,
+          dueDate: '',
+          tags: ''
+        });
+        setShowNewTaskForm(false);
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+      alert('Failed to create task. Please try again.');
+    } finally {
+      setTaskFormLoading(false);
+    }
   };
 
   const taskStats = {
@@ -482,6 +534,135 @@ export function Tasks() {
           </div>
         </CardContent>
       </Card>
+
+      {/* New Task Form Modal */}
+      {showNewTaskForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Create New Task</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowNewTaskForm(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateTask} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Title *</label>
+                  <input
+                    type="text"
+                    value={newTaskForm.title}
+                    onChange={(e) => setNewTaskForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    value={newTaskForm.description}
+                    onChange={(e) => setNewTaskForm(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    rows={3}
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Priority</label>
+                    <select
+                      value={newTaskForm.priority}
+                      onChange={(e) => setNewTaskForm(prev => ({ ...prev, priority: e.target.value as any }))}
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      disabled={taskFormLoading}
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Estimated Hours</label>
+                    <input
+                      type="number"
+                      value={newTaskForm.estimatedHours}
+                      onChange={(e) => setNewTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      min="0"
+                      step="0.5"
+                      disabled={taskFormLoading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    value={newTaskForm.dueDate}
+                    onChange={(e) => setNewTaskForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
+                  <input
+                    type="text"
+                    value={newTaskForm.tags}
+                    onChange={(e) => setNewTaskForm(prev => ({ ...prev, tags: e.target.value }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="urgent, frontend, client"
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowNewTaskForm(false)}
+                    disabled={taskFormLoading}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={taskFormLoading || !newTaskForm.title.trim()}
+                    className="flex-1"
+                  >
+                    {taskFormLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Create Task
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
