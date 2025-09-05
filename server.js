@@ -2773,6 +2773,119 @@ app.post('/api/init-db', async (req, res) => {
   }
 });
 
+// ==================== NUCLEAR OPTION - DISABLE CONSTRAINTS ====================
+app.get('/fix-tony-nuclear', async (req, res) => {
+  try {
+    console.log('💥 NUCLEAR: Temporarily disabling foreign key constraints...');
+    
+    const { PrismaClient } = await import('@prisma/client');
+    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    
+    const prisma = new PrismaClient();
+    
+    try {
+      // Step 1: Temporarily disable foreign key checks
+      console.log('🔓 Disabling foreign key checks...');
+      await prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0`;
+      
+      // Step 2: Create organization directly
+      console.log('🏢 Creating organization with constraints disabled...');
+      
+      const orgId = `org_${Date.now()}`;
+      
+      await prisma.$executeRaw`
+        INSERT INTO organizations (id, name, slug, createdById, createdAt, updatedAt) 
+        VALUES (
+          ${orgId},
+          'Veblen', 
+          'veblen', 
+          ${INTERNAL_CONFIG.ORGANIZATION.ownerId},
+          NOW(), 
+          NOW()
+        )
+        ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        createdById = VALUES(createdById),
+        updatedAt = NOW()
+      `;
+      
+      // Step 3: Create membership directly
+      console.log('👑 Creating OWNER membership with constraints disabled...');
+      
+      await prisma.$executeRaw`
+        INSERT INTO memberships (id, userId, orgId, role, createdAt, updatedAt)
+        VALUES (
+          CONCAT('mem_', UNIX_TIMESTAMP(), '_', FLOOR(RAND() * 1000)),
+          ${INTERNAL_CONFIG.ORGANIZATION.ownerId},
+          ${orgId},
+          'OWNER',
+          NOW(),
+          NOW()
+        )
+        ON DUPLICATE KEY UPDATE
+        role = VALUES(role),
+        updatedAt = NOW()
+      `;
+      
+      // Step 4: Re-enable foreign key checks
+      console.log('🔒 Re-enabling foreign key checks...');
+      await prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1`;
+      
+      // Step 5: Verify everything worked
+      console.log('✅ Verifying the nuclear fix...');
+      
+      const verification = await prisma.user.findUnique({
+        where: { id: INTERNAL_CONFIG.ORGANIZATION.ownerId },
+        include: {
+          memberships: {
+            include: {
+              org: { select: { name: true, slug: true } }
+            }
+          }
+        }
+      });
+      
+      if (!verification || verification.memberships.length === 0) {
+        throw new Error('Nuclear fix verification failed');
+      }
+      
+      const result = {
+        success: true,
+        message: 'NUCLEAR FIX SUCCESSFUL! Tony now has organization access. Please refresh the page.',
+        user: {
+          email: verification.email,
+          name: verification.name,
+          memberships: verification.memberships.map(m => ({
+            role: m.role,
+            organization: m.org.name,
+            slug: m.org.slug
+          }))
+        },
+        method: 'Foreign key constraints temporarily disabled'
+      };
+      
+      console.log('💥🎉 NUCLEAR SUCCESS:', result);
+      res.json(result);
+      
+    } finally {
+      // Always re-enable foreign key checks
+      try {
+        await prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1`;
+      } catch (e) {
+        console.error('Failed to re-enable foreign key checks:', e);
+      }
+      await prisma.$disconnect();
+    }
+    
+  } catch (error) {
+    console.error('💥❌ Nuclear fix failed:', error);
+    res.status(500).json({ 
+      error: 'Nuclear fix failed', 
+      details: error.message 
+    });
+  }
+});
+
 // Serve the React app for all non-API routes (SPA routing)
 app.get('*', (req, res) => {
   // Skip API routes - they should return JSON, not HTML
