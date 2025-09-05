@@ -10,11 +10,44 @@ import { useOrganization } from '../contexts/OrganizationContext';
  * @returns {ApiClient}
  */
 export function createApiClient() {
+  // Deprecated - use useApiClient() instead which properly handles React context
   return {
     async fetch(url, options = {}) {
-      // Get current organization context
-      const { currentOrg } = useOrganization();
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        credentials: 'include'
+      });
       
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(error.error || `HTTP ${response.status}`);
+      }
+      
+      return response.json();
+    }
+  };
+}
+
+/**
+ * Hook to get API client with organization context
+ * @returns {ApiClient}
+ */
+export function useApiClient() {
+  // Get organization context at hook level
+  let currentOrg = null;
+  try {
+    const orgContext = useOrganization();
+    currentOrg = orgContext.currentOrg;
+  } catch (error) {
+    console.warn('Organization context not available in useApiClient');
+  }
+  
+  return {
+    async fetch(url, options = {}) {
       const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -44,14 +77,6 @@ export function createApiClient() {
       return response.json();
     }
   };
-}
-
-/**
- * Hook to get API client with organization context
- * @returns {ApiClient}
- */
-export function useApiClient() {
-  return createApiClient();
 }
 
 /**
