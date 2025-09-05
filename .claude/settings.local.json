@@ -53,7 +53,9 @@
       "Read(/C:\\Users\\USER'S\\Desktop\\VebTask\\src\\api/**)",
       "Read(/C:\\Users\\USER'S\\Desktop\\VebTask\\src/**)",
       "Read(/C:\\Users\\USER'S\\Desktop\\VebTask\\src/**)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(grep:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": [],
