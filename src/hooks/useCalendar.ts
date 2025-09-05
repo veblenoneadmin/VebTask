@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '../lib/auth-client';
+import { useApiClient } from '../lib/api-client';
 
 export interface CalendarEvent {
   id: string;
@@ -37,6 +38,7 @@ export interface CalendarOverview {
 
 export function useCalendar() {
   const { data: session } = useSession();
+  const apiClient = useApiClient();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [overview, setOverview] = useState<CalendarOverview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,8 +57,7 @@ export function useCalendar() {
       if (endDate) params.append('endDate', endDate);
       if (type) params.append('type', type);
 
-      const response = await fetch(`/api/calendar/events/${session.user.id}?${params}`);
-      const data = await response.json();
+      const data = await apiClient.fetch(`/api/calendar/events/${session.user.id}?${params}`);
 
       if (data.success) {
         setEvents(data.events);
@@ -69,7 +70,7 @@ export function useCalendar() {
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id]);
+  }, [session?.user?.id, apiClient]);
 
   // Get calendar overview/stats
   const fetchOverview = useCallback(async (month?: number, year?: number) => {
@@ -80,8 +81,7 @@ export function useCalendar() {
       if (month) params.append('month', month.toString());
       if (year) params.append('year', year.toString());
 
-      const response = await fetch(`/api/calendar/overview/${session.user.id}?${params}`);
-      const data = await response.json();
+      const data = await apiClient.fetch(`/api/calendar/overview/${session.user.id}?${params}`);
 
       if (data.success) {
         setOverview(data.overview);
@@ -92,25 +92,20 @@ export function useCalendar() {
       setError(err.message);
       console.error('Fetch overview error:', err);
     }
-  }, [session?.user?.id]);
+  }, [session?.user?.id, apiClient]);
 
   // Create a new event
   const createEvent = useCallback(async (eventData: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!session?.user?.id) throw new Error('User not authenticated');
 
     try {
-      const response = await fetch('/api/calendar/events', {
+      const data = await apiClient.fetch('/api/calendar/events', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           userId: session.user.id,
           ...eventData,
         }),
       });
-
-      const data = await response.json();
 
       if (data.success) {
         // Refresh events after creation
@@ -123,7 +118,7 @@ export function useCalendar() {
       setError(err.message);
       throw err;
     }
-  }, [session?.user?.id, fetchEvents]);
+  }, [session?.user?.id, fetchEvents, apiClient]);
 
   // Update an event
   const updateEvent = useCallback(async (
@@ -132,18 +127,13 @@ export function useCalendar() {
     updateRecurring = false
   ) => {
     try {
-      const response = await fetch(`/api/calendar/events/${eventId}`, {
+      const data = await apiClient.fetch(`/api/calendar/events/${eventId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           ...updates,
           updateRecurring,
         }),
       });
-
-      const data = await response.json();
 
       if (data.success) {
         // Refresh events after update
@@ -156,17 +146,15 @@ export function useCalendar() {
       setError(err.message);
       throw err;
     }
-  }, [fetchEvents]);
+  }, [fetchEvents, apiClient]);
 
   // Delete an event
   const deleteEvent = useCallback(async (eventId: string, deleteRecurring = false) => {
     try {
       const params = deleteRecurring ? '?deleteRecurring=true' : '';
-      const response = await fetch(`/api/calendar/events/${eventId}${params}`, {
+      const data = await apiClient.fetch(`/api/calendar/events/${eventId}${params}`, {
         method: 'DELETE',
       });
-
-      const data = await response.json();
 
       if (data.success) {
         // Refresh events after deletion
@@ -179,7 +167,7 @@ export function useCalendar() {
       setError(err.message);
       throw err;
     }
-  }, [fetchEvents]);
+  }, [fetchEvents, apiClient]);
 
   // Get events for a specific date
   const getEventsForDate = useCallback((date: string) => {
