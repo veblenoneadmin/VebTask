@@ -3,50 +3,45 @@ import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
 import { validateBody, validateQuery, commonSchemas, invoiceSchemas } from '../lib/validation.js';
+import { handleApiError, asyncHandler } from '../lib/errorHandler.js';
 const router = express.Router();
 
 // Get all invoices for a user
-router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
-  try {
-    const { userId, orgId, status, limit = 50 } = req.query;
-    
-    if (!orgId) {
-      return res.status(400).json({ error: 'orgId is required' });
-    }
-    
-    const where = { orgId };
-    if (status) where.status = status;
-    
-    const invoices = await prisma.invoice.findMany({
-      where,
-      include: {
-        client: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            company: true
-          }
-        }
-      },
-      orderBy: [
-        { createdAt: 'desc' },
-        { number: 'desc' }
-      ],
-      take: parseInt(limit)
-    });
-    
-    res.json({ 
-      success: true, 
-      invoices,
-      total: invoices.length 
-    });
-    
-  } catch (error) {
-    console.error('Error fetching invoices:', error);
-    res.status(500).json({ error: 'Failed to fetch invoices' });
+router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), asyncHandler(async (req, res) => {
+  const { userId, orgId, status, limit = 50 } = req.query;
+  
+  if (!orgId) {
+    return res.status(400).json({ error: 'orgId is required' });
   }
-});
+  
+  const where = { orgId };
+  if (status) where.status = status;
+  
+  const invoices = await prisma.invoice.findMany({
+    where,
+    include: {
+      client: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          company: true
+        }
+      }
+    },
+    orderBy: [
+      { createdAt: 'desc' },
+      { number: 'desc' }
+    ],
+    take: parseInt(limit)
+  });
+  
+  res.json({ 
+    success: true, 
+    invoices,
+    total: invoices.length 
+  });
+}));
 
 // Create new invoice
 router.post('/', requireAuth, withOrgScope, validateBody(invoiceSchemas.create), async (req, res) => {
