@@ -49,6 +49,30 @@ if (missingEnvVars.length > 0) {
   console.log('✅ All required environment variables are configured');
 }
 
+// Database migration function
+async function runDatabaseMigrations() {
+  if (!process.env.DATABASE_URL) {
+    console.warn('⚠️  DATABASE_URL not found, skipping migrations');
+    return;
+  }
+
+  try {
+    console.log('🔄 Running database migrations...');
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+    
+    const { stdout, stderr } = await execAsync('npx prisma migrate deploy');
+    if (stdout) console.log('📋 Migration output:', stdout);
+    if (stderr && !stderr.includes('INFO')) console.warn('⚠️  Migration warnings:', stderr);
+    
+    console.log('✅ Database migrations completed successfully');
+  } catch (error) {
+    console.error('❌ Database migration failed:', error.message);
+    // Don't exit - let the server start anyway, tables might already exist
+  }
+}
+
 // CORS headers with environment-aware configuration
 app.use((req, res, next) => {
   const allowedOrigins = [
@@ -2384,14 +2408,25 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`🔐 Auth endpoints available at /api/auth/*`);
-  console.log(`📱 React app available at /`);
-  console.log(`🏥 Health check available at /health-simple`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📊 Database URL configured: ${!!process.env.DATABASE_URL}`);
-}).on('error', (err) => {
-  console.error('❌ Server startup error:', err);
+// Run migrations and start server
+async function startServer() {
+  await runDatabaseMigrations();
+  
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`🔐 Auth endpoints available at /api/auth/*`);
+    console.log(`📱 React app available at /`);
+    console.log(`🏥 Health check available at /health-simple`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📊 Database URL configured: ${!!process.env.DATABASE_URL}`);
+  }).on('error', (err) => {
+    console.error('❌ Server startup error:', err);
+    process.exit(1);
+  });
+}
+
+// Start the server
+startServer().catch((error) => {
+  console.error('❌ Failed to start server:', error);
   process.exit(1);
 });
