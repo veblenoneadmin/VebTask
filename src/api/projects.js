@@ -42,8 +42,28 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
     });
     
   } catch (error) {
-    console.error('Error fetching projects:', error);
-    res.status(500).json({ error: 'Failed to fetch projects' });
+    console.error('Error fetching projects:', {
+      error: error.message,
+      code: error.code,
+      userId: req.user?.id,
+      orgId: req.query.orgId,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    
+    // Handle specific error types
+    if (error.code === 'P2002') {
+      res.status(409).json({ error: 'Duplicate project constraint violation' });
+    } else if (error.code?.startsWith('P')) {
+      res.status(400).json({ error: 'Database constraint error', details: error.message });
+    } else if (error.message.includes('connect')) {
+      res.status(503).json({ error: 'Database connection error', code: 'DB_CONNECTION_ERROR' });
+    } else {
+      res.status(500).json({ 
+        error: 'Failed to fetch projects',
+        code: 'INTERNAL_ERROR',
+        message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
+    }
   }
 });
 

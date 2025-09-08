@@ -158,6 +158,47 @@ app.use(enforceUserLimits);
 // Internal system info endpoint
 app.get('/api/system/info', getInternalSystemInfo);
 
+// Health check endpoint with detailed status
+app.get('/api/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    services: {
+      database: 'unknown',
+      auth: 'unknown'
+    },
+    environment: {
+      nodeEnv: process.env.NODE_ENV,
+      hasDbUrl: !!process.env.DATABASE_URL,
+      hasAuthSecret: !!process.env.BETTER_AUTH_SECRET,
+      baseUrl: process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL
+    }
+  };
+
+  // Test database connection
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    health.services.database = 'connected';
+  } catch (error) {
+    health.services.database = 'disconnected';
+    health.status = 'degraded';
+    console.error('Health check: Database connection failed:', error.message);
+  }
+
+  // Test auth system (basic check)
+  try {
+    const testHeaders = { cookie: 'test=check' };
+    await auth.api.getSession({ headers: testHeaders });
+    health.services.auth = 'available';
+  } catch (error) {
+    // Auth system is available if it can handle requests (even if session is invalid)
+    health.services.auth = error.message.includes('session') ? 'available' : 'error';
+  }
+
+  const statusCode = health.status === 'ok' ? 200 : 503;
+  res.status(statusCode).json(health);
+});
+
 // ==================== USER AUTHENTICATION MIDDLEWARE ====================
 
 // Middleware to extract user from Better Auth session
@@ -170,6 +211,7 @@ app.use('/api', async (req, res, next) => {
       '/api/invites/',
       '/api/invitations/accept',
       '/api/system/info',
+      '/api/health',
       '/api/ai/',
       '/test'
     ];
@@ -195,10 +237,18 @@ app.use('/api', async (req, res, next) => {
           name: session.user.name,
           image: session.user.image
         };
+        console.log('✅ User session validated:', req.user.email);
+      } else {
+        console.log('⚠️  No valid session found for request to:', req.path);
       }
     } catch (authError) {
       // Session might be expired or invalid, continue without user
-      console.log('⚠️  Auth session check failed:', authError.message);
+      console.error('❌ Auth session check failed for', req.path, ':', authError.message);
+      console.error('Request headers:', {
+        authorization: req.headers.authorization ? '[PRESENT]' : '[MISSING]',
+        cookie: req.headers.cookie ? req.headers.cookie.substring(0, 100) + '...' : '[MISSING]',
+        'user-agent': req.headers['user-agent']?.substring(0, 50)
+      });
     }
 
     next();

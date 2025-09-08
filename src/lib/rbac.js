@@ -13,9 +13,17 @@ export const RoleOrder = {
  */
 export function requireAuth(req, res, next) {
   if (!req.user || !req.user.id) {
+    console.log(`🚫 Authentication required for ${req.method} ${req.path}`, {
+      hasUser: !!req.user,
+      userId: req.user?.id,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      origin: req.headers.origin
+    });
+    
     return res.status(401).json({ 
       error: 'Authentication required',
-      code: 'UNAUTHENTICATED' 
+      code: 'UNAUTHENTICATED',
+      details: 'Please log in to access this resource'
     });
   }
   next();
@@ -34,10 +42,22 @@ export function withOrgScope(req, res, next) {
     req.user?.activeOrgId;
 
   if (!orgId) {
+    console.log(`🏢 Organization context missing for ${req.method} ${req.path}`, {
+      userId: req.user?.id,
+      availableSources: {
+        header: !!req.headers['x-org-id'],
+        body: !!req.body.orgId,
+        params: !!req.params.orgId,
+        query: !!req.query.orgId,
+        userActive: !!req.user?.activeOrgId
+      }
+    });
+    
     return res.status(400).json({ 
       error: 'Organization context required',
       code: 'MISSING_ORG_CONTEXT',
-      message: 'Please provide organization ID via header X-Org-Id, URL parameter, or body'
+      message: 'Please provide organization ID via header X-Org-Id, URL parameter, or body',
+      details: 'This endpoint requires organization context to determine data scope'
     });
   }
 

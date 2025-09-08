@@ -29,7 +29,7 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "mysql"
   }),
-  baseURL: process.env.BETTER_AUTH_URL || "https://vebtask.com",
+  baseURL: process.env.BETTER_AUTH_URL || process.env.VITE_APP_URL || "https://vebtask.com",
   basePath: "/api/auth",
   secret: (() => {
     const secret = process.env.BETTER_AUTH_SECRET;
