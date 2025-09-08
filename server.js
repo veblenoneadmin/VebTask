@@ -1353,7 +1353,7 @@ app.post('/api/ai/transcribe', async (req, res) => {
 // AI Processing API endpoint (secure server-side OpenRouter proxy)
 app.post('/api/ai/process-brain-dump', async (req, res) => {
   try {
-    const { content, timestamp } = req.body;
+    const { content, timestamp, preferences } = req.body;
 
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ error: 'Content is required' });
@@ -1365,7 +1365,7 @@ app.post('/api/ai/process-brain-dump', async (req, res) => {
     // If no API key, fallback to simulation
     if (!OPENROUTER_API_KEY) {
       console.warn('OpenRouter API key not found, using simulation fallback');
-      const result = simulateAIProcessing(content);
+      const result = simulateAIProcessing(content, preferences);
       return res.status(200).json(result);
     }
 
@@ -1382,7 +1382,7 @@ app.post('/api/ai/process-brain-dump', async (req, res) => {
         model: 'openai/gpt-5-nano',
         messages: [{
           role: 'system',
-          content: getAISystemPrompt()
+          content: getAISystemPrompt(preferences)
         }, {
           role: 'user', 
           content: content
@@ -1395,7 +1395,7 @@ app.post('/api/ai/process-brain-dump', async (req, res) => {
     if (!response.ok) {
       console.error(`OpenRouter API error: ${response.status} ${response.statusText}`);
       // Fallback to simulation on API error
-      const result = simulateAIProcessing(content);
+      const result = simulateAIProcessing(content, preferences);
       return res.status(200).json(result);
     }
 
@@ -1432,8 +1432,68 @@ app.post('/api/ai/process-brain-dump', async (req, res) => {
 });
 
 // AI helper functions
-function getAISystemPrompt() {
+function getAISystemPrompt(preferences = {}) {
+  const {
+    workingHours = { start: '9:00 AM', end: '5:00 PM' },
+    focusHours = ['9:00 AM - 11:00 AM', '2:00 PM - 4:00 PM'],
+    scheduleType = 'traditional',
+    breakTime = '12:00 PM - 1:00 PM',
+    timezone = 'UTC'
+  } = preferences;
+
+  // Dynamic scheduling principles based on user's schedule
+  const getSchedulingGuidance = () => {
+    switch (scheduleType) {
+      case 'night':
+        return `
+NIGHT SHIFT SCHEDULING PRINCIPLES:
+- Schedule high-cognitive tasks during peak night hours (${focusHours.join(', ')})
+- Place urgent/important tasks in early evening when energy is fresh
+- Account for lower collaboration availability during traditional business hours
+- Consider energy dips around 2-4 AM, schedule lighter tasks then
+- Group similar tasks to maximize focus during limited peak periods
+- Allow flexibility for team coordination during overlapping hours`;
+
+      case 'evening':
+        return `
+EVENING SHIFT SCHEDULING PRINCIPLES:  
+- Schedule high-cognitive tasks during peak afternoon/evening hours (${focusHours.join(', ')})
+- Place urgent/important tasks in early afternoon when energy is high
+- Maximize overlap with traditional business hours for collaboration
+- Consider energy peaks in late afternoon/early evening
+- Group meetings and collaborative tasks during business hour overlap
+- Buffer time for end-of-day wrap-up and planning`;
+
+      case 'early':
+        return `
+EARLY BIRD SCHEDULING PRINCIPLES:
+- Schedule high-cognitive tasks during peak morning hours (${focusHours.join(', ')})
+- Place most important work in early morning when energy is highest
+- Front-load difficult tasks before afternoon energy dips
+- Group collaborative tasks for mid-morning when others are available
+- Consider natural energy decline in late morning/early afternoon
+- Plan lighter administrative tasks for later in the schedule`;
+
+      default: // traditional
+        return `
+TRADITIONAL SCHEDULING PRINCIPLES:
+- Schedule high-cognitive tasks during peak focus hours (${focusHours.join(', ')})
+- Group similar tasks together to minimize context switching
+- Place urgent/important tasks in morning slots when energy is highest
+- Buffer time between meetings and complex tasks
+- Consider task dependencies and logical workflow
+- Account for collaboration requirements and team availability
+- Suggest realistic daily workload (6-7 productive hours)`;
+    }
+  };
   return `You are an expert AI assistant specialized in analyzing brain dumps and creating optimal daily schedules for employees.
+
+USER'S WORK SCHEDULE:
+- Work Hours: ${workingHours.start} - ${workingHours.end}
+- Peak Focus Periods: ${focusHours.join(' and ')}
+- Schedule Type: ${scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1)}
+- Break Time: ${breakTime}
+- Timezone: ${timezone}
 
 CORE RESPONSIBILITIES:
 1. Parse unstructured thoughts into clear, actionable tasks with proper grammar and formatting
@@ -1443,17 +1503,10 @@ CORE RESPONSIBILITIES:
 5. Extract meaningful tags that enhance organization and searchability
 6. Break down complex tasks into manageable micro-tasks when beneficial
 7. Create optimal time blocks considering energy levels, task complexity, and deadlines
-8. Suggest ideal scheduling times based on task type and priority
+8. Suggest ideal scheduling times based on USER'S SPECIFIC WORK SCHEDULE
 9. Use proper capitalization and professional language throughout
 
-OPTIMAL SCHEDULING PRINCIPLES:
-- Schedule high-cognitive tasks during peak focus hours (typically 9AM-11AM, 2PM-4PM)
-- Group similar tasks together to minimize context switching
-- Place urgent/important tasks in morning slots when energy is highest
-- Buffer time between meetings and complex tasks
-- Consider task dependencies and logical workflow
-- Account for collaboration requirements and team availability
-- Suggest realistic daily workload (6-7 productive hours)
+${getSchedulingGuidance()}
 
 PRIORITY ASSIGNMENT LOGIC:
 - "Urgent": Critical issues, emergencies, immediate deadlines, blocking other work
@@ -1517,7 +1570,7 @@ Return a JSON object with this exact structure:
 CRITICAL: Return ONLY the JSON object. No additional text, explanations, or formatting.`;
 }
 
-function simulateAIProcessing(content) {
+function simulateAIProcessing(content, preferences = {}) {
   const lines = content.split('\n').filter(line => line.trim());
   const tasks = [];
   
