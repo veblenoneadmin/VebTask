@@ -115,9 +115,7 @@ export async function ensureUserHasOrganization(req, res, next) {
       ];
 
       if (internalEmails.includes(req.user.email)) {
-        console.log(`🔧 Auto-creating organization for internal user: ${req.user.email}`);
-        
-        // Create organization for internal user
+        // Create organization for internal user (suppress frequent logs)
         const organization = await prisma.organization.upsert({
           where: { slug: 'veblen' },
           update: {
@@ -148,8 +146,6 @@ export async function ensureUserHasOrganization(req, res, next) {
             role: 'OWNER'
           }
         });
-
-        console.log(`✅ Auto-created organization and OWNER membership for ${req.user.email}`);
         req.autoCreatedOrg = organization.id;
       }
     }
