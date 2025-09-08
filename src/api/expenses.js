@@ -1,12 +1,34 @@
 // Expense management API endpoints
 import express from 'express';
+import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
 import { validateBody, validateQuery, commonSchemas, expenseSchemas } from '../lib/validation.js';
 const router = express.Router();
 
 // Get all expenses for a user/organization
-router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination.merge(commonSchemas.dateRange)), async (req, res) => {
+router.get('/', requireAuth, withOrgScope, validateQuery(z.object({
+  limit: z.string().optional().transform((val) => {
+    const num = parseInt(val);
+    return isNaN(num) ? 50 : Math.min(Math.max(num, 1), 100);
+  }),
+  offset: z.string().optional().transform((val) => {
+    const num = parseInt(val);
+    return isNaN(num) ? 0 : Math.max(num, 0);
+  }),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  category: z.string().optional(),
+  userId: z.string().optional(),
+  orgId: z.string().optional()
+}).refine((data) => {
+  if (data.startDate && data.endDate) {
+    return new Date(data.startDate) <= new Date(data.endDate);
+  }
+  return true;
+}, {
+  message: "Start date must be before or equal to end date"
+})), async (req, res) => {
   try {
     const { userId, orgId, startDate, endDate, category, limit = 50 } = req.query;
     

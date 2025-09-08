@@ -34,12 +34,17 @@ export function requireAuth(req, res, next) {
  */
 export function withOrgScope(req, res, next) {
   // Try to get orgId from multiple sources
-  const orgId = 
+  let orgId = 
     req.headers['x-org-id'] ||
     req.body.orgId ||
     req.params.orgId ||
     req.query.orgId ||
     req.user?.activeOrgId;
+
+  // Handle cases where orgId might be an array (duplicate URL parameters)
+  if (Array.isArray(orgId)) {
+    orgId = orgId[0];
+  }
 
   if (!orgId) {
     console.log(`🏢 Organization context missing for ${req.method} ${req.path}`, {
@@ -71,12 +76,17 @@ export function withOrgScope(req, res, next) {
  */
 export function withOptionalOrgScope(req, res, next) {
   // Try to get orgId from multiple sources
-  const orgId = 
+  let orgId = 
     req.headers['x-org-id'] ||
     req.body.orgId ||
     req.params.orgId ||
     req.query.orgId ||
     req.user?.activeOrgId;
+
+  // Handle cases where orgId might be an array (duplicate URL parameters)
+  if (Array.isArray(orgId)) {
+    orgId = orgId[0];
+  }
 
   req.orgId = orgId || null;
   next();
