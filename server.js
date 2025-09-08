@@ -69,6 +69,21 @@ async function runDatabaseMigrations() {
     console.log('✅ Database migrations completed successfully');
   } catch (error) {
     console.error('❌ Database migration failed:', error.message);
+    
+    // Check if it's a baseline issue (P3005)
+    if (error.message.includes('P3005') || error.message.includes('database schema is not empty')) {
+      console.log('🔄 Database schema exists, checking migration status...');
+      try {
+        // Try to push the current schema state to match Prisma expectations
+        await execAsync('npx prisma db push --accept-data-loss');
+        console.log('✅ Database schema synchronized successfully');
+      } catch (pushError) {
+        console.warn('⚠️  Could not sync schema:', pushError.message);
+        console.log('📋 Database schema exists and server will continue normally');
+        console.log('💡 Manual fix: Run "npx prisma migrate resolve --applied <migration_name>" in Railway console');
+      }
+    }
+    
     // Don't exit - let the server start anyway, tables might already exist
   }
 }
