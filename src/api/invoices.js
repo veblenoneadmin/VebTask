@@ -3,16 +3,22 @@ import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
 import { validateBody, validateQuery, commonSchemas, invoiceSchemas } from '../lib/validation.js';
-import { handleApiError, asyncHandler } from '../lib/errorHandler.js';
+import { checkDatabaseConnection, handleDatabaseError } from '../lib/api-error-handler.js';
 const router = express.Router();
 
 // Get all invoices for a user
-router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), asyncHandler(async (req, res) => {
-  const { userId, orgId, status, limit = 50 } = req.query;
-  
-  if (!orgId) {
-    return res.status(400).json({ error: 'orgId is required' });
-  }
+router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
+  try {
+    const { userId, orgId, status, limit = 50 } = req.query;
+    
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
   
   const where = { orgId };
   if (status) where.status = status;
@@ -36,12 +42,16 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
     take: parseInt(limit)
   });
   
-  res.json({ 
-    success: true, 
-    invoices,
-    total: invoices.length 
-  });
-}));
+    res.json({ 
+      success: true, 
+      invoices,
+      total: invoices.length 
+    });
+    
+  } catch (error) {
+    return handleDatabaseError(error, res, 'fetch invoices');
+  }
+});
 
 // Create new invoice
 router.post('/', requireAuth, withOrgScope, validateBody(invoiceSchemas.create), async (req, res) => {
@@ -50,6 +60,11 @@ router.post('/', requireAuth, withOrgScope, validateBody(invoiceSchemas.create),
     
     if (!orgId || !clientName || !amount) {
       return res.status(400).json({ error: 'Missing required fields: orgId, clientName, and amount are required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     // Generate invoice number
@@ -91,8 +106,7 @@ router.post('/', requireAuth, withOrgScope, validateBody(invoiceSchemas.create),
     });
     
   } catch (error) {
-    console.error('Error creating invoice:', error);
-    res.status(500).json({ error: 'Failed to create invoice' });
+    return handleDatabaseError(error, res, 'create invoice');
   }
 });
 
@@ -104,6 +118,11 @@ router.patch('/:id/status', requireAuth, withOrgScope, requireResourceOwnership(
     
     if (!['draft', 'sent', 'paid', 'overdue', 'cancelled'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const updateData = { status };
@@ -139,8 +158,7 @@ router.patch('/:id/status', requireAuth, withOrgScope, requireResourceOwnership(
     });
     
   } catch (error) {
-    console.error('Error updating invoice status:', error);
-    res.status(500).json({ error: 'Failed to update invoice status' });
+    return handleDatabaseError(error, res, 'update invoice status');
   }
 });
 
@@ -148,6 +166,11 @@ router.patch('/:id/status', requireAuth, withOrgScope, requireResourceOwnership(
 router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('invoice'), async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     
     await prisma.invoice.delete({
       where: { id }
@@ -161,8 +184,7 @@ router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('invoi
     });
     
   } catch (error) {
-    console.error('Error deleting invoice:', error);
-    res.status(500).json({ error: 'Failed to delete invoice' });
+    return handleDatabaseError(error, res, 'delete invoice');
   }
 });
 

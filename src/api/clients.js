@@ -3,6 +3,7 @@ import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
 import { validateBody, validateQuery, commonSchemas, clientSchemas } from '../lib/validation.js';
+import { checkDatabaseConnection, handleDatabaseError } from '../lib/api-error-handler.js';
 const router = express.Router();
 
 // Get all clients for a user/organization
@@ -12,6 +13,11 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
     
     if (!orgId) {
       return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const clients = await prisma.client.findMany({
@@ -30,8 +36,7 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
     });
     
   } catch (error) {
-    console.error('Error fetching clients:', error);
-    res.status(500).json({ error: 'Failed to fetch clients' });
+    return handleDatabaseError(error, res, 'fetch clients');
   }
 });
 
@@ -42,6 +47,11 @@ router.post('/', requireAuth, withOrgScope, validateBody(clientSchemas.create), 
     
     if (!orgId || !name || !email) {
       return res.status(400).json({ error: 'Missing required fields: orgId, name, and email are required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const client = await prisma.client.create({
@@ -69,8 +79,7 @@ router.post('/', requireAuth, withOrgScope, validateBody(clientSchemas.create), 
     });
     
   } catch (error) {
-    console.error('Error creating client:', error);
-    res.status(500).json({ error: 'Failed to create client' });
+    return handleDatabaseError(error, res, 'create client');
   }
 });
 
@@ -79,6 +88,11 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('client
   try {
     const { id } = req.params;
     const updates = req.body;
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     
     // Remove fields that shouldn't be updated directly
     delete updates.id;
@@ -105,8 +119,7 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('client
     });
     
   } catch (error) {
-    console.error('Error updating client:', error);
-    res.status(500).json({ error: 'Failed to update client' });
+    return handleDatabaseError(error, res, 'update client');
   }
 });
 
@@ -114,6 +127,11 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('client
 router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('client'), async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     
     await prisma.client.delete({
       where: { id }
@@ -127,8 +145,7 @@ router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('clien
     });
     
   } catch (error) {
-    console.error('Error deleting client:', error);
-    res.status(500).json({ error: 'Failed to delete client' });
+    return handleDatabaseError(error, res, 'delete client');
   }
 });
 

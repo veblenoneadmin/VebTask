@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
 import { validateBody, validateQuery, commonSchemas, expenseSchemas } from '../lib/validation.js';
+import { checkDatabaseConnection, handleDatabaseError } from '../lib/api-error-handler.js';
 const router = express.Router();
 
 // Get all expenses for a user/organization
@@ -34,6 +35,11 @@ router.get('/', requireAuth, withOrgScope, validateQuery(z.object({
     
     if (!orgId) {
       return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const where = { orgId };
@@ -74,8 +80,7 @@ router.get('/', requireAuth, withOrgScope, validateQuery(z.object({
     });
     
   } catch (error) {
-    console.error('Error fetching expenses:', error);
-    res.status(500).json({ error: 'Failed to fetch expenses' });
+    return handleDatabaseError(error, res, 'fetch expenses');
   }
 });
 
@@ -86,6 +91,11 @@ router.post('/', requireAuth, withOrgScope, validateBody(expenseSchemas.create),
     
     if (!userId || !orgId || !title || !amount || !category) {
       return res.status(400).json({ error: 'Missing required fields: userId, orgId, title, amount, and category are required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const expense = await prisma.expense.create({
@@ -123,8 +133,7 @@ router.post('/', requireAuth, withOrgScope, validateBody(expenseSchemas.create),
     });
     
   } catch (error) {
-    console.error('Error creating expense:', error);
-    res.status(500).json({ error: 'Failed to create expense' });
+    return handleDatabaseError(error, res, 'create expense');
   }
 });
 
@@ -133,6 +142,11 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('expens
   try {
     const { id } = req.params;
     const updates = req.body;
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     
     // Remove fields that shouldn't be updated directly
     delete updates.id;
@@ -174,8 +188,7 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('expens
     });
     
   } catch (error) {
-    console.error('Error updating expense:', error);
-    res.status(500).json({ error: 'Failed to update expense' });
+    return handleDatabaseError(error, res, 'update expense');
   }
 });
 
@@ -183,6 +196,11 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('expens
 router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('expense'), async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     
     await prisma.expense.delete({
       where: { id }
@@ -196,8 +214,7 @@ router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('expen
     });
     
   } catch (error) {
-    console.error('Error deleting expense:', error);
-    res.status(500).json({ error: 'Failed to delete expense' });
+    return handleDatabaseError(error, res, 'delete expense');
   }
 });
 
@@ -208,6 +225,11 @@ router.get('/stats', requireAuth, withOrgScope, validateQuery(commonSchemas.date
     
     if (!orgId) {
       return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const where = { orgId };
@@ -261,8 +283,7 @@ router.get('/stats', requireAuth, withOrgScope, validateQuery(commonSchemas.date
     });
     
   } catch (error) {
-    console.error('Error fetching expense stats:', error);
-    res.status(500).json({ error: 'Failed to fetch expense statistics' });
+    return handleDatabaseError(error, res, 'fetch expense statistics');
   }
 });
 

@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, withOrgScope, requireAdmin } from '../lib/rbac.js';
+import { checkDatabaseConnection, handleDatabaseError } from '../lib/api-error-handler.js';
 import crypto from 'crypto';
 
 const router = express.Router();
@@ -22,6 +23,10 @@ const updateRoleSchema = z.object({
  */
 router.get('/users', requireAuth, withOrgScope, requireAdmin, async (req, res) => {
   try {
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     const users = await prisma.user.findMany({
       where: {
         memberships: {
@@ -61,11 +66,7 @@ router.get('/users', requireAuth, withOrgScope, requireAdmin, async (req, res) =
       count: users.length
     });
   } catch (error) {
-    console.error('Get admin users error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch users',
-      code: 'FETCH_USERS_ERROR' 
-    });
+    return handleDatabaseError(error, res, 'fetch admin users');
   }
 });
 
@@ -75,6 +76,10 @@ router.get('/users', requireAuth, withOrgScope, requireAdmin, async (req, res) =
  */
 router.get('/invites', requireAuth, withOrgScope, requireAdmin, async (req, res) => {
   try {
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     const invites = await prisma.invite.findMany({
       where: {
         orgId: req.orgId
@@ -95,11 +100,7 @@ router.get('/invites', requireAuth, withOrgScope, requireAdmin, async (req, res)
       count: invites.length
     });
   } catch (error) {
-    console.error('Get admin invites error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch invites',
-      code: 'FETCH_INVITES_ERROR' 
-    });
+    return handleDatabaseError(error, res, 'fetch admin invites');
   }
 });
 
@@ -109,6 +110,11 @@ router.get('/invites', requireAuth, withOrgScope, requireAdmin, async (req, res)
  */
 router.post('/invite', requireAuth, withOrgScope, requireAdmin, async (req, res) => {
   try {
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
+    
     const validation = inviteUserSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ 
@@ -192,11 +198,7 @@ router.post('/invite', requireAuth, withOrgScope, requireAdmin, async (req, res)
       }
     });
   } catch (error) {
-    console.error('Send invitation error:', error);
-    res.status(500).json({ 
-      error: 'Failed to send invitation',
-      code: 'SEND_INVITE_ERROR' 
-    });
+    return handleDatabaseError(error, res, 'send invitation');
   }
 });
 
@@ -206,6 +208,11 @@ router.post('/invite', requireAuth, withOrgScope, requireAdmin, async (req, res)
  */
 router.patch('/users/:userId/role', requireAuth, withOrgScope, requireAdmin, async (req, res) => {
   try {
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
+    
     const validation = updateRoleSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ 
@@ -274,11 +281,7 @@ router.patch('/users/:userId/role', requireAuth, withOrgScope, requireAdmin, asy
       }
     });
   } catch (error) {
-    console.error('Update user role error:', error);
-    res.status(500).json({ 
-      error: 'Failed to update user role',
-      code: 'UPDATE_ROLE_ERROR' 
-    });
+    return handleDatabaseError(error, res, 'update user role');
   }
 });
 
@@ -288,6 +291,11 @@ router.patch('/users/:userId/role', requireAuth, withOrgScope, requireAdmin, asy
  */
 router.post('/invites/:inviteId/revoke', requireAuth, withOrgScope, requireAdmin, async (req, res) => {
   try {
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
+    
     const { inviteId } = req.params;
 
     // Check if invite exists and belongs to the organization
@@ -323,11 +331,7 @@ router.post('/invites/:inviteId/revoke', requireAuth, withOrgScope, requireAdmin
       message: 'Invitation revoked successfully'
     });
   } catch (error) {
-    console.error('Revoke invitation error:', error);
-    res.status(500).json({ 
-      error: 'Failed to revoke invitation',
-      code: 'REVOKE_INVITE_ERROR' 
-    });
+    return handleDatabaseError(error, res, 'revoke invitation');
   }
 });
 
@@ -337,6 +341,11 @@ router.post('/invites/:inviteId/revoke', requireAuth, withOrgScope, requireAdmin
  */
 router.delete('/users/:userId', requireAuth, withOrgScope, requireAdmin, async (req, res) => {
   try {
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
+    
     const { userId } = req.params;
 
     // Check if user exists in the organization
@@ -384,11 +393,7 @@ router.delete('/users/:userId', requireAuth, withOrgScope, requireAdmin, async (
       message: 'User removed from organization successfully'
     });
   } catch (error) {
-    console.error('Remove user error:', error);
-    res.status(500).json({ 
-      error: 'Failed to remove user',
-      code: 'REMOVE_USER_ERROR' 
-    });
+    return handleDatabaseError(error, res, 'remove user');
   }
 });
 
@@ -398,6 +403,10 @@ router.delete('/users/:userId', requireAuth, withOrgScope, requireAdmin, async (
  */
 router.get('/stats', requireAuth, withOrgScope, requireAdmin, async (req, res) => {
   try {
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     const stats = await prisma.$transaction(async (tx) => {
       const [
         userCount,
@@ -462,11 +471,7 @@ router.get('/stats', requireAuth, withOrgScope, requireAdmin, async (req, res) =
       stats
     });
   } catch (error) {
-    console.error('Get admin stats error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch statistics',
-      code: 'FETCH_STATS_ERROR' 
-    });
+    return handleDatabaseError(error, res, 'fetch admin statistics');
   }
 });
 
@@ -476,6 +481,11 @@ router.get('/stats', requireAuth, withOrgScope, requireAdmin, async (req, res) =
  */
 router.get('/system/status', requireAuth, withOrgScope, requireAdmin, async (req, res) => {
   try {
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
+    
     const { INTERNAL_CONFIG } = await import('../config/internal.js');
     
     // Get user count
@@ -503,11 +513,7 @@ router.get('/system/status', requireAuth, withOrgScope, requireAdmin, async (req
       }
     });
   } catch (error) {
-    console.error('Get system status error:', error);
-    res.status(500).json({
-      error: 'Failed to fetch system status',
-      code: 'FETCH_SYSTEM_STATUS_ERROR'
-    });
+    return handleDatabaseError(error, res, 'fetch system status');
   }
 });
 

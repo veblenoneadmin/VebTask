@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../lib/rbac.js';
+import { checkDatabaseConnection, handleDatabaseError } from '../lib/api-error-handler.js';
 
 const router = express.Router();
 
@@ -12,6 +13,11 @@ router.get('/financial', requireAuth, async (req, res) => {
   try {
     const { orgId = 'default', period = 'month', limit = '12' } = req.query;
     const limitNum = Math.min(24, Math.max(1, parseInt(limit)));
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
 
     // Calculate date ranges based on period
     const now = new Date();
@@ -163,11 +169,7 @@ router.get('/financial', requireAuth, async (req, res) => {
       data: reportData.reverse() // Most recent first
     });
   } catch (error) {
-    console.error('Financial report error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch financial report',
-      data: []
-    });
+    return handleDatabaseError(error, res, 'fetch financial report');
   }
 });
 
@@ -179,6 +181,11 @@ router.get('/projects', requireAuth, async (req, res) => {
   try {
     const { orgId = 'default', limit = '10' } = req.query;
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
 
     // Get real project data
     const projects = await prisma.project.findMany({
@@ -214,11 +221,7 @@ router.get('/projects', requireAuth, async (req, res) => {
       data: projectPerformance
     });
   } catch (error) {
-    console.error('Project performance report error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch project performance',
-      data: []
-    });
+    return handleDatabaseError(error, res, 'fetch project performance');
   }
 });
 
@@ -230,6 +233,11 @@ router.get('/clients', requireAuth, async (req, res) => {
   try {
     const { orgId = 'default', limit = '10' } = req.query;
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
 
     // Get the last 12 months for client analysis
     const oneYearAgo = new Date();
@@ -285,11 +293,7 @@ router.get('/clients', requireAuth, async (req, res) => {
       data: clientMetrics
     });
   } catch (error) {
-    console.error('Client metrics report error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch client metrics',
-      data: []
-    });
+    return handleDatabaseError(error, res, 'fetch client metrics');
   }
 });
 
@@ -300,6 +304,11 @@ router.get('/clients', requireAuth, async (req, res) => {
 router.get('/summary', requireAuth, async (req, res) => {
   try {
     const { orgId = 'default' } = req.query;
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     
     // Get current month data
     const now = new Date();
@@ -397,11 +406,7 @@ router.get('/summary', requireAuth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Summary report error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch summary report',
-      summary: {}
-    });
+    return handleDatabaseError(error, res, 'fetch summary report');
   }
 });
 

@@ -3,6 +3,7 @@ import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, withOrgScope, requireResourceOwnership } from '../lib/rbac.js';
 import { validateBody, validateQuery, commonSchemas, projectSchemas } from '../lib/validation.js';
+import { checkDatabaseConnection, handleDatabaseError } from '../lib/api-error-handler.js';
 const router = express.Router();
 
 // Get all projects for a user/organization
@@ -12,6 +13,11 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
     
     if (!orgId) {
       return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const where = { orgId };
@@ -42,28 +48,7 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
     });
     
   } catch (error) {
-    console.error('Error fetching projects:', {
-      error: error.message,
-      code: error.code,
-      userId: req.user?.id,
-      orgId: req.query.orgId,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-    
-    // Handle specific error types
-    if (error.code === 'P2002') {
-      res.status(409).json({ error: 'Duplicate project constraint violation' });
-    } else if (error.code?.startsWith('P')) {
-      res.status(400).json({ error: 'Database constraint error', details: error.message });
-    } else if (error.message.includes('connect')) {
-      res.status(503).json({ error: 'Database connection error', code: 'DB_CONNECTION_ERROR' });
-    } else {
-      res.status(500).json({ 
-        error: 'Failed to fetch projects',
-        code: 'INTERNAL_ERROR',
-        message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-      });
-    }
+    return handleDatabaseError(error, res, 'fetch projects');
   }
 });
 
@@ -74,6 +59,11 @@ router.post('/', requireAuth, withOrgScope, validateBody(projectSchemas.create),
     
     if (!orgId || !name) {
       return res.status(400).json({ error: 'Missing required fields: orgId and name are required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const project = await prisma.project.create({
@@ -108,8 +98,7 @@ router.post('/', requireAuth, withOrgScope, validateBody(projectSchemas.create),
     });
     
   } catch (error) {
-    console.error('Error creating project:', error);
-    res.status(500).json({ error: 'Failed to create project' });
+    return handleDatabaseError(error, res, 'create project');
   }
 });
 
@@ -118,6 +107,11 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('projec
   try {
     const { id } = req.params;
     const updates = req.body;
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     
     // Remove fields that shouldn't be updated directly
     delete updates.id;
@@ -173,8 +167,7 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('projec
     });
     
   } catch (error) {
-    console.error('Error updating project:', error);
-    res.status(500).json({ error: 'Failed to update project' });
+    return handleDatabaseError(error, res, 'update project');
   }
 });
 
@@ -182,6 +175,11 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('projec
 router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('project'), async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
+    }
     
     await prisma.project.delete({
       where: { id }
@@ -195,8 +193,7 @@ router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('proje
     });
     
   } catch (error) {
-    console.error('Error deleting project:', error);
-    res.status(500).json({ error: 'Failed to delete project' });
+    return handleDatabaseError(error, res, 'delete project');
   }
 });
 
@@ -207,6 +204,11 @@ router.get('/stats', requireAuth, withOrgScope, validateQuery(commonSchemas.pagi
     
     if (!orgId) {
       return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const projects = await prisma.project.findMany({
@@ -239,8 +241,7 @@ router.get('/stats', requireAuth, withOrgScope, validateQuery(commonSchemas.pagi
     });
     
   } catch (error) {
-    console.error('Error fetching project stats:', error);
-    res.status(500).json({ error: 'Failed to fetch project statistics' });
+    return handleDatabaseError(error, res, 'fetch project statistics');
   }
 });
 

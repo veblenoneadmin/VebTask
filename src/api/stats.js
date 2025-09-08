@@ -2,44 +2,8 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../lib/rbac.js';
+import { checkDatabaseConnection, handleDatabaseError } from '../lib/api-error-handler.js';
 const router = express.Router();
-
-// Helper function to check database connection
-async function checkDatabaseConnection(res) {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    return true;
-  } catch (dbError) {
-    console.error('Database connection failed:', dbError.message);
-    res.status(503).json({ 
-      error: 'Database temporarily unavailable',
-      code: 'DB_CONNECTION_ERROR',
-      message: 'Please try again later'
-    });
-    return false;
-  }
-}
-
-// Helper function for enhanced error handling
-function handleDatabaseError(error, res, operation = 'database operation') {
-  console.error(`Error in ${operation}:`, error);
-  
-  if (error.code === 'P1001') {
-    return res.status(503).json({ 
-      error: 'Database connection failed',
-      code: 'DB_CONNECTION_ERROR',
-      message: 'Database server is not accessible'
-    });
-  } else if (error.code?.startsWith('P')) {
-    return res.status(500).json({ 
-      error: 'Database query failed',
-      code: 'DB_QUERY_ERROR',
-      message: 'Failed to execute database query'
-    });
-  }
-  
-  return res.status(500).json({ error: `Failed to ${operation}` });
-}
 
 // Tasks completed today endpoint
 router.get('/tasks-completed-today', requireAuth, async (req, res) => {
