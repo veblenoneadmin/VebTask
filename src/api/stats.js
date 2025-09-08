@@ -4,6 +4,43 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../lib/rbac.js';
 const router = express.Router();
 
+// Helper function to check database connection
+async function checkDatabaseConnection(res) {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return true;
+  } catch (dbError) {
+    console.error('Database connection failed:', dbError.message);
+    res.status(503).json({ 
+      error: 'Database temporarily unavailable',
+      code: 'DB_CONNECTION_ERROR',
+      message: 'Please try again later'
+    });
+    return false;
+  }
+}
+
+// Helper function for enhanced error handling
+function handleDatabaseError(error, res, operation = 'database operation') {
+  console.error(`Error in ${operation}:`, error);
+  
+  if (error.code === 'P1001') {
+    return res.status(503).json({ 
+      error: 'Database connection failed',
+      code: 'DB_CONNECTION_ERROR',
+      message: 'Database server is not accessible'
+    });
+  } else if (error.code?.startsWith('P')) {
+    return res.status(500).json({ 
+      error: 'Database query failed',
+      code: 'DB_QUERY_ERROR',
+      message: 'Failed to execute database query'
+    });
+  }
+  
+  return res.status(500).json({ error: `Failed to ${operation}` });
+}
+
 // Tasks completed today endpoint
 router.get('/tasks-completed-today', requireAuth, async (req, res) => {
   try {
@@ -11,6 +48,11 @@ router.get('/tasks-completed-today', requireAuth, async (req, res) => {
     
     if (!orgId) {
       return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const today = new Date();
@@ -57,8 +99,7 @@ router.get('/tasks-completed-today', requireAuth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching tasks completed today:', error);
-    res.status(500).json({ error: 'Failed to fetch task statistics' });
+    return handleDatabaseError(error, res, 'fetch task statistics');
   }
 });
 
@@ -69,6 +110,11 @@ router.get('/time-today', requireAuth, async (req, res) => {
     
     if (!orgId || !userId) {
       return res.status(400).json({ error: 'orgId and userId are required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const today = new Date();
@@ -127,8 +173,7 @@ router.get('/time-today', requireAuth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching time today:', error);
-    res.status(500).json({ error: 'Failed to fetch time statistics' });
+    return handleDatabaseError(error, res, 'fetch time statistics');
   }
 });
 
@@ -139,6 +184,11 @@ router.get('/active-projects', requireAuth, async (req, res) => {
     
     if (!orgId) {
       return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     // Count active projects (excluding completed and cancelled)
@@ -174,8 +224,7 @@ router.get('/active-projects', requireAuth, async (req, res) => {
       label: `${dueSoon} due this week`
     });
   } catch (error) {
-    console.error('Error fetching active projects:', error);
-    res.status(500).json({ error: 'Failed to fetch project statistics' });
+    return handleDatabaseError(error, res, 'fetch project statistics');
   }
 });
 
@@ -186,6 +235,11 @@ router.get('/team-members', requireAuth, async (req, res) => {
     
     if (!orgId) {
       return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const memberCount = await prisma.membership.count({
@@ -219,8 +273,7 @@ router.get('/team-members', requireAuth, async (req, res) => {
       label: `${activeToday.length} active today`
     });
   } catch (error) {
-    console.error('Error fetching team members:', error);
-    res.status(500).json({ error: 'Failed to fetch member statistics' });
+    return handleDatabaseError(error, res, 'fetch member statistics');
   }
 });
 
@@ -232,6 +285,11 @@ router.get('/productivity', requireAuth, async (req, res) => {
     
     if (!orgId || !userId) {
       return res.status(400).json({ error: 'orgId and userId are required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     // Get current week boundaries
@@ -306,8 +364,7 @@ router.get('/productivity', requireAuth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching productivity score:', error);
-    res.status(500).json({ error: 'Failed to fetch productivity statistics' });
+    return handleDatabaseError(error, res, 'fetch productivity statistics');
   }
 });
 
@@ -318,6 +375,11 @@ router.get('/overdue-tasks', requireAuth, async (req, res) => {
     
     if (!orgId) {
       return res.status(400).json({ error: 'orgId is required' });
+    }
+    
+    // Check database connection first
+    if (!(await checkDatabaseConnection(res))) {
+      return; // Response already sent by checkDatabaseConnection
     }
     
     const now = new Date();
@@ -342,8 +404,7 @@ router.get('/overdue-tasks', requireAuth, async (req, res) => {
       label: overdueCount === 0 ? 'All caught up!' : `${overdueCount} overdue`
     });
   } catch (error) {
-    console.error('Error fetching overdue tasks:', error);
-    res.status(500).json({ error: 'Failed to fetch overdue task statistics' });
+    return handleDatabaseError(error, res, 'fetch overdue task statistics');
   }
 });
 
