@@ -141,12 +141,12 @@ router.get('/active-projects', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'orgId is required' });
     }
     
-    // Count active projects
+    // Count active projects (excluding completed and cancelled)
     const activeCount = await prisma.project.count({
       where: {
         orgId,
         status: {
-          in: ['active', 'planning', 'in_progress']
+          in: ['active', 'planning', 'on_hold']
         }
       }
     });
@@ -159,7 +159,7 @@ router.get('/active-projects', requireAuth, async (req, res) => {
       where: {
         orgId,
         status: {
-          in: ['active', 'planning', 'in_progress']
+          in: ['active', 'planning', 'on_hold']
         },
         endDate: {
           gte: today,
