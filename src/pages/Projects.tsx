@@ -19,6 +19,7 @@ import {
   Activity
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { ProjectModal } from '../components/ProjectModal';
 
 interface Project {
   id: string;
@@ -152,17 +153,6 @@ export function Projects() {
   const [, setError] = useState<string | null>(null);
   const [, setSelectedProject] = useState<Project | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
-  const [newProjectLoading, setNewProjectLoading] = useState(false);
-  const [newProjectForm, setNewProjectForm] = useState({
-    name: '',
-    description: '',
-    client: '',
-    priority: 'medium' as 'low' | 'medium' | 'high',
-    budget: 0,
-    estimatedHours: 0,
-    startDate: '',
-    endDate: ''
-  });
 
   // Fetch projects from server
   const fetchProjects = async () => {
@@ -215,48 +205,30 @@ export function Projects() {
   };
 
 
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateProject = async (projectData: any) => {
     if (!session?.user?.id) return;
 
     try {
-      setNewProjectLoading(true);
-      
       const data = await apiClient.fetch('/api/projects', {
         method: 'POST',
         body: JSON.stringify({
           userId: session.user.id,
           orgId: currentOrg?.id,
-          name: newProjectForm.name,
-          description: newProjectForm.description,
-          clientName: newProjectForm.client,
-          budget: newProjectForm.budget,
-          deadline: newProjectForm.endDate,
-          priority: newProjectForm.priority
+          name: projectData.name,
+          description: projectData.description,
+          status: projectData.status || 'active'
         })
       });
 
       if (data.success) {
         // Refresh the entire projects list from server
         await fetchProjects();
+        setShowNewProjectModal(false);
       } else {
         throw new Error('Failed to create project');
       }
-      setShowNewProjectModal(false);
-      setNewProjectForm({
-        name: '',
-        description: '',
-        client: '',
-        priority: 'medium',
-        budget: 0,
-        estimatedHours: 0,
-        startDate: '',
-        endDate: ''
-      });
     } catch (error: any) {
       console.error('Error creating project:', error);
-    } finally {
-      setNewProjectLoading(false);
     }
   };
   
@@ -568,119 +540,12 @@ export function Projects() {
         </Card>
       )}
 
-      {/* New Project Modal */}
-      {showNewProjectModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>Create New Project</h2>
-              <button className="modal-close" onClick={() => setShowNewProjectModal(false)}>
-                <Plus className="rotate-45" size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateProject} className="modal-form">
-              <div className="form-group">
-                <label>Project Name *</label>
-                <input
-                  type="text"
-                  value={newProjectForm.name}
-                  onChange={(e) => setNewProjectForm(prev => ({ ...prev, name: e.target.value }))}
-                  required
-                  placeholder="Enter project name"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  value={newProjectForm.description}
-                  onChange={(e) => setNewProjectForm(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                  placeholder="Project description..."
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Client *</label>
-                  <input
-                    type="text"
-                    value={newProjectForm.client}
-                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, client: e.target.value }))}
-                    required
-                    placeholder="Client name"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Priority</label>
-                  <select
-                    value={newProjectForm.priority}
-                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, priority: e.target.value as 'low' | 'medium' | 'high' }))}
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Budget ($)</label>
-                  <input
-                    type="number"
-                    value={newProjectForm.budget}
-                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, budget: parseFloat(e.target.value) || 0 }))}
-                    min="0"
-                    step="100"
-                    placeholder="0"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Estimated Hours</label>
-                  <input
-                    type="number"
-                    value={newProjectForm.estimatedHours}
-                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
-                    min="0"
-                    step="1"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Start Date</label>
-                  <input
-                    type="date"
-                    value={newProjectForm.startDate}
-                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, startDate: e.target.value }))}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>End Date</label>
-                  <input
-                    type="date"
-                    value={newProjectForm.endDate}
-                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, endDate: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button type="button" className="secondary-btn" onClick={() => setShowNewProjectModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="primary-btn" disabled={newProjectLoading}>
-                  {newProjectLoading ? 'Creating...' : 'Create Project'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Enhanced Project Modal */}
+      <ProjectModal
+        isOpen={showNewProjectModal}
+        onClose={() => setShowNewProjectModal(false)}
+        onSave={handleCreateProject}
+      />
     </div>
   );
 }
