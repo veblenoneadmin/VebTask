@@ -58,10 +58,11 @@ export function useApiClient() {
         headers['X-Org-Id'] = currentOrg.id;
       }
       
-      // Also add as query parameter for backward compatibility
-      const urlWithOrg = currentOrg?.id ? 
-        `${url}${url.includes('?') ? '&' : '?'}orgId=${currentOrg.id}` : 
-        url;
+      // Add as query parameter for backward compatibility, but only if not already present
+      let urlWithOrg = url;
+      if (currentOrg?.id && !url.includes('orgId=')) {
+        urlWithOrg = `${url}${url.includes('?') ? '&' : '?'}orgId=${currentOrg.id}`;
+      }
       
       const response = await fetch(urlWithOrg, {
         ...options,
