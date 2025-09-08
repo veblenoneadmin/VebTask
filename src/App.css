@@ -969,7 +969,8 @@ body {
 }
 
 .modal-content {
-  background: white;
+  background: #1a1a1a;
+  border: 1px solid #333;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   max-width: 500px;
@@ -982,7 +983,7 @@ body {
 
 .modal-header {
   padding: 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #333;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -990,7 +991,7 @@ body {
 
 .modal-header h2 {
   margin: 0;
-  color: #111827;
+  color: #ffffff;
 }
 
 .modal-close {
@@ -998,7 +999,7 @@ body {
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #6b7280;
+  color: #888888;
   padding: 0;
   width: 30px;
   height: 30px;
@@ -1008,7 +1009,7 @@ body {
 }
 
 .modal-close:hover {
-  color: #374151;
+  color: #ffffff;
 }
 
 .modal-form {
@@ -1028,13 +1029,72 @@ body {
   justify-content: flex-end;
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #333;
 }
 
 textarea {
   min-height: 80px;
   resize: vertical;
   font-family: inherit;
+}
+
+/* Modal Form Styling */
+.modal-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.modal-form .form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.modal-form input,
+.modal-form textarea,
+.modal-form select {
+  width: 100%;
+  padding: 12px 16px;
+  background: #333333;
+  border: 1px solid #555;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.modal-form input::placeholder,
+.modal-form textarea::placeholder {
+  color: #888888;
+}
+
+.modal-form input:focus,
+.modal-form textarea:focus,
+.modal-form select:focus {
+  outline: none;
+  border-color: #6366f1;
+  background: #444444;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.modal-form select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.modal-form select option {
+  background: #333333;
+  color: #ffffff;
+  padding: 8px 12px;
 }
 
 /* Color Picker */
@@ -1055,11 +1115,12 @@ textarea {
 }
 
 .color-option:hover {
-  border-color: #d1d5db;
+  border-color: #888888;
 }
 
 .color-option.selected {
-  border-color: #374151;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 /* Reports Enhancements */
