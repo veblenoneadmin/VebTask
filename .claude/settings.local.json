@@ -58,7 +58,10 @@
       "Bash(awk:*)",
       "Bash(node:*)",
       "Bash(npm run dev:*)",
-      "Bash(railway run npx prisma migrate:*)"
+      "Bash(railway run npx prisma migrate:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": [],

@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prisma } from "./src/lib/prisma.js";
+import { prisma } from "./lib/prisma.js";
 
 console.log('✅ Using Prisma adapter for Better Auth');
 // Helper function to get the base URL for the application

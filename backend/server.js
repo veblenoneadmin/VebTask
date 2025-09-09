@@ -5,31 +5,31 @@ import { toNodeHandler } from 'better-auth/node';
 import { auth } from './auth.js';
 
 // Import new route modules
-import authRoutes from './src/routes/auth.js';
-import organizationRoutes from './src/routes/organizations.js';
-import memberRoutes from './src/routes/members.js';
-import inviteRoutes from './src/routes/invites.js';
-import wizardRoutes from './src/routes/wizard.js';
-import statsRoutes from './src/api/stats.js';
-import timersRoutes from './src/api/timers.js';
-import tasksRoutes from './src/api/tasks.js';
-import calendarRoutes from './src/api/calendar.js';
-import invoicesRoutes from './src/api/invoices.js';
-import projectsRoutes from './src/api/projects.js';
-import clientsRoutes from './src/api/clients.js';
-import expensesRoutes from './src/api/expenses.js';
-import reportsRoutes from './src/api/reports.js';
-import onboardingRoutes from './src/api/onboarding.js';
-import adminRoutes from './src/api/admin.js';
-import passwordResetRoutes from './src/routes/password-reset.js';
-import invitationRoutes from './src/api/invitations.js';
+import authRoutes from './routes/auth.js';
+import organizationRoutes from './routes/organizations.js';
+import memberRoutes from './routes/members.js';
+import inviteRoutes from './routes/invites.js';
+import wizardRoutes from './routes/wizard.js';
+import statsRoutes from './api/stats.js';
+import timersRoutes from './api/timers.js';
+import tasksRoutes from './api/tasks.js';
+import calendarRoutes from './api/calendar.js';
+import invoicesRoutes from './api/invoices.js';
+import projectsRoutes from './api/projects.js';
+import clientsRoutes from './api/clients.js';
+import expensesRoutes from './api/expenses.js';
+import reportsRoutes from './api/reports.js';
+import onboardingRoutes from './api/onboarding.js';
+import adminRoutes from './api/admin.js';
+import passwordResetRoutes from './routes/password-reset.js';
+import invitationRoutes from './api/invitations.js';
 import { 
   blockPublicRegistration, 
   addInternalBranding, 
   validateInvitationOnSignup,
   enforceUserLimits,
   getInternalSystemInfo 
-} from './src/middleware/internal-security.js';
+} from './middleware/internal-security.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -339,7 +339,7 @@ app.get('/fix-tony-membership', async (req, res) => {
     console.log('🔧 TEMPORARY: Fixing Tony\'s organization membership...');
     
     const { PrismaClient } = await import('@prisma/client');
-    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    const { INTERNAL_CONFIG } = await import('./config/internal.js');
     
     const prisma = new PrismaClient();
     
@@ -500,7 +500,7 @@ app.get('/quick-fix-membership', async (req, res) => {
     console.log('🚀 Quick membership fix triggered...');
     
     const { PrismaClient } = await import('@prisma/client');
-    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    const { INTERNAL_CONFIG } = await import('./config/internal.js');
     
     const prisma = new PrismaClient();
     
@@ -692,7 +692,7 @@ app.get('/fix-tony-membership-raw', async (req, res) => {
     console.log('🔧 RAW SQL: Fixing Tony\'s membership with direct database access...');
     
     const { PrismaClient } = await import('@prisma/client');
-    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    const { INTERNAL_CONFIG } = await import('./config/internal.js');
     
     const prisma = new PrismaClient();
     
@@ -787,7 +787,7 @@ app.get('/fix-tony-minimal', async (req, res) => {
     console.log('🔧 MINIMAL: Just creating Tony\'s membership...');
     
     const { PrismaClient } = await import('@prisma/client');
-    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    const { INTERNAL_CONFIG } = await import('./config/internal.js');
     
     const prisma = new PrismaClient();
     
@@ -949,7 +949,7 @@ app.get('/debug-database-state', async (req, res) => {
     console.log('🔍 FINAL DIAGNOSTIC: Checking entire database state...');
     
     const { PrismaClient } = await import('@prisma/client');
-    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    const { INTERNAL_CONFIG } = await import('./config/internal.js');
     
     const prisma = new PrismaClient();
     
@@ -1020,7 +1020,7 @@ app.get('/debug-tony-user', async (req, res) => {
     console.log('🔍 DIAGNOSTIC: Checking Tony\'s user record...');
     
     const { PrismaClient } = await import('@prisma/client');
-    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    const { INTERNAL_CONFIG } = await import('./config/internal.js');
     
     const prisma = new PrismaClient();
     
@@ -2297,7 +2297,7 @@ app.get('/fix-tony-nuclear', async (req, res) => {
     console.log('💥 NUCLEAR: Temporarily disabling foreign key constraints...');
     
     const { PrismaClient } = await import('@prisma/client');
-    const { INTERNAL_CONFIG } = await import('./src/config/internal.js');
+    const { INTERNAL_CONFIG } = await import('./config/internal.js');
     
     const prisma = new PrismaClient();
     
