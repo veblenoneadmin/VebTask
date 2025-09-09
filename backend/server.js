@@ -1746,8 +1746,8 @@ function generateSimpleId() {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// Serve static files from dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
+// Serve static files from frontend dist directory
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
 
 // Auth configuration endpoint
 app.get('/api/auth-config', (req, res) => {
@@ -2420,7 +2420,7 @@ app.get('*', (req, res) => {
     return res.json({ status: 'ok', service: 'vebtask', timestamp: new Date() });
   }
   
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
 });
 
 // Run migrations and start server
