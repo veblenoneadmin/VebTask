@@ -15,6 +15,7 @@
     "db:reset": "cd backend && prisma db push --force-reset",
     "db:studio": "cd backend && prisma studio",
     "db:seed": "cd backend && node scripts/backfill-orgs.js",
+    "db:seed-demo": "cd backend && node scripts/seed-demo-data.js",
     "postinstall": "cd backend && prisma generate"
   },
   "dependencies": {
