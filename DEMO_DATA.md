@@ -1,6 +1,6 @@
 # Demo Data Setup
 
-This project includes comprehensive mock data for demonstration purposes.
+This project includes comprehensive mock data for demonstration purposes, including both general demo accounts and the actual Veblen organization data.
 
 ## Demo Accounts
 
@@ -13,20 +13,54 @@ The following demo accounts are available:
 | Developer | `developer@demo.com` | `demo123` | Development team member |
 | Client | `client@demo.com` | `demo123` | External client user |
 
+## Veblen Organization Accounts
+
+The Veblen team accounts (representing the actual company):
+
+| Role | Email | Password | Name | Title |
+|------|-------|----------|------|-------|
+| Owner | `founder@veblen.com` | `veblen2024` | Jordan Veblen | Founder & CEO |
+| Admin | `sarah@veblen.com` | `veblen2024` | Sarah Mitchell | Head of Operations |
+| Admin | `alex@veblen.com` | `veblen2024` | Alex Rodriguez | Lead Developer |
+| Staff | `emma@veblen.com` | `veblen2024` | Emma Thompson | Senior Product Designer |
+| Staff | `marcus@veblen.com` | `veblen2024` | Marcus Chen | Full-Stack Developer |
+| Staff | `lisa@veblen.com` | `veblen2024` | Lisa Park | Project Manager |
+| Staff | `david@veblen.com` | `veblen2024` | David Johnson | DevOps Engineer |
+| Staff | `rachel@veblen.com` | `veblen2024` | Rachel Kim | UX Researcher |
+
 ## Demo Data Includes
 
-### Organization
+### Organizations
 - **Demo Agency** - A sample consulting/development agency
+- **Veblen** - The actual Veblen company with real team structure and projects
 
-### Clients (3)
+### Clients
+**Demo Agency (3 clients):**
 - **TechCorp Inc** - High-priority technology client ($125/hr)
 - **GreenLeaf Solutions** - Environmental consulting client ($95/hr)  
 - **Retail Plus** - Retail industry prospect ($85/hr)
 
-### Projects (3)
+**Veblen (6 enterprise clients):**
+- **InnovateTech Solutions** - AI/ML enterprise client ($185/hr)
+- **GreenFuture Corp** - Renewable energy leader ($165/hr)
+- **MedTech Innovations** - Healthcare technology ($195/hr)
+- **FinanceFlow Systems** - Fintech platform ($175/hr)
+- **EduTech Academy** - Online education ($145/hr)
+- **RetailNext Analytics** - Retail analytics prospect ($155/hr)
+
+### Projects
+**Demo Agency (3 projects):**
 - **E-commerce Platform Redesign** - Active project (25% complete, $50K budget)
 - **Mobile App Development** - Active project (15% complete, $75K budget)
 - **Brand Identity Package** - Planning phase project ($15K budget)
+
+**Veblen (6 projects):**
+- **VebTask - Time Tracking Platform** - Internal product (65% complete, $250K budget)
+- **AI-Powered Healthcare Dashboard** - MedTech project (35% complete, $180K budget)
+- **Smart Energy Management System** - GreenFuture project (40% complete, $220K budget)
+- **Enterprise AI Integration Suite** - InnovateTech project (15% complete, $300K budget)
+- **FinTech Security Compliance Platform** - Planning phase ($165K budget)
+- **Educational Content Management System** - Planning phase ($125K budget)
 
 ### Tasks (6)
 - Mix of completed, in-progress, and planned tasks
@@ -54,6 +88,12 @@ npm run db:migrate
 
 # Seed the demo data
 npm run db:seed-demo
+
+# OR seed Veblen organization data
+npm run db:seed-veblen
+
+# OR seed both
+npm run db:seed-demo && npm run db:seed-veblen
 ```
 
 **⚠️ Warning:** This script will delete existing data in demo-related tables before seeding new data. Only run this on development databases.
