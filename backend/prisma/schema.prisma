@@ -1,12 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Development Prisma schema file using SQLite
+// This is a copy of schema.prisma but with SQLite provider for local development
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -18,458 +18,358 @@ enum Role {
   CLIENT
 }
 
-enum InviteStatus {
-  PENDING
-  ACCEPTED
-  EXPIRED
-  REVOKED
-}
-
-// Core User model (managed by Better Auth)
+// User model for authentication
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  emailVerified Boolean @default(false)
-  name         String?
-  image        String?
-  
-  // Onboarding wizard tracking
-  completedWizards String? // Comma-separated list of completed wizard steps
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  image       String?
+  role        Role     @default(STAFF)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastLoginAt DateTime?
+  isActive    Boolean  @default(true)
   
   // Organization relationships
-  memberships      Membership[]
-  createdOrgs      Organization[]  @relation("OrganizationCreator")
-  invitesSent      Invite[]        @relation("InvitesSent")
-  invitesAccepted  Invite[]        @relation("InvitesAccepted")
+  organizations    OrganizationMember[]
+  ownedOrganizations Organization[] @relation("OrganizationOwner")
   
-  // Internal invitation system
-  invitationsCreated  Invitation[]  @relation("InvitationsCreated")
-  invitationsApproved Invitation[]  @relation("InvitationsApproved")
-
-  // Better Auth relationships
-  accounts Account[]
-  sessions Session[]
-
-  // Business data relationships (will be scoped by org)
-  createdTasks     MacroTask[]    @relation("TaskCreator")
-  brainDumps       BrainDump[]
-  timeLogs         TimeLog[]
-  calendarEvents   CalendarEvent[]
-  expenses         Expense[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// Organization model - core tenant entity
-model Organization {
-  id          String   @id @default(cuid())
-  name        String   @db.VarChar(255)
-  slug        String   @unique @db.VarChar(100)
-  createdById String
+  // Time tracking
+  timeLogs        TimeLog[]
   
-  // Relationships
-  createdBy   User         @relation("OrganizationCreator", fields: [createdById], references: [id])
-  memberships Membership[]
-  invites     Invite[]
-  invitations Invitation[] // Internal invitation system
-
-  // Business data (scoped to this org)
-  macroTasks     MacroTask[]
-  brainDumps     BrainDump[]
-  timeLogs       TimeLog[]
-  calendarEvents CalendarEvent[]
-  clients        Client[]
-  projects       Project[]
-  invoices       Invoice[]
-  expenses       Expense[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([createdById])
-  @@map("organizations")
+  // Tasks assigned to user
+  assignedTasks   Task[]
+  
+  // Projects user is involved in
+  projectMembers  ProjectMember[]
+  
+  // Session management for better-auth
+  sessions        Session[]
+  accounts        Account[]
+  verifications   Verification[]
 }
 
-// Membership - links users to organizations with roles
-model Membership {
-  id     String @id @default(cuid())
-  userId String
-  orgId  String
-  role   Role
-
-  // Relationships
-  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, orgId])
-  @@index([orgId])
-  @@index([userId])
-  @@map("memberships")
-}
-
-// Invite system for onboarding new users
-model Invite {
-  id           String       @id @default(cuid())
-  orgId        String
-  email        String       @db.VarChar(255)
-  role         Role
-  token        String       @unique @db.VarChar(64)
-  expiresAt    DateTime
-  status       InviteStatus @default(PENDING)
-  invitedById  String
-  acceptedById String?
-
-  // Relationships
-  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  invitedBy  User         @relation("InvitesSent", fields: [invitedById], references: [id])
-  acceptedBy User?        @relation("InvitesAccepted", fields: [acceptedById], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([orgId])
-  @@index([token])
-  @@index([email])
-  @@map("invites")
-}
-
-// Better Auth required models
-model Account {
-  id                     String  @id @default(cuid())
-  accountId              String  // Better Auth compatibility  
-  userId                 String
-  providerId             String  // Better Auth uses 'providerId' not 'provider'
-  providerAccountId      String?
-  type                   String  @default("oauth")
-  refreshToken           String? @db.Text
-  accessToken            String? @db.Text
-  accessTokenExpiresAt   DateTime?
-  expires_at             Int?
-  token_type             String?
-  scope                  String?
-  idToken                String? @db.Text
-  session_state          String?
-  password               String? @db.Text  // For email/password auth
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([providerId, providerAccountId])
-  @@index([userId])
-}
-
+// Session model for better-auth
 model Session {
-  id           String   @id @default(cuid())
-  token        String   @unique // Better Auth uses 'token' 
-  userId       String
-  expiresAt    DateTime // Better Auth uses 'expiresAt'
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  ipAddress    String?  // Better Auth optional fields
-  userAgent    String?  // Better Auth optional fields
+  id        String   @id @default(cuid())
+  userId    String
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
 }
 
+// Account model for OAuth providers
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+}
+
+// Verification model for email verification, password reset, etc.
 model Verification {
   id         String   @id @default(cuid())
-  identifier String   @db.VarChar(255)
-  value      String   @db.Text
-  expiresAt  DateTime
+  identifier String   // email or user ID
+  token      String   @unique
+  expires    DateTime
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@map("verification")
-}
-
-// Business Models (updated with org scoping)
-
-model BrainDump {
-  id               String   @id @default(cuid()) @db.VarChar(50)
-  userId           String   @db.VarChar(36)
-  orgId            String   @db.VarChar(191) // Added for org scoping
-  rawContent       String   @db.Text
-  processedContent Json?
-  processingStatus String   @default("pending") @db.VarChar(20)
-  aiModel          String?  @db.VarChar(100)
-  processedAt      DateTime?
-
-  // Relationships
-  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([userId, createdAt])
-  @@index([orgId])
-  @@index([processingStatus])
-  @@map("brain_dumps")
-}
-
-model MacroTask {
-  id             String    @id @default(cuid()) @db.VarChar(50)
-  title          String    @db.VarChar(500)
-  description    String?   @db.Text
-  userId         String    @db.VarChar(36)
-  orgId          String    @db.VarChar(191) // Added for org scoping
-  createdBy      String    @db.VarChar(36)
-  priority       String    @default("Medium") @db.VarChar(10)
-  estimatedHours Decimal   @default(0) @db.Decimal(5, 2)
-  actualHours    Decimal   @default(0) @db.Decimal(5, 2)
-  status         String    @default("not_started") @db.VarChar(20)
-  category       String    @default("General") @db.VarChar(100)
-  tags           Json?
-  dueDate        DateTime?
-  completedAt    DateTime?
-
-  // Relationships
-  user         User            @relation("TaskCreator", fields: [createdBy], references: [id])
-  org          Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  timeLogs     TimeLog[]
-  calendarEvents CalendarEvent[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([userId, status])
-  @@index([orgId])
-  @@index([priority])
-  @@index([dueDate])
-  @@fulltext([title, description])
-  @@map("macro_tasks")
-}
-
-model TimeLog {
-  id          String    @id @default(cuid()) @db.VarChar(50)
-  taskId      String?   @db.VarChar(50)
-  userId      String    @db.VarChar(36)
-  orgId       String    @db.VarChar(191) // Added for org scoping
+  userId     String?
   
-  // Kimai-style timer fields
-  begin       DateTime  // Start time (was startTime)
-  end         DateTime? // End time (was endTime) - null means active/running
-  duration    Int       @default(0) // Duration in seconds - calculated when stopped
-  timezone    String    @default("UTC") @db.VarChar(64) // User timezone
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Work categorization 
-  category    String    @default("work") @db.VarChar(20) // work, break, meeting, etc
-  description String?   @db.Text
-  
-  // Billing information
-  isBillable  Boolean   @default(false)
-  hourlyRate  Decimal?  @db.Decimal(10, 2)
-  earnings    Decimal?  @db.Decimal(10, 2)
-  
-  // Export tracking
-  isExported  Boolean   @default(false)
-  exportedAt  DateTime?
-
-  // Relationships
-  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  task MacroTask?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // Kimai-style indexes for performance
-  @@index([userId, begin])
-  @@index([begin, end])
-  @@index([begin, end, userId])
-  @@index([end, userId])
-  @@index([userId, end]) // For active entries (end IS NULL)
-  @@index([orgId])
-  @@index([taskId])
-  @@index([isBillable])
-  @@map("time_logs")
+  @@unique([identifier, token])
 }
 
-model CalendarEvent {
-  id               String    @id @default(cuid()) @db.VarChar(50)
-  userId           String    @db.VarChar(36)
-  orgId            String    @db.VarChar(191) // Added for org scoping
-  title            String    @db.VarChar(500)
-  description      String?   @db.Text
-  startTime        DateTime
-  endTime          DateTime
-  type             String    @default("task") @db.VarChar(20)
-  taskId           String?   @db.VarChar(50)
-  color            String    @default("#6366f1") @db.VarChar(20)
-  location         String?   @db.VarChar(255)
-  attendees        Json?
-  isRecurring      Boolean   @default(false)
-  recurringPattern Json?
-  status           String    @default("scheduled") @db.VarChar(20)
-
-  // Relationships
-  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  task MacroTask?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([userId, startTime, endTime])
-  @@index([orgId])
-  @@index([taskId])
-  @@index([type])
-  @@map("calendar_events")
+// Organization model for multi-tenancy
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  settings    Json?    // Store org-specific settings
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
+  
+  // Owner relationship
+  ownerId String
+  owner   User   @relation("OrganizationOwner", fields: [ownerId], references: [id])
+  
+  // Members
+  members OrganizationMember[]
+  
+  // Organization data
+  clients     Client[]
+  projects    Project[]
+  tasks       Task[]
+  timeLogs    TimeLog[]
+  invoices    Invoice[]
+  expenses    Expense[]
 }
 
-// Future business models (placeholders for upcoming features)
-// These will be implemented in subsequent phases
+// Organization membership model
+model OrganizationMember {
+  id     String @id @default(cuid())
+  role   Role
+  userId String
+  orgId  String
+  
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, orgId])
+}
 
+// Client model
 model Client {
-  id          String @id @default(cuid())
-  orgId       String @db.VarChar(191)
-  name        String @db.VarChar(255)
-  email       String @db.VarChar(255)
-  company     String? @db.VarChar(255)
-  phone       String? @db.VarChar(50)
-  address     String? @db.Text
-  notes       String? @db.Text
-  contactPerson String? @db.VarChar(255)
-  industry    String? @db.VarChar(255)
-  hourlyRate  Decimal? @db.Decimal(8, 2)
-  priority    String @default("medium") @db.VarChar(20)
-  status      String @default("potential") @db.VarChar(20)
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  website     String?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   
-  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  // Organization relationship
+  orgId String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  // Projects for this client
   projects Project[]
+  
+  // Invoices for this client
   invoices Invoice[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([orgId])
-  @@map("clients")
 }
 
-model Invoice {
-  id          String @id @default(cuid())
-  orgId       String @db.VarChar(191)
-  clientId    String?
-  number      String @db.VarChar(50)
-  clientName  String @db.VarChar(255)
-  description String? @db.Text
-  status      String @default("draft") @db.VarChar(20)
-  amount      Decimal @db.Decimal(10, 2)
-  taxAmount   Decimal @default(0) @db.Decimal(10, 2)
-  totalAmount Decimal @db.Decimal(10, 2)
-  dueDate     DateTime
-  issuedAt    DateTime?
-  paidAt      DateTime?
-  
-  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([orgId])
-  @@index([number])
-  @@map("invoices")
+// Project status enum
+enum ProjectStatus {
+  planning
+  active
+  on_hold
+  completed
+  cancelled
 }
 
-model Expense {
-  id          String @id @default(cuid())
-  orgId       String @db.VarChar(191)
-  userId      String @db.VarChar(36)
-  title       String @db.VarChar(255)
-  category    String @db.VarChar(100)
-  description String? @db.Text
-  amount      Decimal @db.Decimal(10, 2)
-  vendor      String? @db.VarChar(255)
-  paymentMethod String @default("card") @db.VarChar(50)
-  receiptUrl  String? @db.VarChar(500)
-  expenseDate DateTime
-  status      String @default("pending") @db.VarChar(20)
-  isTaxDeductible Boolean @default(false)
-  isRecurring Boolean @default(false)
-  
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([orgId])
-  @@index([userId])
-  @@map("expenses")
+// Project priority enum
+enum ProjectPriority {
+  low
+  medium
+  high
 }
 
+// Project model
 model Project {
-  id          String @id @default(cuid())
-  orgId       String @db.VarChar(191)
-  clientId    String?
-  name        String @db.VarChar(255)
-  description String? @db.Text
-  status      String @default("planning") @db.VarChar(20)
-  priority    String @default("medium") @db.VarChar(20)
-  budget      Decimal? @db.Decimal(10, 2)
-  spent       Decimal @default(0) @db.Decimal(10, 2)
-  progress    Int @default(0)
-  estimatedHours Int @default(0)
-  hoursLogged Int @default(0)
-  startDate   DateTime?
-  endDate     DateTime?
-  color       String @default("bg-primary") @db.VarChar(50)
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
+  status         ProjectStatus   @default(planning)
+  priority       ProjectPriority @default(medium)
+  color          String          @default("#646cff")
+  budget         Float?
+  spent          Float           @default(0)
+  estimatedHours Int?
+  hoursLogged    Int             @default(0)
+  progress       Int             @default(0)
+  startDate      DateTime?
+  endDate        DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   
-  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  // Organization relationship
+  orgId String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Client relationship
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
   
-  @@index([orgId])
-  @@index([clientId])
-  @@map("projects")
+  // Tasks in this project
+  tasks Task[]
+  
+  // Project members
+  members ProjectMember[]
+  
+  // Time logs for this project
+  timeLogs TimeLog[]
+  
+  // Expenses for this project
+  expenses Expense[]
 }
-//   
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-//   
-//   @@index([orgId])
-//   @@index([userId])
-//   @@map("expenses")
-// }
 
-// User invitation system for internal Veblen use
-model Invitation {
-  id           String    @id @default(cuid()) @db.VarChar(50)
-  email        String    @db.VarChar(255)
-  name         String?   @db.VarChar(255)
-  orgId        String    @db.VarChar(191)
-  invitedById  String    @db.VarChar(36)
-  role         String    @default("STAFF") @db.VarChar(20) // ADMIN, STAFF, CLIENT
-  status       String    @default("sent") @db.VarChar(20) // sent, pending_approval, approved, rejected, accepted, expired
-  message      String?   @db.Text
-  token        String    @unique @db.VarChar(100)
-  expiresAt    DateTime
-  acceptedAt   DateTime?
-  approvedAt   DateTime?
-  approvedById String?   @db.VarChar(36)
-  
-  // Relationships
-  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  invitedBy  User         @relation("InvitationsCreated", fields: [invitedById], references: [id], onDelete: Cascade)
-  approvedBy User?        @relation("InvitationsApproved", fields: [approvedById], references: [id], onDelete: SetNull)
-  
+// Project member model
+model ProjectMember {
+  id        String   @id @default(cuid())
+  role      String   @default("member") // project role, not system role
+  userId    String
+  projectId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  @@index([email])
-  @@index([orgId])
-  @@index([status])
-  @@index([token])
-  @@index([invitedById])
-  @@map("invitations")
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, projectId])
+}
+
+// Task status enum
+enum TaskStatus {
+  not_started
+  in_progress
+  completed
+  cancelled
+}
+
+// Task priority enum  
+enum TaskPriority {
+  Low
+  Medium
+  High
+}
+
+// Task model
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(not_started)
+  priority    TaskPriority @default(Medium)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Organization relationship
+  orgId String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  // Project relationship
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  
+  // Assigned user
+  assignedUserId String?
+  assignedUser   User?   @relation(fields: [assignedUserId], references: [id])
+  
+  // Time logs for this task
+  timeLogs TimeLog[]
+}
+
+// Time log model
+model TimeLog {
+  id          String    @id @default(cuid())
+  description String?
+  startTime   DateTime
+  endTime     DateTime?
+  duration    Int?      // in minutes, calculated field
+  isRunning   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Organization relationship
+  orgId String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  // User who logged the time
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Project relationship
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  
+  // Task relationship
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id])
+}
+
+// Invoice status enum
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+  cancelled
+}
+
+// Invoice model
+model Invoice {
+  id           String        @id @default(cuid())
+  number       String        @unique
+  description  String?
+  amount       Float
+  taxAmount    Float         @default(0)
+  totalAmount  Float
+  status       InvoiceStatus @default(draft)
+  issueDate    DateTime      @default(now())
+  dueDate      DateTime?
+  paidDate     DateTime?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Organization relationship
+  orgId String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  // Client relationship
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+}
+
+// Expense category enum
+enum ExpenseCategory {
+  travel
+  meals
+  supplies
+  software
+  hardware
+  marketing
+  other
+}
+
+// Expense model
+model Expense {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  amount      Float
+  category    ExpenseCategory @default(other)
+  expenseDate DateTime        @default(now())
+  receipt     String?         // URL to receipt image
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  // Organization relationship
+  orgId String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  // Project relationship
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
 }
