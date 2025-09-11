@@ -61,7 +61,9 @@
       "Bash(railway run npx prisma migrate:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": [],
