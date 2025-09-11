@@ -28,7 +28,7 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
     name: '',
     description: '',
     color: '#646cff',
-    status: 'active' as 'active' | 'completed' | 'archived',
+    status: 'planning' as 'planning' | 'active' | 'completed' | 'on_hold' | 'cancelled',
     clientName: '',
     budget: '',
     deadline: '',
@@ -58,7 +58,7 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
         name: '',
         description: '',
         color: PROJECT_COLORS[0].color,
-        status: 'active',
+        status: 'planning',
         clientName: '',
         budget: '',
         deadline: '',
@@ -244,11 +244,13 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
                 <Target className="w-4 h-4" />
                 Project Status
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {[
+                  { value: 'planning', label: 'Planning', color: 'bg-purple-500' },
                   { value: 'active', label: 'Active', color: 'bg-green-500' },
                   { value: 'completed', label: 'Completed', color: 'bg-blue-500' },
-                  { value: 'archived', label: 'Archived', color: 'bg-gray-500' }
+                  { value: 'on_hold', label: 'On Hold', color: 'bg-yellow-500' },
+                  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-500' }
                 ].map((status) => (
                   <button
                     key={status.value}

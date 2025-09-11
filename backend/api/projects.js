@@ -55,7 +55,7 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
 // Create new project
 router.post('/', requireAuth, withOrgScope, validateBody(projectSchemas.create), async (req, res) => {
   try {
-    const { orgId, name, description, clientId, budget, estimatedHours, startDate, endDate, priority } = req.body;
+    const { orgId, name, description, clientId, budget, estimatedHours, startDate, endDate, priority, status, color } = req.body;
     
     if (!orgId || !name) {
       return res.status(400).json({ error: 'Missing required fields: orgId and name are required' });
@@ -77,7 +77,8 @@ router.post('/', requireAuth, withOrgScope, validateBody(projectSchemas.create),
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         priority: priority || 'medium',
-        status: 'planning'
+        status: status || 'planning',
+        color: color || 'bg-primary'
       },
       include: {
         client: {
