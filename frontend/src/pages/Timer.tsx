@@ -157,13 +157,13 @@ export function Timer() {
             {/* Timer Display */}
             <div className="text-center">
               <div className={cn(
-                "text-6xl font-mono font-bold transition-colors duration-200",
+                "text-6xl font-mono font-bold transition-colors duration-300",
                 isRunning ? "text-primary" : "text-muted-foreground"
               )}>
                 {formattedElapsedTime}
               </div>
               {activeTimer && (
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-muted-foreground mt-2 transition-opacity duration-300">
                   {activeTimer.taskTitle}
                 </p>
               )}

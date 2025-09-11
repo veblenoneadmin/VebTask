@@ -64,14 +64,26 @@ export function useTimer() {
       
       if (data.timers && data.timers.length > 0) {
         const timer = data.timers[0]; // Get the first active timer
-        setActiveTimer(timer);
-        startTimeRef.current = new Date(timer.startTime);
-        startTimerInterval();
+        
+        // Only update if timer has actually changed to prevent unnecessary re-renders
+        setActiveTimer(prev => {
+          if (!prev || prev.id !== timer.id || prev.startTime !== timer.startTime) {
+            startTimeRef.current = new Date(timer.startTime);
+            startTimerInterval();
+            return timer;
+          }
+          return prev;
+        });
       } else {
-        setActiveTimer(null);
-        startTimeRef.current = null;
-        clearTimerInterval();
-        setElapsedTime(0);
+        setActiveTimer(prev => {
+          if (prev !== null) {
+            startTimeRef.current = null;
+            clearTimerInterval();
+            setElapsedTime(0);
+            return null;
+          }
+          return prev;
+        });
       }
     } catch (err: any) {
       console.error('Error fetching active timer:', err);
@@ -186,24 +198,31 @@ export function useTimer() {
 
   // Auto-fetch active timer when session changes or on mount
   useEffect(() => {
-    fetchActiveTimer();
+    if (session?.user?.id) {
+      fetchActiveTimer();
+    }
+  }, [session?.user?.id]);
+
+  // Set up periodic refresh (separate effect to avoid re-creating interval)
+  useEffect(() => {
+    if (!session?.user?.id || !activeTimer) {
+      return; // Don't sync if no user or no active timer
+    }
     
-    // Set up periodic refresh to sync with server (every 30 seconds)
     const syncInterval = setInterval(() => {
       fetchActiveTimer();
-    }, 30000);
+    }, 60000); // Reduced to 1 minute to reduce blinking
     
     return () => {
       clearInterval(syncInterval);
-      clearTimerInterval();
     };
-  }, [session?.user?.id]); // Only depend on user ID, not the whole fetchActiveTimer function
+  }, [session?.user?.id, activeTimer?.id]); // Only sync when there's an active timer
 
   // Handle page visibility change to sync timer when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden && activeTimer) {
-        // Refresh timer when tab becomes visible
+      if (!document.hidden && activeTimer && session?.user?.id) {
+        // Refresh timer when tab becomes visible, but only if we have an active timer
         fetchActiveTimer();
       }
     };
@@ -213,7 +232,7 @@ export function useTimer() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [activeTimer?.id]); // Only depend on activeTimer ID, not the fetchActiveTimer function
+  }, [activeTimer?.id, session?.user?.id]); // Stable dependencies
 
   // Handle beforeunload to warn user about active timer
   useEffect(() => {
