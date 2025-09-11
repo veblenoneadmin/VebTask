@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSession as useBetterAuthSession } from '../lib/auth-client';
 
+// Session management context for Better Auth integration
+
 interface SessionContextType {
   session: any;
   isLoading: boolean;
