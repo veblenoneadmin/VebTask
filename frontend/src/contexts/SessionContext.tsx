@@ -1,4 +1,5 @@
-import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useSession as useBetterAuthSession } from '../lib/auth-client';
 
 interface SessionContextType {
