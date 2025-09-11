@@ -407,7 +407,7 @@ export function requireTaskOwnership(req, res, next) {
 }
 
 /**
- * Middleware to validate resource ownership for timers
+ * Middleware to validate resource ownership for timers (TimeLog model)
  */
 export function requireTimerOwnership(req, res, next) {
   const checkOwnership = async () => {
@@ -419,7 +419,7 @@ export function requireTimerOwnership(req, res, next) {
     }
 
     try {
-      const timer = await prisma.timer.findUnique({
+      const timer = await prisma.timeLog.findUnique({
         where: { id: timerId },
         select: { orgId: true, userId: true }
       });

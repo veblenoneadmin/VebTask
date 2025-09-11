@@ -99,8 +99,8 @@ export const taskSchemas = {
   create: z.object({
     title: z.string().min(1).max(200).trim(),
     description: z.string().max(2000).optional(),
-    priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).default('MEDIUM'),
-    status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).default('PENDING'),
+    priority: z.enum(['Low', 'Medium', 'High']).default('Medium'),
+    status: z.enum(['not_started', 'in_progress', 'completed', 'cancelled']).default('not_started'),
     dueDate: z.string().datetime().optional(),
     assigneeId: z.string().optional(),
     projectId: z.string().optional(),
@@ -111,8 +111,8 @@ export const taskSchemas = {
   update: z.object({
     title: z.string().min(1).max(200).trim().optional(),
     description: z.string().max(2000).optional(),
-    priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
-    status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+    priority: z.enum(['Low', 'Medium', 'High']).optional(),
+    status: z.enum(['not_started', 'in_progress', 'completed', 'cancelled']).optional(),
     dueDate: z.string().datetime().optional(),
     assigneeId: z.string().optional(),
     projectId: z.string().optional(),
@@ -121,7 +121,7 @@ export const taskSchemas = {
   }),
   
   statusUpdate: z.object({
-    status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
+    status: z.enum(['not_started', 'in_progress', 'completed', 'cancelled'])
   })
 };
 
@@ -145,21 +145,27 @@ export const projectSchemas = {
   create: z.object({
     name: z.string().min(1).max(100).trim(),
     description: z.string().max(2000).optional(),
-    status: z.enum(['ACTIVE', 'COMPLETED', 'ON_HOLD', 'CANCELLED']).default('ACTIVE'),
+    status: z.enum(['planning', 'active', 'completed', 'on_hold', 'cancelled']).default('planning'),
+    priority: z.enum(['low', 'medium', 'high']).default('medium'),
     clientId: z.string().optional(),
     budget: z.number().min(0).optional(),
+    estimatedHours: z.number().min(0).optional(),
     startDate: z.string().datetime().optional(),
-    endDate: z.string().datetime().optional()
+    endDate: z.string().datetime().optional(),
+    color: z.string().max(50).optional()
   }),
   
   update: z.object({
     name: z.string().min(1).max(100).trim().optional(),
     description: z.string().max(2000).optional(),
-    status: z.enum(['ACTIVE', 'COMPLETED', 'ON_HOLD', 'CANCELLED']).optional(),
+    status: z.enum(['planning', 'active', 'completed', 'on_hold', 'cancelled']).optional(),
+    priority: z.enum(['low', 'medium', 'high']).optional(),
     clientId: z.string().optional(),
     budget: z.number().min(0).optional(),
+    estimatedHours: z.number().min(0).optional(),
     startDate: z.string().datetime().optional(),
-    endDate: z.string().datetime().optional()
+    endDate: z.string().datetime().optional(),
+    color: z.string().max(50).optional()
   })
 };
 
@@ -167,10 +173,15 @@ export const projectSchemas = {
 export const clientSchemas = {
   create: z.object({
     name: z.string().min(1).max(100).trim(),
-    email: z.string().email().optional(),
+    email: z.string().email(),
     phone: z.string().max(20).optional(),
     company: z.string().max(100).optional(),
-    address: z.string().max(500).optional()
+    address: z.string().max(500).optional(),
+    notes: z.string().max(2000).optional(),
+    contactPerson: z.string().max(255).optional(),
+    industry: z.string().max(255).optional(),
+    hourlyRate: z.number().min(0).optional(),
+    priority: z.enum(['low', 'medium', 'high']).default('medium')
   }),
   
   update: z.object({
@@ -178,50 +189,56 @@ export const clientSchemas = {
     email: z.string().email().optional(),
     phone: z.string().max(20).optional(),
     company: z.string().max(100).optional(),
-    address: z.string().max(500).optional()
+    address: z.string().max(500).optional(),
+    notes: z.string().max(2000).optional(),
+    contactPerson: z.string().max(255).optional(),
+    industry: z.string().max(255).optional(),
+    hourlyRate: z.number().min(0).optional(),
+    priority: z.enum(['low', 'medium', 'high']).optional()
   })
 };
 
 // Expense-specific schemas
 export const expenseSchemas = {
   create: z.object({
+    title: z.string().min(1).max(255).trim(),
     amount: z.number().min(0.01).max(999999.99),
-    currency: z.string().length(3).default('USD'),
-    description: z.string().min(1).max(200).trim(),
-    category: z.string().max(50).optional(),
-    date: z.string().datetime().optional(),
-    projectId: z.string().optional(),
-    receiptUrl: z.string().url().optional()
+    category: z.string().min(1).max(100),
+    description: z.string().max(2000).optional(),
+    vendor: z.string().max(255).optional(),
+    paymentMethod: z.string().max(50).default('card'),
+    receiptUrl: z.string().url().optional(),
+    expenseDate: z.string().datetime().optional(),
+    isTaxDeductible: z.boolean().default(false),
+    isRecurring: z.boolean().default(false)
   }),
   
   update: z.object({
+    title: z.string().min(1).max(255).trim().optional(),
     amount: z.number().min(0.01).max(999999.99).optional(),
-    currency: z.string().length(3).optional(),
-    description: z.string().min(1).max(200).trim().optional(),
-    category: z.string().max(50).optional(),
-    date: z.string().datetime().optional(),
-    projectId: z.string().optional(),
-    receiptUrl: z.string().url().optional()
+    category: z.string().min(1).max(100).optional(),
+    description: z.string().max(2000).optional(),
+    vendor: z.string().max(255).optional(),
+    paymentMethod: z.string().max(50).optional(),
+    receiptUrl: z.string().url().optional(),
+    expenseDate: z.string().datetime().optional(),
+    isTaxDeductible: z.boolean().optional(),
+    isRecurring: z.boolean().optional()
   })
 };
 
 // Invoice-specific schemas
 export const invoiceSchemas = {
   create: z.object({
-    clientId: z.string().min(1),
+    clientId: z.string().optional(),
+    clientName: z.string().min(1).max(255),
     amount: z.number().min(0.01).max(999999.99),
-    currency: z.string().length(3).default('USD'),
-    description: z.string().min(1).max(200).trim(),
-    dueDate: z.string().datetime().optional(),
-    projectId: z.string().optional(),
-    items: z.array(z.object({
-      description: z.string().min(1).max(200),
-      quantity: z.number().min(0.01),
-      unitPrice: z.number().min(0.01)
-    })).optional()
+    taxAmount: z.number().min(0).optional(),
+    description: z.string().max(2000).optional(),
+    dueDate: z.string().datetime().optional()
   }),
   
   statusUpdate: z.object({
-    status: z.enum(['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'])
+    status: z.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled'])
   })
 };
