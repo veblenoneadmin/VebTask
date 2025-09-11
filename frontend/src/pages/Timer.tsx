@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSession } from '../lib/auth-client';
+import { useSessionContext } from '../contexts/SessionContext';
 import { useApiTasks } from '../hooks/useApiTasks';
 import { useTimer } from '../hooks/useTimer';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
@@ -17,7 +17,7 @@ import { cn } from '../lib/utils';
 import { logger } from '../lib/logger';
 
 export function Timer() {
-  const { data: session } = useSession();
+  const { session } = useSessionContext();
   const { activeTasks, loading: tasksLoading, error: tasksError } = useApiTasks();
   const {
     activeTimer,

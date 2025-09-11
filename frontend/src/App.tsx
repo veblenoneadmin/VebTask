@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useSession } from './lib/auth-client';
 import { useState, useEffect } from 'react';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -23,13 +22,14 @@ import { Admin } from './pages/Admin';
 import MainLayout from './components/Layout/MainLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { OrganizationProvider } from './contexts/OrganizationContext';
+import { SessionProvider, useSessionContext } from './contexts/SessionContext';
 import { initializeWidgets } from './lib/widgets/widgetRegistry';
 
 // Initialize widgets on app load
 initializeWidgets();
 
-function App() {
-  const { data: session, isPending } = useSession();
+function AppContent() {
+  const { session, isLoading: isPending } = useSessionContext();
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
@@ -145,6 +145,14 @@ function App() {
         </Router>
       </OrganizationProvider>
     </ErrorBoundary>
+  );
+}
+
+function App() {
+  return (
+    <SessionProvider>
+      <AppContent />
+    </SessionProvider>
   );
 }
 

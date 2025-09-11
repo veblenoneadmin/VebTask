@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSession } from '../lib/auth-client';
+import { useSessionContext } from '../contexts/SessionContext';
 import { useApiClient } from '../lib/api-client';
 import { useOrganization } from '../contexts/OrganizationContext';
 
@@ -16,7 +16,7 @@ export interface TimerSession {
 }
 
 export function useTimer() {
-  const { data: session } = useSession();
+  const { session } = useSessionContext();
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
   const [activeTimer, setActiveTimer] = useState<TimerSession | null>(null);

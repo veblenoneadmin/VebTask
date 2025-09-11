@@ -26,6 +26,11 @@ console.log('Auth client baseURL:', baseURL + '/api/auth');
 
 export const authClient = createAuthClient({
   baseURL: baseURL + "/api/auth",
+  // Reduce session polling frequency to prevent blinking
+  sessionConfig: {
+    refreshOnWindowFocus: false, // Don't refresh on window focus
+    refreshInterval: 5 * 60 * 1000, // Only refresh every 5 minutes instead of constantly
+  },
 });
 
 // Export the hooks and methods we'll use
