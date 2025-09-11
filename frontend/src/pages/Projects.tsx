@@ -55,7 +55,6 @@ interface Project {
   tags?: string[];
 }
 
-
 export function Projects() {
   const { data: session } = useSession();
   const { currentOrg } = useOrganization();
