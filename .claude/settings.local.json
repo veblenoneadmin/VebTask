@@ -64,7 +64,8 @@
       "Bash(sed:*)",
       "mcp__ide__getDiagnostics",
       "Bash(npm install:*)",
-      "Bash(DATABASE_URL=\"mysql://root:HKTRyMpSIcLAJqNWVlHaPBIRYQRIVNOK@viaduct.proxy.rlwy.net:31761/railway\" npx prisma migrate status)"
+      "Bash(DATABASE_URL=\"mysql://root:HKTRyMpSIcLAJqNWVlHaPBIRYQRIVNOK@viaduct.proxy.rlwy.net:31761/railway\" npx prisma migrate status)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": [],
