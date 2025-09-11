@@ -30,7 +30,7 @@ export interface Project {
   name: string;
   description: string;
   color: string;
-  status: 'active' | 'completed' | 'archived';
+  status: 'planning' | 'active' | 'completed' | 'on_hold' | 'cancelled';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -399,7 +399,7 @@ function getInitialProjects(): Project[] {
       name: 'Client Project',
       description: 'Custom solution for enterprise client',
       color: '#10b981',
-      status: 'active',
+      status: 'planning',
       createdAt: new Date(Date.now() - 86400000),
       updatedAt: new Date(Date.now() - 21600000)
     },
@@ -408,7 +408,7 @@ function getInitialProjects(): Project[] {
       name: 'Documentation',
       description: 'Project documentation and guides',
       color: '#f59e0b',
-      status: 'active',
+      status: 'completed',
       createdAt: new Date(Date.now() - 43200000),
       updatedAt: new Date(Date.now() - 10800000)
     }

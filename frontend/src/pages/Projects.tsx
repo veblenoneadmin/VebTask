@@ -21,7 +21,7 @@ import {
 import { cn } from '../lib/utils';
 import { ProjectModal } from '../components/ProjectModal';
 
-interface Project {
+interface DatabaseProject {
   id: string;
   name: string;
   description: string | null;
@@ -59,10 +59,10 @@ export function Projects() {
   const { data: session } = useSession();
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [, setLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
-  const [, setSelectedProject] = useState<Project | null>(null);
+  const [, setSelectedProject] = useState<DatabaseProject | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
 
   // Fetch projects from server
