@@ -55,14 +55,14 @@ interface Project {
   tags?: string[];
 }
 
-const mockProjects: Project[] = [
+const _mockProjects: Project[] = [
   {
     id: '1',
     name: 'E-commerce Platform Redesign',
     description: 'Complete UI/UX overhaul for the main e-commerce platform including mobile responsiveness and performance optimization',
     status: 'active',
     priority: 'high',
-    client: 'TechCorp Solutions',
+    client: { id: '1', name: 'TechCorp Solutions', email: 'contact@techcorp.com' },
     startDate: '2024-01-01',
     endDate: '2024-03-15',
     budget: 45000,
@@ -81,7 +81,7 @@ const mockProjects: Project[] = [
     description: 'Build a comprehensive customer self-service portal with account management, billing, and support features',
     status: 'active',
     priority: 'medium',
-    client: 'GlobalBank Inc.',
+    client: { id: '2', name: 'GlobalBank Inc.', email: 'info@globalbank.com' },
     startDate: '2024-01-15',
     endDate: '2024-04-30',
     budget: 32000,
@@ -100,7 +100,7 @@ const mockProjects: Project[] = [
     description: 'Develop minimum viable product for iOS and Android mobile application with core features',
     status: 'planning',
     priority: 'high',
-    client: 'StartupXYZ',
+    client: { id: '3', name: 'StartupXYZ', email: 'hello@startupxyz.com' },
     startDate: '2024-02-01',
     endDate: '2024-05-15',
     budget: 28000,
@@ -119,7 +119,7 @@ const mockProjects: Project[] = [
     description: 'Create comprehensive analytics dashboard with real-time data visualization and reporting capabilities',
     status: 'completed',
     priority: 'medium',
-    client: 'DataDriven LLC',
+    client: { id: '4', name: 'DataDriven LLC', email: 'contact@datadriven.com' },
     startDate: '2023-11-01',
     endDate: '2024-01-10',
     budget: 22000,
@@ -138,7 +138,7 @@ const mockProjects: Project[] = [
     description: 'Integrate multiple third-party APIs and build unified data layer for legacy system modernization',
     status: 'on_hold',
     priority: 'low',
-    client: 'Legacy Systems Corp',
+    client: { id: '5', name: 'Legacy Systems Corp', email: 'support@legacysystems.com' },
     startDate: '2024-01-20',
     endDate: '2024-06-30',
     budget: 18000,
@@ -278,7 +278,7 @@ export function Projects() {
     total: projects.length,
     active: projects.filter(p => p.status === 'active').length,
     completed: projects.filter(p => p.status === 'completed').length,
-    totalBudget: projects.reduce((sum, p) => sum + p.budget, 0),
+    totalBudget: projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0),
     totalSpent: projects.reduce((sum, p) => sum + p.spent, 0),
     totalHours: projects.reduce((sum, p) => sum + p.hoursLogged, 0)
   };
@@ -499,53 +499,57 @@ export function Projects() {
               )}
 
               {/* Team Members */}
-              <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <div className="flex -space-x-2">
-                  {project.teamMembers.slice(0, 3).map((member, index) => (
-                    <div
-                      key={index}
-                      className="h-6 w-6 rounded-full bg-gradient-primary border-2 border-background flex items-center justify-center"
-                      title={member}
-                    >
-                      <span className="text-xs font-medium text-white">
-                        {member.split('@')[0].charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  ))}
-                  {project.teamMembers.length > 3 && (
-                    <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground">+{project.teamMembers.length - 3}</span>
-                    </div>
-                  )}
+              {project.teamMembers && project.teamMembers.length > 0 && (
+                <div className="flex items-center space-x-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex -space-x-2">
+                    {project.teamMembers.slice(0, 3).map((member, index) => (
+                      <div
+                        key={index}
+                        className="h-6 w-6 rounded-full bg-gradient-primary border-2 border-background flex items-center justify-center"
+                        title={member}
+                      >
+                        <span className="text-xs font-medium text-white">
+                          {member.split('@')[0].charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    ))}
+                    {project.teamMembers.length > 3 && (
+                      <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">+{project.teamMembers.length - 3}</span>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {project.teamMembers.length} member{project.teamMembers.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {project.teamMembers.length} member{project.teamMembers.length !== 1 ? 's' : ''}
-                </span>
-              </div>
+              )}
 
               {/* Tags */}
-              <div className="flex flex-wrap gap-1">
-                {project.tags.slice(0, 3).map((tag) => (
-                  <span key={tag} className="px-2 py-1 bg-muted/20 text-muted-foreground text-xs rounded">
-                    #{tag}
-                  </span>
-                ))}
-                {project.tags.length > 3 && (
-                  <span className="px-2 py-1 bg-muted/20 text-muted-foreground text-xs rounded">
-                    +{project.tags.length - 3}
-                  </span>
-                )}
-              </div>
+              {project.tags && project.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {project.tags.slice(0, 3).map((tag) => (
+                    <span key={tag} className="px-2 py-1 bg-muted/20 text-muted-foreground text-xs rounded">
+                      #{tag}
+                    </span>
+                  ))}
+                  {project.tags.length > 3 && (
+                    <span className="px-2 py-1 bg-muted/20 text-muted-foreground text-xs rounded">
+                      +{project.tags.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Dates */}
               <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-3 w-3" />
-                  <span>Start: {new Date(project.startDate).toLocaleDateString()}</span>
+                  <span>Start: {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <span>Due: {new Date(project.endDate).toLocaleDateString()}</span>
+                  <span>Due: {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not set'}</span>
                 </div>
               </div>
             </CardContent>
