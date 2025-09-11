@@ -24,26 +24,35 @@ import { ProjectModal } from '../components/ProjectModal';
 interface Project {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   status: 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';
   priority: 'high' | 'medium' | 'low';
-  client: string;
-  startDate: string;
-  endDate: string;
-  budget: number;
+  client?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  clientId?: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  budget: number | null;
   spent: number;
   progress: number;
-  teamMembers: string[];
-  tasks: {
+  estimatedHours: number;
+  hoursLogged: number;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+  orgId: string;
+  // Frontend-only fields for display compatibility
+  teamMembers?: string[];
+  tasks?: {
     total: number;
     completed: number;
     inProgress: number;
     pending: number;
   };
-  hoursLogged: number;
-  estimatedHours: number;
-  tags: string[];
-  color: string;
+  tags?: string[];
 }
 
 const mockProjects: Project[] = [
@@ -164,14 +173,16 @@ export function Projects() {
       const data = await apiClient.fetch(`/api/projects?userId=${session.user.id}&orgId=${currentOrg?.id || ''}&limit=100`);
       
       if (data.success) {
-        // For now, use mock data since API returns empty array
-        // When database is implemented, use: setProjects(data.projects || []);
-        setProjects(data.projects?.length > 0 ? data.projects : mockProjects);
+        // Use real API data - fallback to empty array if no projects
+        setProjects(data.projects || []);
+        console.log('📊 Loaded projects from database:', data.projects?.length || 0);
       } else {
-        setError('Failed to fetch projects');
+        console.warn('Failed to fetch projects:', data.error);
+        setError(data.error || 'Failed to fetch projects');
         setProjects([]);
       }
     } catch (err: any) {
+      console.error('Error fetching projects:', err);
       setError(err.message);
       setProjects([]);
     } finally {
@@ -206,29 +217,48 @@ export function Projects() {
 
 
   const handleCreateProject = async (projectData: any) => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || !currentOrg?.id) {
+      console.error('Missing required data:', { userId: session?.user?.id, orgId: currentOrg?.id });
+      return;
+    }
 
     try {
+      console.log('🚀 Creating project:', projectData);
+      
+      const payload = {
+        orgId: currentOrg.id,
+        name: projectData.name,
+        description: projectData.description || '',
+        priority: projectData.priority || 'medium',
+        status: projectData.status || 'planning',
+        budget: projectData.budget ? parseFloat(projectData.budget) : null,
+        estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : null,
+        startDate: projectData.startDate || null,
+        endDate: projectData.deadline || null,
+        color: projectData.color || 'bg-primary'
+      };
+
       const data = await apiClient.fetch('/api/projects', {
         method: 'POST',
-        body: JSON.stringify({
-          userId: session.user.id,
-          orgId: currentOrg?.id,
-          name: projectData.name,
-          description: projectData.description,
-          status: projectData.status || 'active'
-        })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
       });
 
+      console.log('📊 API Response:', data);
+
       if (data.success) {
+        console.log('✅ Project created successfully:', data.project);
         // Refresh the entire projects list from server
         await fetchProjects();
         setShowNewProjectModal(false);
       } else {
-        throw new Error('Failed to create project');
+        console.error('❌ Failed to create project:', data.error);
+        throw new Error(data.error || 'Failed to create project');
       }
     } catch (error: any) {
-      console.error('Error creating project:', error);
+      console.error('❌ Error creating project:', error);
     }
   };
   
@@ -410,7 +440,7 @@ export function Projects() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold truncate">{project.name}</h3>
-                    <p className="text-sm text-muted-foreground">Client: {project.client}</p>
+                    <p className="text-sm text-muted-foreground">Client: {project.client?.name || 'No client assigned'}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -445,7 +475,7 @@ export function Projects() {
               {/* Project Stats */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-2 glass-surface rounded-lg">
-                  <p className="text-lg font-bold">{project.tasks.completed}/{project.tasks.total}</p>
+                  <p className="text-lg font-bold">{project.tasks?.completed || 0}/{project.tasks?.total || 0}</p>
                   <p className="text-xs text-muted-foreground">Tasks</p>
                 </div>
                 <div className="text-center p-2 glass-surface rounded-lg">
@@ -455,16 +485,18 @@ export function Projects() {
               </div>
 
               {/* Budget Info */}
-              <div className="flex items-center justify-between p-2 glass-surface rounded-lg">
-                <div>
-                  <p className="text-sm font-medium">${project.spent.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">of ${project.budget.toLocaleString()}</p>
+              {(project.budget && project.budget > 0) && (
+                <div className="flex items-center justify-between p-2 glass-surface rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium">${(project.spent || 0).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">of ${project.budget.toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">{Math.round(((project.spent || 0) / project.budget) * 100)}%</p>
+                    <p className="text-xs text-muted-foreground">spent</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">{Math.round((project.spent / project.budget) * 100)}%</p>
-                  <p className="text-xs text-muted-foreground">spent</p>
-                </div>
-              </div>
+              )}
 
               {/* Team Members */}
               <div className="flex items-center space-x-2">

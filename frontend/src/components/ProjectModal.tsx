@@ -72,10 +72,24 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prepare data for API
+    const projectData = {
+      name: formData.name,
+      description: formData.description,
+      color: formData.color,
+      status: formData.status,
+      priority: formData.priority,
+      budget: formData.budget ? parseFloat(formData.budget) : null,
+      estimatedHours: formData.estimatedHours ? parseInt(formData.estimatedHours) : null,
+      startDate: null, // Will be handled later if needed
+      endDate: formData.deadline ? new Date(formData.deadline).toISOString() : null,
+      clientId: null // Will be handled when client management is added
+    };
+    
     if (project && onUpdate) {
-      onUpdate(project.id, formData);
+      onUpdate(project.id, projectData);
     } else {
-      onSave(formData);
+      onSave(projectData);
     }
     
     onClose();
