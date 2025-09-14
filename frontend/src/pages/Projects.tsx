@@ -420,15 +420,20 @@ export function Projects() {
           : "space-y-4"
       )}>
         {filteredProjects.map((project) => (
-          <Card 
-            key={project.id} 
+          <Card
+            key={project.id}
             className={cn(
-              "glass shadow-elevation cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1",
+              "glass shadow-elevation cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 relative overflow-hidden",
               viewMode === 'list' && "w-full"
             )}
             onClick={() => setSelectedProject(project)}
           >
-            <CardHeader className="pb-4">
+            {/* Color Indicator Bar */}
+            <div
+              className="absolute left-0 top-0 bottom-0 w-2 z-10 rounded-r-sm"
+              style={{ backgroundColor: project.color }}
+            />
+            <CardHeader className="pb-4 pl-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-3">
                   <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shadow-glow", project.color)}>
@@ -488,7 +493,7 @@ export function Projects() {
               </div>
             </CardHeader>
             
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pl-6">
               <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
               
               {/* Progress Bar */}
