@@ -83,7 +83,8 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
       estimatedHours: formData.estimatedHours ? parseInt(formData.estimatedHours) : null,
       startDate: null, // Will be handled later if needed
       endDate: formData.deadline ? new Date(formData.deadline).toISOString() : null,
-      clientId: null // Will be handled when client management is added
+      clientId: null, // Will be handled when client management is added
+      clientName: formData.clientName // Include client name for temporary storage
     };
     
     if (project && onUpdate) {
