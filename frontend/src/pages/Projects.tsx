@@ -62,6 +62,7 @@ interface DatabaseProject {
 const parseClientFromDescription = (description: string | null): string | null => {
   if (!description) return null;
   const match = description.match(/^CLIENT:([^|]+)\|DESC:/);
+  console.log('🔍 Parsing client from description:', description, 'Result:', match ? match[1] : null);
   return match ? match[1] : null;
 };
 
@@ -249,6 +250,12 @@ export function Projects() {
       const combinedDescription = clientName
         ? `CLIENT:${clientName}|DESC:${description}`
         : description;
+
+      console.log('🔍 Creating project with:', {
+        clientName,
+        description,
+        combinedDescription
+      });
 
       const payload = {
         orgId: orgId,
