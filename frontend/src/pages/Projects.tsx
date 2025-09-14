@@ -5,7 +5,7 @@ import { useOrganization } from '../contexts/OrganizationContext';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { 
+import {
   Building2,
   Plus,
   Users,
@@ -16,7 +16,9 @@ import {
   AlertCircle,
   CheckCircle2,
   MoreVertical,
-  Activity
+  Activity,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ProjectModal } from '../components/ProjectModal';
@@ -62,8 +64,11 @@ export function Projects() {
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [, setLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
-  const [, setSelectedProject] = useState<DatabaseProject | null>(null);
+  const [selectedProject, setSelectedProject] = useState<DatabaseProject | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<DatabaseProject | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<DatabaseProject | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   // Fetch projects from server
   const fetchProjects = async () => {
@@ -101,6 +106,23 @@ export function Projects() {
   useEffect(() => {
     fetchProjects();
   }, [session?.user?.id, currentOrg?.id]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownOpen) {
+        const target = event.target as Element;
+        if (!target.closest('.relative')) {
+          setDropdownOpen(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -122,6 +144,73 @@ export function Projects() {
     }
   };
 
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!session?.user?.id) return;
+
+    try {
+      console.log('🗑️ Deleting project:', projectId);
+
+      const data = await apiClient.fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      if (data.success) {
+        console.log('✅ Project deleted successfully');
+        // Refresh the projects list
+        await fetchProjects();
+        setShowDeleteConfirm(null);
+      } else {
+        console.error('❌ Failed to delete project:', data.error);
+        throw new Error(data.error || 'Failed to delete project');
+      }
+    } catch (error: any) {
+      console.error('❌ Error deleting project:', error);
+    }
+  };
+
+  const handleUpdateProject = async (projectData: any) => {
+    if (!session?.user?.id || !editingProject) return;
+
+    try {
+      console.log('✏️ Updating project:', editingProject.id, projectData);
+
+      // EMERGENCY FIX: Use hardcoded orgId if currentOrg is not available
+      const orgId = currentOrg?.id || 'org_1757046595553';
+
+      const payload = {
+        name: projectData.name,
+        description: projectData.description || '',
+        priority: projectData.priority || 'medium',
+        status: projectData.status || 'planning',
+        budget: projectData.budget ? parseFloat(projectData.budget) : undefined,
+        estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
+        startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
+        endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
+        color: projectData.color || 'bg-primary'
+      };
+
+      const data = await apiClient.fetch(`/api/projects/${editingProject.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (data.success) {
+        console.log('✅ Project updated successfully');
+        // Refresh the projects list
+        await fetchProjects();
+        setEditingProject(null);
+      } else {
+        console.error('❌ Failed to update project:', data.error);
+        throw new Error(data.error || 'Failed to update project');
+      }
+    } catch (error: any) {
+      console.error('❌ Error updating project:', error);
+    }
+  };
 
   const handleCreateProject = async (projectData: any) => {
     if (!session?.user?.id) {
@@ -359,9 +448,45 @@ export function Projects() {
                     {getStatusIcon(project.status)}
                     <span className="ml-1 capitalize">{project.status.replace('_', ' ')}</span>
                   </Badge>
-                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                    <MoreVertical className="h-3 w-3" />
-                  </Button>
+                  <div className="relative">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDropdownOpen(dropdownOpen === project.id ? null : project.id);
+                      }}
+                    >
+                      <MoreVertical className="h-3 w-3" />
+                    </Button>
+                    {dropdownOpen === project.id && (
+                      <div className="absolute right-0 top-8 z-50 bg-surface-elevated border border-border rounded-lg shadow-lg py-2 min-w-[120px]">
+                        <button
+                          className="w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingProject(project);
+                            setDropdownOpen(null);
+                          }}
+                        >
+                          <Edit3 className="h-3 w-3" />
+                          Edit
+                        </button>
+                        <button
+                          className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-red-400 hover:text-red-300 flex items-center gap-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteConfirm(project);
+                            setDropdownOpen(null);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -487,12 +612,68 @@ export function Projects() {
         </Card>
       )}
 
-      {/* Enhanced Project Modal */}
+      {/* Create Project Modal */}
       <ProjectModal
         isOpen={showNewProjectModal}
         onClose={() => setShowNewProjectModal(false)}
         onSave={handleCreateProject}
       />
+
+      {/* Edit Project Modal */}
+      <ProjectModal
+        isOpen={!!editingProject}
+        onClose={() => setEditingProject(null)}
+        onSave={handleUpdateProject}
+        project={editingProject}
+      />
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay glass">
+          <div className="modal-content glass shadow-elevation" style={{ maxWidth: '400px', width: '95%' }}>
+            <div className="modal-header" style={{
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              borderRadius: '8px 8px 0 0',
+              padding: '24px',
+              color: 'white'
+            }}>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold m-0">Delete Project</h2>
+                  <p className="text-white/80 text-sm m-0 mt-1">
+                    This action cannot be undone
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding: '24px' }}>
+              <p className="text-white mb-6">
+                Are you sure you want to delete "{showDeleteConfirm.name}"? This will permanently remove the project and all associated data.
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  className="px-6 py-2 bg-surface-elevated hover:bg-muted border border-border rounded-lg text-white transition-all"
+                  onClick={() => setShowDeleteConfirm(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg text-white font-medium transition-all flex items-center gap-2 shadow-glow"
+                  onClick={() => handleDeleteProject(showDeleteConfirm.id)}
+                >
+                  <Trash2 size={16} />
+                  Delete Project
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
