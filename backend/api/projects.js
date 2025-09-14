@@ -110,7 +110,7 @@ router.post('/', requireAuth, withOrgScope, validateBody(projectSchemas.create),
 });
 
 // Update project
-router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('project'), validateBody(projectSchemas.update), async (req, res) => {
+router.patch('/:id', requireAuth, withOrgScope, validateBody(projectSchemas.update), async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -179,7 +179,7 @@ router.patch('/:id', requireAuth, withOrgScope, requireResourceOwnership('projec
 });
 
 // Delete project
-router.delete('/:id', requireAuth, withOrgScope, requireResourceOwnership('project'), async (req, res) => {
+router.delete('/:id', requireAuth, withOrgScope, async (req, res) => {
   try {
     const { id } = req.params;
     
