@@ -64,7 +64,7 @@ export function Projects() {
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [, setLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
-  const [selectedProject, setSelectedProject] = useState<DatabaseProject | null>(null);
+  const [, setSelectedProject] = useState<DatabaseProject | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState<DatabaseProject | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<DatabaseProject | null>(null);
@@ -174,9 +174,6 @@ export function Projects() {
 
     try {
       console.log('✏️ Updating project:', editingProject.id, projectData);
-
-      // EMERGENCY FIX: Use hardcoded orgId if currentOrg is not available
-      const orgId = currentOrg?.id || 'org_1757046595553';
 
       const payload = {
         name: projectData.name,
@@ -624,7 +621,7 @@ export function Projects() {
         isOpen={!!editingProject}
         onClose={() => setEditingProject(null)}
         onSave={handleUpdateProject}
-        project={editingProject}
+        project={editingProject || undefined}
       />
 
       {/* Delete Confirmation Modal */}
