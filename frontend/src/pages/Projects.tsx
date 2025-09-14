@@ -639,7 +639,7 @@ export function Projects() {
           status: editingProject.status,
           createdAt: new Date(editingProject.createdAt),
           updatedAt: new Date(editingProject.updatedAt),
-          clientName: editingProject.clientName
+          clientName: editingProject.clientName || undefined
         } : undefined}
       />
 
