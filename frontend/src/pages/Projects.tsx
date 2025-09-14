@@ -137,17 +137,19 @@ export function Projects() {
       console.log('🔧 Using orgId:', orgId, 'from:', currentOrg?.id ? 'currentOrg' : 'hardcoded fallback');
 
       const payload = {
-        orgId: orgId,
         name: projectData.name,
         description: projectData.description || '',
         priority: projectData.priority || 'medium',
         status: projectData.status || 'planning',
-        budget: projectData.budget ? parseFloat(projectData.budget) : null,
-        estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : null,
-        startDate: projectData.startDate || null,
-        endDate: projectData.deadline || null,
+        budget: projectData.budget ? parseFloat(projectData.budget) : undefined,
+        estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
+        startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
+        endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
         color: projectData.color || 'bg-primary'
       };
+
+      // Add orgId to the payload since the backend expects it in the body
+      payload.orgId = orgId;
 
       const data = await apiClient.fetch('/api/projects', {
         method: 'POST',
