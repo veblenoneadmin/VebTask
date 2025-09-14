@@ -118,8 +118,12 @@ app.use((req, res, next) => {
       res.header('Access-Control-Allow-Origin', 'https://vebtask-production.up.railway.app');
     }
   } else {
-    // In development, allow localhost with current port
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3001');
+    // In development, allow localhost with current port, but also allow production origins
+    if (origin && origin.includes('vebtask.com')) {
+      res.header('Access-Control-Allow-Origin', origin);
+    } else {
+      res.header('Access-Control-Allow-Origin', 'http://localhost:3001');
+    }
   }
   
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
