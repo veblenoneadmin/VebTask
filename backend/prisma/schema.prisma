@@ -22,7 +22,7 @@ model Organization {
   id          String       @id @default(cuid())
   name        String       @db.VarChar(255)
   slug        String       @unique @db.VarChar(100)
-  createdById String?      @db.VarChar(36)
+  createdById String       @db.VarChar(191)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   invites     Invite[]
