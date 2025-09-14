@@ -45,7 +45,7 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
         description: project.description,
         color: project.color,
         status: project.status,
-        clientName: '',
+        clientName: project.clientName || '',
         budget: '',
         deadline: '',
         estimatedHours: '',

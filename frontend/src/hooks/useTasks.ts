@@ -33,6 +33,7 @@ export interface Project {
   status: 'planning' | 'active' | 'completed' | 'on_hold' | 'cancelled';
   createdAt: Date;
   updatedAt: Date;
+  clientName?: string;
 }
 
 const STORAGE_KEYS = {

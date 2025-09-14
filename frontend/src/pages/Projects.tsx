@@ -35,6 +35,7 @@ interface DatabaseProject {
     email: string;
   } | null;
   clientId?: string | null;
+  clientName?: string | null;
   startDate: string | null;
   endDate: string | null;
   budget: number | null;
@@ -184,7 +185,8 @@ export function Projects() {
         estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
         endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
-        color: projectData.color || 'bg-primary'
+        color: projectData.color || 'bg-primary',
+        clientName: projectData.clientName || null
       };
 
       const data = await apiClient.fetch(`/api/projects/${editingProject.id}`, {
@@ -232,7 +234,8 @@ export function Projects() {
         estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
         endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
-        color: projectData.color || 'bg-primary'
+        color: projectData.color || 'bg-primary',
+        clientName: projectData.clientName || null
       };
 
       const data = await apiClient.fetch('/api/projects', {
@@ -442,7 +445,9 @@ export function Projects() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold truncate">{project.name}</h3>
-                    <p className="text-sm text-muted-foreground">Client: {project.client?.name || 'No client assigned'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {project.client?.name || project.clientName || 'No client assigned'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -633,7 +638,8 @@ export function Projects() {
           color: editingProject.color,
           status: editingProject.status,
           createdAt: new Date(editingProject.createdAt),
-          updatedAt: new Date(editingProject.updatedAt)
+          updatedAt: new Date(editingProject.updatedAt),
+          clientName: editingProject.clientName
         } : undefined}
       />
 
