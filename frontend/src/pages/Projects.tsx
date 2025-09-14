@@ -621,7 +621,15 @@ export function Projects() {
         isOpen={!!editingProject}
         onClose={() => setEditingProject(null)}
         onSave={handleUpdateProject}
-        project={editingProject || undefined}
+        project={editingProject ? {
+          id: editingProject.id,
+          name: editingProject.name,
+          description: editingProject.description || '',
+          color: editingProject.color,
+          status: editingProject.status,
+          createdAt: new Date(editingProject.createdAt),
+          updatedAt: new Date(editingProject.updatedAt)
+        } : undefined}
       />
 
       {/* Delete Confirmation Modal */}
