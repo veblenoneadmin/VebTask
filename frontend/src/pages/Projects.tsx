@@ -185,8 +185,8 @@ export function Projects() {
         estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
         endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
-        color: projectData.color || 'bg-primary',
-        clientName: projectData.clientName || null
+        color: projectData.color || 'bg-primary'
+        // clientName: projectData.clientName || null // Temporarily disabled until DB migration
       };
 
       const data = await apiClient.fetch(`/api/projects/${editingProject.id}`, {
@@ -234,8 +234,8 @@ export function Projects() {
         estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
         endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
-        color: projectData.color || 'bg-primary',
-        clientName: projectData.clientName || null
+        color: projectData.color || 'bg-primary'
+        // clientName: projectData.clientName || null // Temporarily disabled until DB migration
       };
 
       const data = await apiClient.fetch('/api/projects', {
@@ -446,7 +446,7 @@ export function Projects() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold truncate">{project.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {project.client?.name || project.clientName || 'No client assigned'}
+                      {project.client?.name || 'No client assigned'}
                     </p>
                   </div>
                 </div>
