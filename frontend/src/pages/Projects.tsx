@@ -58,6 +58,19 @@ interface DatabaseProject {
   tags?: string[];
 }
 
+// TEMP: Helper functions to parse client name from description until DB migration
+const parseClientFromDescription = (description: string | null): string | null => {
+  if (!description) return null;
+  const match = description.match(/^CLIENT:([^|]+)\|DESC:/);
+  return match ? match[1] : null;
+};
+
+const parseDescriptionFromCombined = (description: string | null): string => {
+  if (!description) return '';
+  const match = description.match(/^CLIENT:[^|]+\|DESC:(.*)$/);
+  return match ? match[1] : description;
+};
+
 export function Projects() {
   const { data: session } = useSession();
   const { currentOrg } = useOrganization();
@@ -176,9 +189,16 @@ export function Projects() {
     try {
       console.log('✏️ Updating project:', editingProject.id, projectData);
 
+      // TEMP: Store client name in description until DB migration
+      const clientName = projectData.clientName || '';
+      const description = projectData.description || '';
+      const combinedDescription = clientName
+        ? `CLIENT:${clientName}|DESC:${description}`
+        : description;
+
       const payload = {
         name: projectData.name,
-        description: projectData.description || '',
+        description: combinedDescription,
         priority: projectData.priority || 'medium',
         status: projectData.status || 'planning',
         budget: projectData.budget ? parseFloat(projectData.budget) : undefined,
@@ -186,7 +206,6 @@ export function Projects() {
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
         endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
         color: projectData.color || 'bg-primary'
-        // clientName: projectData.clientName || null // Temporarily disabled until DB migration
       };
 
       const data = await apiClient.fetch(`/api/projects/${editingProject.id}`, {
@@ -224,10 +243,17 @@ export function Projects() {
       const orgId = currentOrg?.id || 'org_1757046595553';
       console.log('🔧 Using orgId:', orgId, 'from:', currentOrg?.id ? 'currentOrg' : 'hardcoded fallback');
 
+      // TEMP: Store client name in description until DB migration
+      const clientName = projectData.clientName || '';
+      const description = projectData.description || '';
+      const combinedDescription = clientName
+        ? `CLIENT:${clientName}|DESC:${description}`
+        : description;
+
       const payload = {
         orgId: orgId,
         name: projectData.name,
-        description: projectData.description || '',
+        description: combinedDescription,
         priority: projectData.priority || 'medium',
         status: projectData.status || 'planning',
         budget: projectData.budget ? parseFloat(projectData.budget) : undefined,
@@ -235,7 +261,6 @@ export function Projects() {
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
         endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
         color: projectData.color || 'bg-primary'
-        // clientName: projectData.clientName || null // Temporarily disabled until DB migration
       };
 
       const data = await apiClient.fetch('/api/projects', {
@@ -446,7 +471,7 @@ export function Projects() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold truncate">{project.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {project.client?.name || 'No client assigned'}
+                      {project.client?.name || parseClientFromDescription(project.description) || 'No client assigned'}
                     </p>
                   </div>
                 </div>
@@ -499,7 +524,7 @@ export function Projects() {
             </CardHeader>
             
             <CardContent className="space-y-4 pl-6">
-              <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{parseDescriptionFromCombined(project.description)}</p>
               
               {/* Progress Bar */}
               <div>
@@ -634,12 +659,12 @@ export function Projects() {
         project={editingProject ? {
           id: editingProject.id,
           name: editingProject.name,
-          description: editingProject.description || '',
+          description: parseDescriptionFromCombined(editingProject.description),
           color: editingProject.color,
           status: editingProject.status,
           createdAt: new Date(editingProject.createdAt),
           updatedAt: new Date(editingProject.updatedAt),
-          clientName: editingProject.clientName || undefined
+          clientName: parseClientFromDescription(editingProject.description) || undefined
         } : undefined}
       />
 
