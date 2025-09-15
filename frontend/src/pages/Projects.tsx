@@ -321,7 +321,7 @@ export function Projects() {
   const ProjectTitle = ({ project }: { project: DatabaseProject }) => {
     const isExpanded = expandedTitles.has(project.id);
     const title = project.name;
-    const maxLength = 35; // Approximate character limit for the available space
+    const maxLength = 15; // Reduced for testing - will show truncation more often
     const needsTruncation = title.length > maxLength;
 
     const displayTitle = needsTruncation && !isExpanded
@@ -329,23 +329,24 @@ export function Projects() {
       : title;
 
     return (
-      <div className="flex items-center gap-1">
-        <h3 className="text-base font-semibold leading-tight flex-1">
+      <div className="flex items-center gap-2">
+        <h3 className="text-base font-semibold leading-tight flex-1 break-words">
           {displayTitle}
         </h3>
         {needsTruncation && (
           <button
             onClick={(e) => {
               e.stopPropagation();
+              console.log('Toggle clicked for project:', project.id, 'Current expanded:', isExpanded);
               toggleTitleExpansion(project.id);
             }}
-            className="p-1 rounded hover:bg-surface-elevated transition-colors"
+            className="p-1 rounded bg-primary/20 hover:bg-primary/30 transition-colors flex-shrink-0"
             title={isExpanded ? "Show less" : "Show full title"}
           >
             {isExpanded ? (
-              <EyeOff className="h-3 w-3 text-muted-foreground hover:text-white" />
+              <EyeOff className="h-4 w-4 text-primary" />
             ) : (
-              <Eye className="h-3 w-3 text-muted-foreground hover:text-white" />
+              <Eye className="h-4 w-4 text-primary" />
             )}
           </button>
         )}
