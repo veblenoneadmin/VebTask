@@ -313,18 +313,21 @@ export function Projects() {
   const ProjectTitle = ({ project }: { project: DatabaseProject }) => {
     const title = project.name;
     const maxLength = 15;
-    const needsTruncation = title.length > maxLength;
 
-    // Debug logging
+    // Exact condition as specified:
+    // - If title length ≤ 15: show entire title in one line only
+    // - If title length > 15: show first 15 chars + "..." + eye button
+    const needsTruncation = title.length > 15;
+
     console.log(`Project: "${title}" | Length: ${title.length} | Needs truncation: ${needsTruncation}`);
 
     const displayTitle = needsTruncation
-      ? `${title.substring(0, maxLength)}...`
-      : title;
+      ? `${title.substring(0, 15)}...`  // Get exactly first 15 chars + "..."
+      : title;  // Show entire title
 
     return (
       <div className="flex items-center gap-2">
-        <h3 className="text-base font-semibold leading-tight flex-1">
+        <h3 className="text-base font-semibold leading-tight flex-1 whitespace-nowrap">
           {displayTitle}
         </h3>
         {needsTruncation && (
