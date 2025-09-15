@@ -618,13 +618,42 @@ export function Projects() {
               )}
 
               {/* Dates */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
-                <div className="flex items-center space-x-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>Start: {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}</span>
+              <div className="space-y-2 pt-3 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-white">Project Timeline</span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <span>Due: {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not set'}</span>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="flex items-center justify-between p-2 bg-surface-elevated rounded-lg">
+                    <span className="text-xs text-muted-foreground">Start Date</span>
+                    <span className="text-sm font-medium text-white">
+                      {project.startDate ? new Date(project.startDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      }) : 'Not set'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-surface-elevated rounded-lg">
+                    <span className="text-xs text-muted-foreground">End Date</span>
+                    <span className="text-sm font-medium text-white">
+                      {project.endDate ? new Date(project.endDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      }) : 'Not set'}
+                    </span>
+                  </div>
+                  {project.startDate && project.endDate && (
+                    <div className="flex items-center justify-between p-2 bg-primary/10 border border-primary/20 rounded-lg">
+                      <span className="text-xs text-primary">Duration</span>
+                      <span className="text-sm font-medium text-primary">
+                        {Math.ceil((new Date(project.endDate).getTime() - new Date(project.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
