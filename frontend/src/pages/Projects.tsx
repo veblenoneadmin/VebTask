@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSession } from '../lib/auth-client';
 import { useApiClient } from '../lib/api-client';
 import { useOrganization } from '../contexts/OrganizationContext';
@@ -708,9 +709,41 @@ export function Projects() {
       />
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="modal-overlay glass">
-          <div className="modal-content glass shadow-elevation" style={{ maxWidth: '400px', width: '95%' }}>
+      {showDeleteConfirm && createPortal(
+        <div
+          className="modal-overlay glass"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+          onClick={(e) => {
+            // Close modal when clicking on overlay (not the modal content)
+            if (e.target === e.currentTarget) {
+              setShowDeleteConfirm(null);
+            }
+          }}
+        >
+          <div
+            className="modal-content glass shadow-elevation"
+            style={{
+              maxWidth: '400px',
+              width: '95%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+              backgroundColor: '#1a1a1a',
+              borderRadius: '12px',
+              border: '1px solid #333'
+            }}
+          >
             <div className="modal-header" style={{
               background: 'linear-gradient(135deg, #ef4444, #dc2626)',
               borderRadius: '8px 8px 0 0',
@@ -752,7 +785,8 @@ export function Projects() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
