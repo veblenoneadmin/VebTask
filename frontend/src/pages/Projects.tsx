@@ -305,6 +305,14 @@ export function Projects() {
     }
   };
 
+  const getTitleFontSize = (title: string) => {
+    const length = title.length;
+    if (length <= 20) return 'text-base font-semibold'; // Normal size
+    if (length <= 35) return 'text-sm font-semibold'; // Smaller size
+    if (length <= 50) return 'text-xs font-semibold'; // Even smaller
+    return 'text-xs font-medium'; // Smallest for very long titles
+  };
+
   const projectStats = {
     total: projects.length,
     active: projects.filter(p => p.status === 'active').length,
@@ -477,9 +485,9 @@ export function Projects() {
                     {getStatusIcon(project.status)}
                     <span className="sr-only">{project.status}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{project.name}</h3>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <h3 className={`${getTitleFontSize(project.name)} leading-tight`}>{project.name}</h3>
+                    <p className="text-sm text-muted-foreground truncate">
                       {project.client?.name || parseClientFromDescription(project.description) || 'No client assigned'}
                     </p>
                   </div>
