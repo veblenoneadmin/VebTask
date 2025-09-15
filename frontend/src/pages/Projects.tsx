@@ -88,6 +88,7 @@ export function Projects() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<DatabaseProject | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [showFullTitle, setShowFullTitle] = useState<string | null>(null);
+  const [showFullDescription, setShowFullDescription] = useState<string | null>(null);
 
   // Fetch projects from server
   const fetchProjects = async () => {
@@ -342,6 +343,40 @@ export function Projects() {
     );
   };
 
+  const ProjectDescription = ({ project }: { project: DatabaseProject }) => {
+    const description = parseDescriptionFromCombined(project.description);
+    const maxLength = 20;
+    const needsTruncation = description.length > maxLength;
+
+    const displayDescription = needsTruncation
+      ? `${description.substring(0, maxLength)}...`
+      : description;
+
+    if (!description.trim()) {
+      return <p className="text-sm text-muted-foreground">No description available</p>;
+    }
+
+    return (
+      <div className="flex items-center gap-2">
+        <p className="text-sm text-muted-foreground flex-1">
+          {displayDescription}
+        </p>
+        {needsTruncation && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowFullDescription(project.id);
+            }}
+            className="p-1 rounded hover:bg-surface-elevated transition-colors flex-shrink-0"
+            title="Click to view full description"
+          >
+            <Eye className="h-3 w-3 text-muted-foreground hover:text-white" />
+          </button>
+        )}
+      </div>
+    );
+  };
+
   const projectStats = {
     total: projects.length,
     active: projects.filter(p => p.status === 'active').length,
@@ -570,7 +605,7 @@ export function Projects() {
             </CardHeader>
             
             <CardContent className="space-y-4 pl-6">
-              <p className="text-sm text-muted-foreground line-clamp-2">{parseDescriptionFromCombined(project.description)}</p>
+              <ProjectDescription project={project} />
               
               {/* Progress Bar */}
               <div>
@@ -884,6 +919,71 @@ export function Projects() {
             <div style={{ padding: '20px' }}>
               <p className="text-white text-base leading-relaxed">
                 {projects.find(p => p.id === showFullTitle)?.name}
+              </p>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Full Description Modal */}
+      {showFullDescription && createPortal(
+        <div
+          className="modal-overlay glass"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowFullDescription(null);
+            }
+          }}
+        >
+          <div
+            className="modal-content glass shadow-elevation"
+            style={{
+              maxWidth: '600px',
+              width: '95%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+              backgroundColor: '#1a1a1a',
+              borderRadius: '12px',
+              border: '1px solid #333'
+            }}
+          >
+            <div className="modal-header" style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              borderRadius: '8px 8px 0 0',
+              padding: '20px',
+              color: 'white'
+            }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Eye className="w-5 h-5" />
+                  <h2 className="text-lg font-bold m-0">Full Project Description</h2>
+                </div>
+                <button
+                  className="bg-white/20 hover:bg-white/30 rounded-lg p-2"
+                  onClick={() => setShowFullDescription(null)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              <p className="text-white text-base leading-relaxed">
+                {parseDescriptionFromCombined(projects.find(p => p.id === showFullDescription)?.description || '')}
               </p>
             </div>
           </div>
