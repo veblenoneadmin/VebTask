@@ -33,7 +33,6 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
     budget: '',
     startDate: '',
     deadline: '',
-    estimatedHours: '',
     priority: 'medium' as 'low' | 'medium' | 'high'
   });
 
@@ -50,7 +49,6 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
         budget: '',
         startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
         deadline: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
-        estimatedHours: '',
         priority: 'medium'
       });
       const colorIndex = PROJECT_COLORS.findIndex(c => c.color === project.color);
@@ -65,7 +63,6 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
         budget: '',
         startDate: '',
         deadline: '',
-        estimatedHours: '',
         priority: 'medium'
       });
       setSelectedColorIndex(0);
@@ -83,7 +80,6 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
       status: formData.status,
       priority: formData.priority,
       budget: formData.budget ? parseFloat(formData.budget) : null,
-      estimatedHours: formData.estimatedHours ? parseInt(formData.estimatedHours) : null,
       startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
       endDate: formData.deadline ? new Date(formData.deadline).toISOString() : null,
       clientId: null, // Will be handled when client management is added
@@ -211,38 +207,20 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-group">
-                <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
-                  <DollarSign className="w-4 h-4" />
-                  Budget ($)
-                </label>
-                <input
-                  type="number"
-                  value={formData.budget}
-                  onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
-                  placeholder="0"
-                  min="0"
-                  step="100"
-                  className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
-                  <Target className="w-4 h-4" />
-                  Estimated Hours
-                </label>
-                <input
-                  type="number"
-                  value={formData.estimatedHours}
-                  onChange={(e) => setFormData(prev => ({ ...prev, estimatedHours: e.target.value }))}
-                  placeholder="0"
-                  min="0"
-                  step="1"
-                  className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                />
-              </div>
+            <div className="form-group">
+              <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                <DollarSign className="w-4 h-4" />
+                Budget ($)
+              </label>
+              <input
+                type="number"
+                value={formData.budget}
+                onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
+                placeholder="0"
+                min="0"
+                step="100"
+                className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

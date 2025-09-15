@@ -203,7 +203,6 @@ export function Projects() {
         priority: projectData.priority || 'medium',
         status: projectData.status || 'planning',
         budget: projectData.budget ? parseFloat(projectData.budget) : undefined,
-        estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
         endDate: projectData.endDate ? new Date(projectData.endDate).toISOString() : undefined,
         color: projectData.color || 'bg-primary'
@@ -264,7 +263,6 @@ export function Projects() {
         priority: projectData.priority || 'medium',
         status: projectData.status || 'planning',
         budget: projectData.budget ? parseFloat(projectData.budget) : undefined,
-        estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
         endDate: projectData.endDate ? new Date(projectData.endDate).toISOString() : undefined,
         color: projectData.color || 'bg-primary'
