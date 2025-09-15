@@ -205,7 +205,7 @@ export function Projects() {
         budget: projectData.budget ? parseFloat(projectData.budget) : undefined,
         estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
-        endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
+        endDate: projectData.endDate ? new Date(projectData.endDate).toISOString() : undefined,
         color: projectData.color || 'bg-primary'
       };
 
@@ -266,7 +266,7 @@ export function Projects() {
         budget: projectData.budget ? parseFloat(projectData.budget) : undefined,
         estimatedHours: projectData.estimatedHours ? parseInt(projectData.estimatedHours) : undefined,
         startDate: projectData.startDate ? new Date(projectData.startDate).toISOString() : undefined,
-        endDate: projectData.deadline ? new Date(projectData.deadline).toISOString() : undefined,
+        endDate: projectData.endDate ? new Date(projectData.endDate).toISOString() : undefined,
         color: projectData.color || 'bg-primary'
       };
 
@@ -669,6 +669,8 @@ export function Projects() {
           description: parseDescriptionFromCombined(editingProject.description),
           color: editingProject.color,
           status: editingProject.status,
+          startDate: editingProject.startDate,
+          endDate: editingProject.endDate,
           createdAt: new Date(editingProject.createdAt),
           updatedAt: new Date(editingProject.updatedAt),
           clientName: parseClientFromDescription(editingProject.description) || undefined
