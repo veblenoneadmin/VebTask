@@ -19,7 +19,9 @@ import {
   MoreVertical,
   Activity,
   Edit3,
-  Trash2
+  Trash2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ProjectModal } from '../components/ProjectModal';
@@ -85,6 +87,7 @@ export function Projects() {
   const [editingProject, setEditingProject] = useState<DatabaseProject | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<DatabaseProject | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [expandedTitles, setExpandedTitles] = useState<Set<string>>(new Set());
 
   // Fetch projects from server
   const fetchProjects = async () => {
@@ -305,12 +308,49 @@ export function Projects() {
     }
   };
 
-  const getTitleFontSize = (title: string) => {
-    const length = title.length;
-    if (length <= 20) return 'text-base font-semibold'; // Normal size
-    if (length <= 35) return 'text-sm font-semibold'; // Smaller size
-    if (length <= 50) return 'text-xs font-semibold'; // Even smaller
-    return 'text-xs font-medium'; // Smallest for very long titles
+  const toggleTitleExpansion = (projectId: string) => {
+    const newExpanded = new Set(expandedTitles);
+    if (newExpanded.has(projectId)) {
+      newExpanded.delete(projectId);
+    } else {
+      newExpanded.add(projectId);
+    }
+    setExpandedTitles(newExpanded);
+  };
+
+  const ProjectTitle = ({ project }: { project: DatabaseProject }) => {
+    const isExpanded = expandedTitles.has(project.id);
+    const title = project.name;
+    const maxLength = 35; // Approximate character limit for the available space
+    const needsTruncation = title.length > maxLength;
+
+    const displayTitle = needsTruncation && !isExpanded
+      ? `${title.substring(0, maxLength)}...`
+      : title;
+
+    return (
+      <div className="flex items-center gap-1">
+        <h3 className="text-base font-semibold leading-tight flex-1">
+          {displayTitle}
+        </h3>
+        {needsTruncation && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleTitleExpansion(project.id);
+            }}
+            className="p-1 rounded hover:bg-surface-elevated transition-colors"
+            title={isExpanded ? "Show less" : "Show full title"}
+          >
+            {isExpanded ? (
+              <EyeOff className="h-3 w-3 text-muted-foreground hover:text-white" />
+            ) : (
+              <Eye className="h-3 w-3 text-muted-foreground hover:text-white" />
+            )}
+          </button>
+        )}
+      </div>
+    );
   };
 
   const projectStats = {
@@ -486,7 +526,7 @@ export function Projects() {
                     <span className="sr-only">{project.status}</span>
                   </div>
                   <div className="flex-1 min-w-0 pr-2">
-                    <h3 className={`${getTitleFontSize(project.name)} leading-tight`}>{project.name}</h3>
+                    <ProjectTitle project={project} />
                     <p className="text-sm text-muted-foreground truncate">
                       {project.client?.name || parseClientFromDescription(project.description) || 'No client assigned'}
                     </p>
