@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { Project } from '../hooks/useTasks';
 import { X, Save, Building2, Star, Calendar, DollarSign, Users, Target, Zap } from 'lucide-react';
 
@@ -111,7 +112,7 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay glass"
       style={{
@@ -124,7 +125,7 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999
+        zIndex: 99999
       }}
       onClick={(e) => {
         // Close modal when clicking on overlay (not the modal content)
@@ -368,6 +369,7 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
