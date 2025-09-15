@@ -312,7 +312,7 @@ export function Projects() {
 
   const ProjectTitle = ({ project }: { project: DatabaseProject }) => {
     const title = project.name;
-    const maxLength = 15; // Reduced to 15 characters
+    const maxLength = 15;
     const needsTruncation = title.length > maxLength;
 
     // Debug logging
@@ -324,7 +324,7 @@ export function Projects() {
 
     return (
       <div className="flex items-center gap-2">
-        <h3 className="text-base font-semibold leading-tight flex-1 whitespace-nowrap overflow-hidden">
+        <h3 className="text-base font-semibold leading-tight flex-1">
           {displayTitle}
         </h3>
         {needsTruncation && (
