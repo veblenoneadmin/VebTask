@@ -112,8 +112,40 @@ export function ProjectModal({ isOpen, onClose, onSave, onUpdate, project }: Pro
   };
 
   return (
-    <div className="modal-overlay glass">
-      <div className="modal-content glass shadow-elevation" style={{ maxWidth: '600px', width: '95%' }}>
+    <div
+      className="modal-overlay glass"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999
+      }}
+      onClick={(e) => {
+        // Close modal when clicking on overlay (not the modal content)
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="modal-content glass shadow-elevation"
+        style={{
+          maxWidth: '600px',
+          width: '95%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          position: 'relative',
+          backgroundColor: '#1a1a1a',
+          borderRadius: '12px',
+          border: '1px solid #333'
+        }}
+      >
         {/* Enhanced Header */}
         <div className="modal-header" style={{ 
           background: PROJECT_COLORS[selectedColorIndex].gradient,
