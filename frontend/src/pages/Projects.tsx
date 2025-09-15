@@ -551,7 +551,7 @@ export function Projects() {
                     {getStatusIcon(project.status)}
                     <span className="sr-only">{project.status}</span>
                   </div>
-                  <div className="min-w-0 overflow-hidden" style={{ maxWidth: 'calc(100% - 140px)' }}>
+                  <div className="min-w-0 flex-1">
                     <ProjectTitle project={project} />
                     <p className="text-sm text-muted-foreground truncate">
                       {project.client?.name || parseClientFromDescription(project.description) || 'No client assigned'}
