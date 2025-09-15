@@ -469,7 +469,10 @@ export function Projects() {
             <CardHeader className="pb-4 pl-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-3">
-                  <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shadow-glow", project.color)}>
+                  <div
+                    className="h-10 w-10 rounded-xl flex items-center justify-center shadow-glow text-white"
+                    style={{ backgroundColor: project.color }}
+                  >
                     {getStatusIcon(project.status)}
                     <span className="sr-only">{project.status}</span>
                   </div>
