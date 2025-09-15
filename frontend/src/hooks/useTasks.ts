@@ -31,6 +31,8 @@ export interface Project {
   description: string;
   color: string;
   status: 'planning' | 'active' | 'completed' | 'on_hold' | 'cancelled';
+  startDate?: string | null;
+  endDate?: string | null;
   createdAt: Date;
   updatedAt: Date;
   clientName?: string;
