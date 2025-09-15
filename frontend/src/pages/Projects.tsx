@@ -321,7 +321,7 @@ export function Projects() {
   const ProjectTitle = ({ project }: { project: DatabaseProject }) => {
     const isExpanded = expandedTitles.has(project.id);
     const title = project.name;
-    const maxLength = 15; // Reduced for testing - will show truncation more often
+    const maxLength = 25; // Increased back to reasonable length
     const needsTruncation = title.length > maxLength;
 
     const displayTitle = needsTruncation && !isExpanded
@@ -329,27 +329,35 @@ export function Projects() {
       : title;
 
     return (
-      <div className="flex items-center gap-2">
-        <h3 className="text-base font-semibold leading-tight flex-1 break-words">
-          {displayTitle}
-        </h3>
-        {needsTruncation && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('Toggle clicked for project:', project.id, 'Current expanded:', isExpanded);
-              toggleTitleExpansion(project.id);
+      <div className="w-full">
+        <div className="flex items-center gap-1">
+          <h3
+            className={`text-base font-semibold leading-tight break-words ${needsTruncation && !isExpanded ? 'flex-1' : ''}`}
+            style={{
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word'
             }}
-            className="p-1 rounded bg-primary/20 hover:bg-primary/30 transition-colors flex-shrink-0"
-            title={isExpanded ? "Show less" : "Show full title"}
           >
-            {isExpanded ? (
-              <EyeOff className="h-4 w-4 text-primary" />
-            ) : (
-              <Eye className="h-4 w-4 text-primary" />
-            )}
-          </button>
-        )}
+            {displayTitle}
+          </h3>
+          {needsTruncation && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('Toggle clicked for project:', project.id, 'Current expanded:', isExpanded);
+                toggleTitleExpansion(project.id);
+              }}
+              className="p-1 rounded bg-primary/20 hover:bg-primary/30 transition-colors flex-shrink-0 ml-1"
+              title={isExpanded ? "Show less" : "Show full title"}
+            >
+              {isExpanded ? (
+                <EyeOff className="h-3 w-3 text-primary" />
+              ) : (
+                <Eye className="h-3 w-3 text-primary" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
     );
   };
@@ -518,22 +526,22 @@ export function Projects() {
             />
             <CardHeader className="pb-4 pl-6">
               <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-3 flex-1 min-w-0">
                   <div
-                    className="h-10 w-10 rounded-xl flex items-center justify-center shadow-glow text-white"
+                    className="h-10 w-10 rounded-xl flex items-center justify-center shadow-glow text-white flex-shrink-0"
                     style={{ backgroundColor: project.color }}
                   >
                     {getStatusIcon(project.status)}
                     <span className="sr-only">{project.status}</span>
                   </div>
-                  <div className="flex-1 min-w-0 pr-2">
+                  <div className="min-w-0 overflow-hidden" style={{ maxWidth: 'calc(100% - 140px)' }}>
                     <ProjectTitle project={project} />
                     <p className="text-sm text-muted-foreground truncate">
                       {project.client?.name || parseClientFromDescription(project.description) || 'No client assigned'}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
                   <Badge className={cn("text-xs", getStatusColor(project.status))}>
                     {getStatusIcon(project.status)}
                     <span className="ml-1 capitalize">{project.status.replace('_', ' ')}</span>
