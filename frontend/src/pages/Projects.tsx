@@ -313,23 +313,23 @@ export function Projects() {
   const ProjectTitle = ({ project }: { project: DatabaseProject }) => {
     const title = project.name;
 
-    // Exact condition as specified:
-    // - If title length ≤ 15: show entire title in one line only
+    // EXACT LOGIC AS REQUESTED:
+    // - If title length < 15: show entire title in one line only (NO eye button)
     // - If title length > 15: show first 15 chars + "..." + eye button
-    const needsTruncation = title.length > 15;
-
-    console.log(`Project: "${title}" | Length: ${title.length} | Needs truncation: ${needsTruncation}`);
-
-    const displayTitle = needsTruncation
-      ? `${title.substring(0, 15)}...`  // Get exactly first 15 chars + "..."
-      : title;  // Show entire title
-
-    return (
-      <div className="flex items-center gap-2">
-        <h3 className="text-base font-semibold leading-tight flex-1 whitespace-nowrap">
-          {displayTitle}
+    if (title.length <= 15) {
+      // Less than or equal to 15 characters: show entire title, NO eye button
+      return (
+        <h3 className="text-base font-semibold leading-tight">
+          {title}
         </h3>
-        {needsTruncation && (
+      );
+    } else {
+      // Over 15 characters: first 15 chars + "..." + eye button
+      return (
+        <div className="flex items-center gap-1">
+          <h3 className="text-base font-semibold leading-tight">
+            {title.substring(0, 15)}...
+          </h3>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -340,9 +340,9 @@ export function Projects() {
           >
             <Eye className="h-3 w-3 text-muted-foreground hover:text-white" />
           </button>
-        )}
-      </div>
-    );
+        </div>
+      );
+    }
   };
 
   const ProjectDescription = ({ project }: { project: DatabaseProject }) => {
