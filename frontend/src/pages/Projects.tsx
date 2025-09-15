@@ -20,7 +20,8 @@ import {
   Activity,
   Edit3,
   Trash2,
-  Eye
+  Eye,
+  X
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ProjectModal } from '../components/ProjectModal';
@@ -86,6 +87,7 @@ export function Projects() {
   const [editingProject, setEditingProject] = useState<DatabaseProject | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<DatabaseProject | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [showFullTitle, setShowFullTitle] = useState<string | null>(null);
 
   // Fetch projects from server
   const fetchProjects = async () => {
@@ -325,8 +327,7 @@ export function Projects() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              // Show full title in tooltip or modal - no expanding text
-              alert(title); // Simple alert for now - can be replaced with tooltip
+              setShowFullTitle(project.id);
             }}
             className="p-1 rounded hover:bg-surface-elevated transition-colors flex-shrink-0"
             title="Click to view full title"
@@ -816,6 +817,71 @@ export function Projects() {
                   Delete Project
                 </button>
               </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Full Title Modal */}
+      {showFullTitle && createPortal(
+        <div
+          className="modal-overlay glass"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowFullTitle(null);
+            }
+          }}
+        >
+          <div
+            className="modal-content glass shadow-elevation"
+            style={{
+              maxWidth: '500px',
+              width: '95%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+              backgroundColor: '#1a1a1a',
+              borderRadius: '12px',
+              border: '1px solid #333'
+            }}
+          >
+            <div className="modal-header" style={{
+              background: 'linear-gradient(135deg, #646cff, #8b5cf6)',
+              borderRadius: '8px 8px 0 0',
+              padding: '20px',
+              color: 'white'
+            }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Eye className="w-5 h-5" />
+                  <h2 className="text-lg font-bold m-0">Full Project Title</h2>
+                </div>
+                <button
+                  className="bg-white/20 hover:bg-white/30 rounded-lg p-2"
+                  onClick={() => setShowFullTitle(null)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              <p className="text-white text-base leading-relaxed">
+                {projects.find(p => p.id === showFullTitle)?.name}
+              </p>
             </div>
           </div>
         </div>,
