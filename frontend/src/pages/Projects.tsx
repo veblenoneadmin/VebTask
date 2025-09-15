@@ -311,7 +311,7 @@ export function Projects() {
 
   const ProjectTitle = ({ project }: { project: DatabaseProject }) => {
     const title = project.name;
-    const maxLength = 25;
+    const maxLength = 20; // Reduced to catch titles like "POSPOSPOSPOSPOSPOSPOS"
     const needsTruncation = title.length > maxLength;
 
     const displayTitle = needsTruncation
