@@ -314,13 +314,16 @@ export function Projects() {
     const maxLength = 20; // Reduced to catch titles like "POSPOSPOSPOSPOSPOSPOS"
     const needsTruncation = title.length > maxLength;
 
+    // Debug logging
+    console.log(`Project: "${title}" | Length: ${title.length} | Needs truncation: ${needsTruncation}`);
+
     const displayTitle = needsTruncation
       ? `${title.substring(0, maxLength)}...`
       : title;
 
     return (
       <div className="flex items-center gap-2">
-        <h3 className="text-base font-semibold leading-tight truncate flex-1">
+        <h3 className={`text-base font-semibold leading-tight flex-1 ${needsTruncation ? 'truncate' : ''}`}>
           {displayTitle}
         </h3>
         {needsTruncation && (
