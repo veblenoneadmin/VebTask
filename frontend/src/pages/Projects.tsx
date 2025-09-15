@@ -314,14 +314,14 @@ export function Projects() {
     const title = project.name;
 
     // UPDATED LOGIC:
-    // - If title length <= 14: show entire title in one line only (NO eye button)
-    // - If title length > 14: show first 14 chars + "..." + eye button
-    if (title.length > 14) {
-      // Over 14 characters: first 14 chars + "..." + eye button
+    // - If title length <= 12: show entire title in one line only (NO eye button)
+    // - If title length > 12: show first 12 chars + "..." + eye button
+    if (title.length > 12) {
+      // Over 12 characters: first 12 chars + "..." + eye button
       return (
         <div className="flex items-center gap-1 whitespace-nowrap">
           <h3 className="text-base font-semibold leading-tight whitespace-nowrap">
-            {title.substring(0, 14)}...
+            {title.substring(0, 12)}...
           </h3>
           <button
             onClick={(e) => {
@@ -336,7 +336,7 @@ export function Projects() {
         </div>
       );
     } else {
-      // 14 or less characters: show entire title in one line only
+      // 12 or less characters: show entire title in one line only
       return (
         <h3 className="text-base font-semibold leading-tight whitespace-nowrap">
           {title}
