@@ -319,8 +319,8 @@ export function Projects() {
     if (title.length > 15) {
       // Over 15 characters: first 15 chars + "..." + eye button
       return (
-        <div className="flex items-center gap-1">
-          <h3 className="text-base font-semibold leading-tight">
+        <div className="flex items-center gap-1 whitespace-nowrap">
+          <h3 className="text-base font-semibold leading-tight whitespace-nowrap">
             {title.substring(0, 15)}...
           </h3>
           <button
@@ -338,7 +338,7 @@ export function Projects() {
     } else {
       // 15 or less characters: show entire title in one line only
       return (
-        <h3 className="text-base font-semibold leading-tight">
+        <h3 className="text-base font-semibold leading-tight whitespace-nowrap">
           {title}
         </h3>
       );
