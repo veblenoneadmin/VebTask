@@ -20,8 +20,7 @@ import {
   Activity,
   Edit3,
   Trash2,
-  Eye,
-  EyeOff
+  Eye
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ProjectModal } from '../components/ProjectModal';
@@ -87,7 +86,6 @@ export function Projects() {
   const [editingProject, setEditingProject] = useState<DatabaseProject | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<DatabaseProject | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
-  const [expandedTitles, setExpandedTitles] = useState<Set<string>>(new Set());
 
   // Fetch projects from server
   const fetchProjects = async () => {
@@ -308,56 +306,34 @@ export function Projects() {
     }
   };
 
-  const toggleTitleExpansion = (projectId: string) => {
-    const newExpanded = new Set(expandedTitles);
-    if (newExpanded.has(projectId)) {
-      newExpanded.delete(projectId);
-    } else {
-      newExpanded.add(projectId);
-    }
-    setExpandedTitles(newExpanded);
-  };
 
   const ProjectTitle = ({ project }: { project: DatabaseProject }) => {
-    const isExpanded = expandedTitles.has(project.id);
     const title = project.name;
-    const maxLength = 25; // Increased back to reasonable length
+    const maxLength = 25;
     const needsTruncation = title.length > maxLength;
 
-    const displayTitle = needsTruncation && !isExpanded
+    const displayTitle = needsTruncation
       ? `${title.substring(0, maxLength)}...`
       : title;
 
     return (
-      <div className="w-full">
-        <div className="flex items-center gap-1">
-          <h3
-            className={`text-base font-semibold leading-tight break-words ${needsTruncation && !isExpanded ? 'flex-1' : ''}`}
-            style={{
-              wordBreak: 'break-word',
-              overflowWrap: 'break-word'
+      <div className="flex items-center gap-2">
+        <h3 className="text-base font-semibold leading-tight truncate flex-1">
+          {displayTitle}
+        </h3>
+        {needsTruncation && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              // Show full title in tooltip or modal - no expanding text
+              alert(title); // Simple alert for now - can be replaced with tooltip
             }}
+            className="p-1 rounded hover:bg-surface-elevated transition-colors flex-shrink-0"
+            title="Click to view full title"
           >
-            {displayTitle}
-          </h3>
-          {needsTruncation && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log('Toggle clicked for project:', project.id, 'Current expanded:', isExpanded);
-                toggleTitleExpansion(project.id);
-              }}
-              className="p-1 rounded bg-primary/20 hover:bg-primary/30 transition-colors flex-shrink-0 ml-1"
-              title={isExpanded ? "Show less" : "Show full title"}
-            >
-              {isExpanded ? (
-                <EyeOff className="h-3 w-3 text-primary" />
-              ) : (
-                <Eye className="h-3 w-3 text-primary" />
-              )}
-            </button>
-          )}
-        </div>
+            <Eye className="h-3 w-3 text-muted-foreground hover:text-white" />
+          </button>
+        )}
       </div>
     );
   };
