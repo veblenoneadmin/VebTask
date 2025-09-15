@@ -312,7 +312,6 @@ export function Projects() {
 
   const ProjectTitle = ({ project }: { project: DatabaseProject }) => {
     const title = project.name;
-    const maxLength = 15;
 
     // Exact condition as specified:
     // - If title length ≤ 15: show entire title in one line only
