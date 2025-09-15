@@ -316,14 +316,7 @@ export function Projects() {
     // EXACT LOGIC AS REQUESTED:
     // - If title length < 15: show entire title in one line only (NO eye button)
     // - If title length > 15: show first 15 chars + "..." + eye button
-    if (title.length <= 15) {
-      // Less than or equal to 15 characters: show entire title, NO eye button
-      return (
-        <h3 className="text-base font-semibold leading-tight">
-          {title}
-        </h3>
-      );
-    } else {
+    if (title.length > 15) {
       // Over 15 characters: first 15 chars + "..." + eye button
       return (
         <div className="flex items-center gap-1">
@@ -341,6 +334,13 @@ export function Projects() {
             <Eye className="h-3 w-3 text-muted-foreground hover:text-white" />
           </button>
         </div>
+      );
+    } else {
+      // 15 or less characters: show entire title in one line only
+      return (
+        <h3 className="text-base font-semibold leading-tight">
+          {title}
+        </h3>
       );
     }
   };
