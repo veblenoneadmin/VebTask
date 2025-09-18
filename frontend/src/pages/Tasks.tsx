@@ -99,7 +99,11 @@ export function Tasks() {
       setLoading(true);
       const data = await apiClient.fetch(`/api/tasks/recent?userId=${session.user.id}&limit=50`);
       if (data.success) {
-        setTasks(data.tasks || []);
+        const tasksWithDefaults = (data.tasks || []).map((task: any) => ({
+          ...task,
+          tags: task.tags || []
+        }));
+        setTasks(tasksWithDefaults);
       } else {
         console.error('Failed to fetch tasks:', data.error);
         setTasks([]);
@@ -461,7 +465,7 @@ export function Tasks() {
                       </div>
 
                       {/* Tags */}
-                      {task.tags.length > 0 && (
+                      {task.tags && task.tags.length > 0 && (
                         <div className="flex gap-1 mt-2">
                           {task.tags.map((tag) => (
                             <span
