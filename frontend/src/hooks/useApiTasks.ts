@@ -58,7 +58,7 @@ export function useApiTasks() {
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, currentOrg?.id, apiClient]);
+  }, [session?.user?.id, currentOrg?.id]);
 
   // Auto-fetch tasks when session changes
   useEffect(() => {

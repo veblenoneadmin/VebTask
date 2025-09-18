@@ -97,7 +97,7 @@ export function useTimer() {
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, apiClient, startTimerInterval, clearTimerInterval]);
+  }, [session?.user?.id, startTimerInterval, clearTimerInterval]);
 
   // Start a new timer
   const startTimer = useCallback(async (taskId: string, description?: string, category: string = 'work') => {
@@ -140,7 +140,7 @@ export function useTimer() {
       setError(err.message);
       throw err;
     }
-  }, [session?.user?.id, currentOrg?.id, apiClient, startTimerInterval]);
+  }, [session?.user?.id, currentOrg?.id, startTimerInterval]);
 
   // Stop the active timer
   const stopTimer = useCallback(async () => {
@@ -176,7 +176,7 @@ export function useTimer() {
       setError(err.message);
       throw err;
     }
-  }, [activeTimer, session?.user?.id, apiClient, clearTimerInterval]);
+  }, [activeTimer, session?.user?.id, clearTimerInterval]);
 
   // Update timer description or category
   const updateTimer = useCallback(async (updates: { description?: string; category?: string; taskId?: string }) => {
@@ -210,7 +210,7 @@ export function useTimer() {
       setError(err.message);
       throw err;
     }
-  }, [activeTimer, session?.user?.id, apiClient]);
+  }, [activeTimer, session?.user?.id]);
 
   // Format elapsed time as HH:MM:SS
   const formatElapsedTime = useCallback((seconds: number) => {
