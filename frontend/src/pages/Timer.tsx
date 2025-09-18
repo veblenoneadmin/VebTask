@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
-import { useApiClient } from '../lib/api-client';
-import { useOrganization } from '../contexts/OrganizationContext';
 import { useApiTasks } from '../hooks/useApiTasks';
 import { useTimer } from '../hooks/useTimer';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
@@ -20,8 +18,6 @@ import { logger } from '../lib/logger';
 
 export function Timer() {
   const { data: session } = useSession();
-  const { currentOrg } = useOrganization();
-  const apiClient = useApiClient();
   const { activeTasks, loading: tasksLoading, error: tasksError } = useApiTasks();
   const {
     activeTimer,
