@@ -43,98 +43,6 @@ interface Client {
   priority: 'high' | 'medium' | 'low';
 }
 
-const mockClients: Client[] = [
-  {
-    id: '1',
-    name: 'TechCorp Solutions',
-    company: 'TechCorp Solutions LLC',
-    email: 'contact@techcorp.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Tech Street, San Francisco, CA 94105',
-    status: 'active',
-    totalProjects: 8,
-    totalHours: 320,
-    totalEarnings: 28500,
-    hourlyRate: 95,
-    lastActivity: '2024-01-15',
-    contactPerson: 'John Smith',
-    industry: 'Technology',
-    notes: 'Long-term strategic partner, prefers agile methodology',
-    priority: 'high'
-  },
-  {
-    id: '2',
-    name: 'GlobalBank Inc.',
-    company: 'GlobalBank Financial Services',
-    email: 'projects@globalbank.com',
-    phone: '+1 (555) 987-6543',
-    address: '456 Financial Ave, New York, NY 10001',
-    status: 'active',
-    totalProjects: 3,
-    totalHours: 180,
-    totalEarnings: 17100,
-    hourlyRate: 95,
-    lastActivity: '2024-01-14',
-    contactPerson: 'Sarah Johnson',
-    industry: 'Finance',
-    notes: 'High security requirements, quarterly reviews',
-    priority: 'high'
-  },
-  {
-    id: '3',
-    name: 'StartupXYZ',
-    company: 'StartupXYZ Inc.',
-    email: 'hello@startupxyz.com',
-    phone: '+1 (555) 456-7890',
-    address: '789 Innovation Blvd, Austin, TX 73301',
-    status: 'active',
-    totalProjects: 2,
-    totalHours: 95,
-    totalEarnings: 8075,
-    hourlyRate: 85,
-    lastActivity: '2024-01-13',
-    contactPerson: 'Mike Chen',
-    industry: 'Startup',
-    notes: 'Fast-paced environment, equity + cash compensation',
-    priority: 'medium'
-  },
-  {
-    id: '4',
-    name: 'DataDriven LLC',
-    company: 'DataDriven Analytics',
-    email: 'team@datadriven.com',
-    phone: '+1 (555) 321-0987',
-    address: '321 Data Way, Seattle, WA 98101',
-    status: 'inactive',
-    totalProjects: 1,
-    totalHours: 45,
-    totalEarnings: 4275,
-    hourlyRate: 95,
-    lastActivity: '2023-12-20',
-    contactPerson: 'Lisa Wang',
-    industry: 'Analytics',
-    notes: 'Project completed, may have future opportunities',
-    priority: 'low'
-  },
-  {
-    id: '5',
-    name: 'Creative Agency Pro',
-    company: 'Creative Agency Pro Ltd.',
-    email: 'creative@agency.pro',
-    phone: '+1 (555) 654-3210',
-    address: '654 Creative Lane, Los Angeles, CA 90210',
-    status: 'potential',
-    totalProjects: 0,
-    totalHours: 0,
-    totalEarnings: 0,
-    hourlyRate: 90,
-    lastActivity: '2024-01-10',
-    contactPerson: 'Alex Rivera',
-    industry: 'Creative',
-    notes: 'Potential client from referral, interested in web redesign',
-    priority: 'medium'
-  }
-];
 
 export function Clients() {
   const { data: session } = useSession();
@@ -172,9 +80,7 @@ export function Clients() {
       const data = await apiClient.fetch(`/api/clients?userId=${session.user.id}&orgId=${currentOrg?.id || ''}&limit=100`);
       
       if (data.success) {
-        // For now, use mock data since API returns empty array
-        // When database is implemented, use: setClients(data.clients || []);
-        setClients(data.clients?.length > 0 ? data.clients : mockClients);
+        setClients(data.clients || []);
       } else {
         setError('Failed to fetch clients');
         setClients([]);

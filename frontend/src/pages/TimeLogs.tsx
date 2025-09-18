@@ -35,102 +35,6 @@ interface TimeLog {
   status: 'logged' | 'approved' | 'invoiced';
 }
 
-const mockTimeLogs: TimeLog[] = [
-  {
-    id: '1',
-    taskTitle: 'UI Component Development',
-    projectName: 'E-commerce Platform Redesign',
-    clientName: 'TechCorp Solutions',
-    date: '2024-01-15',
-    startTime: '09:00',
-    endTime: '11:30',
-    duration: 150,
-    description: 'Developed responsive product card components with hover animations and mobile optimization',
-    isBillable: true,
-    hourlyRate: 95,
-    earnings: 237.50,
-    tags: ['frontend', 'react', 'css'],
-    status: 'approved'
-  },
-  {
-    id: '2',
-    taskTitle: 'Client Meeting',
-    projectName: 'Customer Portal Development',
-    clientName: 'GlobalBank Inc.',
-    date: '2024-01-15',
-    startTime: '14:00',
-    endTime: '15:00',
-    duration: 60,
-    description: 'Weekly status meeting to review progress and discuss upcoming milestones',
-    isBillable: true,
-    hourlyRate: 95,
-    earnings: 95.00,
-    tags: ['meeting', 'client'],
-    status: 'invoiced'
-  },
-  {
-    id: '3',
-    taskTitle: 'Code Review',
-    projectName: 'Data Analytics Dashboard',
-    clientName: 'DataDriven LLC',
-    date: '2024-01-14',
-    startTime: '10:30',
-    endTime: '12:00',
-    duration: 90,
-    description: 'Reviewed pull request for new chart components and visualization features',
-    isBillable: false,
-    earnings: 0,
-    tags: ['review', 'code-quality'],
-    status: 'logged'
-  },
-  {
-    id: '4',
-    taskTitle: 'API Integration',
-    projectName: 'Mobile App MVP',
-    clientName: 'StartupXYZ',
-    date: '2024-01-14',
-    startTime: '15:30',
-    endTime: '18:00',
-    duration: 150,
-    description: 'Integrated authentication API and implemented user session management',
-    isBillable: true,
-    hourlyRate: 85,
-    earnings: 212.50,
-    tags: ['backend', 'api', 'authentication'],
-    status: 'logged'
-  },
-  {
-    id: '5',
-    taskTitle: 'Documentation Update',
-    projectName: 'Internal Tools',
-    clientName: 'Internal',
-    date: '2024-01-13',
-    startTime: '16:00',
-    endTime: '17:30',
-    duration: 90,
-    description: 'Updated project documentation and created setup guides for new team members',
-    isBillable: false,
-    earnings: 0,
-    tags: ['documentation', 'internal'],
-    status: 'logged'
-  },
-  {
-    id: '6',
-    taskTitle: 'Bug Fixes',
-    projectName: 'E-commerce Platform Redesign',
-    clientName: 'TechCorp Solutions',
-    date: '2024-01-13',
-    startTime: '09:00',
-    endTime: '11:45',
-    duration: 165,
-    description: 'Fixed responsive issues on mobile devices and resolved checkout flow bugs',
-    isBillable: true,
-    hourlyRate: 95,
-    earnings: 260.63,
-    tags: ['bugfix', 'mobile', 'testing'],
-    status: 'approved'
-  }
-];
 
 export function TimeLogs() {
   const { data: session } = useSession();
@@ -197,11 +101,11 @@ export function TimeLogs() {
           setTimeLogs(transformedLogs);
         } else {
           console.error('Failed to fetch time logs');
-          setTimeLogs(mockTimeLogs); // Fallback to mock data
+          setTimeLogs([]);
         }
       } catch (error) {
         console.error('Error fetching time logs:', error);
-        setTimeLogs(mockTimeLogs); // Fallback to mock data
+        setTimeLogs([]);
       } finally {
         setLoading(false);
       }
