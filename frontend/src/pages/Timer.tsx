@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useSessionContext } from '../contexts/SessionContext';
+import { useSession } from '../lib/auth-client';
+import { useApiClient } from '../lib/api-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { useApiTasks } from '../hooks/useApiTasks';
 import { useTimer } from '../hooks/useTimer';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { 
-  Play, 
-  Square, 
-  Clock, 
+import {
+  Play,
+  Square,
+  Clock,
   Target,
   DollarSign,
   AlertCircle
@@ -17,7 +19,9 @@ import { cn } from '../lib/utils';
 import { logger } from '../lib/logger';
 
 export function Timer() {
-  const { session } = useSessionContext();
+  const { data: session } = useSession();
+  const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
   const { activeTasks, loading: tasksLoading, error: tasksError } = useApiTasks();
   const {
     activeTimer,

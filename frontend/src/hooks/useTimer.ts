@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSessionContext } from '../contexts/SessionContext';
+import { useSession } from '../lib/auth-client';
 import { useApiClient } from '../lib/api-client';
 import { useOrganization } from '../contexts/OrganizationContext';
 
@@ -16,7 +16,7 @@ export interface TimerSession {
 }
 
 export function useTimer() {
-  const { session } = useSessionContext();
+  const { data: session } = useSession();
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
   const [activeTimer, setActiveTimer] = useState<TimerSession | null>(null);
@@ -60,7 +60,11 @@ export function useTimer() {
 
     try {
       setError(null);
-      const data = await apiClient.fetch(`/api/timers/active?userId=${session.user.id}`);
+      // EMERGENCY FIX: Use hardcoded orgId if currentOrg is not available
+      const orgId = currentOrg?.id || 'org_1757046595553';
+      console.log('🔧 Fetching active timer with orgId:', orgId, 'from:', currentOrg?.id ? 'currentOrg' : 'hardcoded fallback');
+
+      const data = await apiClient.fetch(`/api/timer/active?userId=${session.user.id}&orgId=${orgId}&limit=100`);
       
       if (data.timers && data.timers.length > 0) {
         const timer = data.timers[0]; // Get the first active timer
@@ -105,11 +109,18 @@ export function useTimer() {
       setError(null);
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
-      const data = await apiClient.fetch('/api/timers', {
+      // EMERGENCY FIX: Use hardcoded orgId if currentOrg is not available
+      const orgId = currentOrg?.id || 'org_1757046595553';
+      console.log('🔧 Starting timer with orgId:', orgId, 'from:', currentOrg?.id ? 'currentOrg' : 'hardcoded fallback');
+
+      const data = await apiClient.fetch('/api/timer/start', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           userId: session.user.id,
-          orgId: currentOrg?.id,
+          orgId,
           taskId,
           description,
           category,
@@ -139,10 +150,17 @@ export function useTimer() {
 
     try {
       setError(null);
-      const data = await apiClient.fetch(`/api/timers/${activeTimer.id}/stop`, {
+      // EMERGENCY FIX: Use hardcoded orgId if currentOrg is not available
+      const orgId = currentOrg?.id || 'org_1757046595553';
+
+      const data = await apiClient.fetch(`/api/timer/stop`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          userId: session.user.id
+          userId: session.user.id,
+          orgId
         })
       });
 
@@ -168,10 +186,17 @@ export function useTimer() {
 
     try {
       setError(null);
-      const data = await apiClient.fetch(`/api/timers/${activeTimer.id}`, {
+      // EMERGENCY FIX: Use hardcoded orgId if currentOrg is not available
+      const orgId = currentOrg?.id || 'org_1757046595553';
+
+      const data = await apiClient.fetch(`/api/timer/update/${activeTimer.id}`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           userId: session.user.id,
+          orgId,
           ...updates
         })
       });
