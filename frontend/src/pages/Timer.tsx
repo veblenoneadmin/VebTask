@@ -106,12 +106,41 @@ export function Timer() {
   const showLoading = tasksLoading || timerLoading;
   const showError = tasksError || timerError;
 
+  // DEBUG: Log the current state to help diagnose issues
+  console.log('🔍 Timer Debug:', {
+    session: !!session,
+    tasksLoading,
+    timerLoading,
+    showLoading,
+    tasksError,
+    timerError,
+    showError,
+    activeTasks: activeTasks.length,
+    activeTimer: !!activeTimer
+  });
+
+  // Show login required message if no session
+  if (!session) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card className="border-warning">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2 text-warning">
+              <AlertCircle className="h-4 w-4" />
+              <span>Please log in to use the timer feature.</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (showLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
           <Clock className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading...</span>
+          <span className="ml-2">Loading timer...</span>
         </div>
       </div>
     );
