@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '../lib/auth-client';
 import { useApiClient } from '../lib/api-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 export interface ApiTask {
   id: string;
@@ -23,6 +24,7 @@ export interface ApiTask {
 
 export function useApiTasks() {
   const { data: session } = useSession();
+  const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
   const [tasks, setTasks] = useState<ApiTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,10 +39,13 @@ export function useApiTasks() {
     try {
       setLoading(true);
       setError(null);
-      
-      // Use the API client which automatically includes organization context
-      const data = await apiClient.fetch(`/api/tasks/recent?userId=${session.user.id}&limit=50`);
-      
+
+      // EMERGENCY FIX: Use hardcoded orgId if currentOrg is not available
+      const orgId = currentOrg?.id || 'org_1757046595553';
+      console.log('🔧 Fetching tasks with orgId:', orgId, 'from:', currentOrg?.id ? 'currentOrg' : 'hardcoded fallback');
+
+      const data = await apiClient.fetch(`/api/tasks/recent?userId=${session.user.id}&orgId=${orgId}&limit=50`);
+
       if (data.success) {
         setTasks(data.tasks || []);
       } else {
@@ -53,7 +58,7 @@ export function useApiTasks() {
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, apiClient]);
+  }, [session?.user?.id, currentOrg?.id, apiClient]);
 
   // Auto-fetch tasks when session changes
   useEffect(() => {
