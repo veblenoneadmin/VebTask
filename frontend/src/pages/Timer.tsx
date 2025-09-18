@@ -51,17 +51,24 @@ export function Timer() {
   }, [activeTasks, selectedTaskId, activeTimer]);
 
   const handleStartTimer = async () => {
-    if (!selectedTaskId) {
-      alert('Please select a task first');
-      return;
-    }
-
     try {
-      const selectedTask = activeTasks.find(t => t.id === selectedTaskId);
-      const description = sessionNotes || `Working on ${selectedTask?.title || 'task'}`;
-      
-      await startTimer(selectedTaskId, description, 'work');
-      logger.info('Timer started', { taskId: selectedTaskId, description });
+      let taskId = selectedTaskId;
+      let description = sessionNotes;
+
+      // If no tasks available, allow timer without a specific task
+      if (activeTasks.length === 0) {
+        taskId = 'general-work'; // Use a generic task ID
+        description = sessionNotes || 'General work session';
+      } else if (!selectedTaskId) {
+        alert('Please select a task first');
+        return;
+      } else {
+        const selectedTask = activeTasks.find(t => t.id === selectedTaskId);
+        description = sessionNotes || `Working on ${selectedTask?.title || 'task'}`;
+      }
+
+      await startTimer(taskId, description, 'work');
+      logger.info('Timer started', { taskId, description });
     } catch (error) {
       logger.error('Failed to start timer', { taskId: selectedTaskId }, error as Error);
       alert('Failed to start timer. Please try again.');
@@ -204,7 +211,7 @@ export function Timer() {
                 <Button
                   onClick={handleStartTimer}
                   size="lg"
-                  disabled={!selectedTaskId || activeTasks.length === 0}
+                  disabled={activeTasks.length > 0 && !selectedTaskId}
                   className="flex items-center space-x-2"
                 >
                   <Play className="h-4 w-4" />
@@ -253,7 +260,8 @@ export function Timer() {
               <div className="text-center py-8 text-muted-foreground">
                 <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No active tasks available</p>
-                <p className="text-sm">Create some tasks to start tracking time</p>
+                <p className="text-sm">You can still start a general work timer</p>
+                <p className="text-xs mt-2">Create tasks later to organize your time better</p>
               </div>
             ) : (
               activeTasks.map((task) => (
