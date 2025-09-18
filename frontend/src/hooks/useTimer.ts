@@ -38,11 +38,11 @@ export function useTimer() {
 
   // Update elapsed time every second for active timer
   const updateElapsedTime = useCallback(() => {
-    if (activeTimer && startTimeRef.current) {
+    if (startTimeRef.current) {
       const elapsed = Math.floor((Date.now() - startTimeRef.current.getTime()) / 1000);
       setElapsedTime(elapsed);
     }
-  }, [activeTimer]);
+  }, []);
 
   // Start the timer interval
   const startTimerInterval = useCallback(() => {
@@ -107,8 +107,27 @@ export function useTimer() {
 
     try {
       setError(null);
+
+      // Start timer immediately in UI - don't wait for API response
+      const now = new Date();
+      startTimeRef.current = now;
+      setElapsedTime(0);
+      startTimerInterval();
+
+      // Create temporary timer object for immediate UI update
+      const tempTimer = {
+        id: 'temp-' + Date.now(),
+        taskId,
+        taskTitle: 'Starting...',
+        description: description || '',
+        category,
+        startTime: now.toISOString(),
+        status: 'running' as const
+      };
+      setActiveTimer(tempTimer);
+
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      
+
       // EMERGENCY FIX: Use hardcoded orgId if currentOrg is not available
       const orgId = currentOrg?.id || 'org_1757046595553';
       console.log('🔧 Starting timer with orgId:', orgId, 'from:', currentOrg?.id ? 'currentOrg' : 'hardcoded fallback');
@@ -129,10 +148,8 @@ export function useTimer() {
       });
 
       if (data.timer) {
+        // Update with real timer data from server
         setActiveTimer(data.timer);
-        startTimeRef.current = new Date(data.timer.startTime);
-        setElapsedTime(0);
-        startTimerInterval();
         return data.timer;
       }
     } catch (err: any) {
