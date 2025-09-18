@@ -13,6 +13,7 @@ import inviteRoutes from './routes/invites.js';
 import wizardRoutes from './routes/wizard.js';
 import statsRoutes from './api/stats.js';
 import timersRoutes from './api/timers.js';
+import timerRoutes from './api/timer.js';
 import tasksRoutes from './api/tasks.js';
 import calendarRoutes from './api/calendar.js';
 import invoicesRoutes from './api/invoices.js';
@@ -340,6 +341,7 @@ app.use('/api/wizard', wizardRoutes);
 // Widget API routes
 app.use('/api/stats', statsRoutes);
 app.use('/api/timers', timersRoutes);
+app.use('/api/timer', timerRoutes); // Mount the timer.js routes at /api/timer
 app.use('/api/time-logs', timersRoutes); // Add time-logs alias for Timer component
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/calendar', calendarRoutes);
