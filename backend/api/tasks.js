@@ -14,28 +14,11 @@ router.get('/recent', requireAuth, withOrgScope, validateQuery(commonSchemas.pag
       return res.status(400).json({ error: 'orgId is required' });
     }
     
+    // EMERGENCY FIX: Remove relations causing collation mismatch
     const tasks = await prisma.macroTask.findMany({
       where: {
         orgId: orgId,
         ...(userId ? { userId: userId } : {})
-      },
-      include: {
-        timeLogs: {
-          select: {
-            begin: true,
-            end: true,
-            duration: true
-          },
-          orderBy: {
-            begin: 'desc'
-          },
-          take: 1
-        },
-        _count: {
-          select: {
-            timeLogs: true
-          }
-        }
       },
       orderBy: [
         { updatedAt: 'desc' },
@@ -44,36 +27,20 @@ router.get('/recent', requireAuth, withOrgScope, validateQuery(commonSchemas.pag
       take: parseInt(limit)
     });
     
-    // Calculate total time and last worked for each task
-    const tasksWithStats = await Promise.all(tasks.map(async (task) => {
-      // Get total time worked on this task
-      const timeStats = await prisma.timeLog.aggregate({
-        where: {
-          taskId: task.id,
-          end: { not: null } // Only completed time entries
-        },
-        _sum: {
-          duration: true
-        }
-      });
-      
-      const totalTime = timeStats._sum.duration || 0;
-      const lastWorked = task.timeLogs.length > 0 ? task.timeLogs[0].begin : null;
-      
-      return {
-        id: task.id,
-        title: task.title,
-        description: task.description,
-        status: task.status,
-        priority: task.priority,
-        category: task.category,
-        dueDate: task.dueDate,
-        lastWorked: lastWorked,
-        totalTime: totalTime,
-        estimatedHours: task.estimatedHours,
-        actualHours: task.actualHours,
-        completedAt: task.completedAt
-      };
+    // EMERGENCY FIX: Simplify to avoid collation issues
+    const tasksWithStats = tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      priority: task.priority,
+      category: task.category,
+      dueDate: task.dueDate,
+      lastWorked: null, // Will fix later after database collation issue is resolved
+      totalTime: 0, // Will fix later after database collation issue is resolved
+      estimatedHours: task.estimatedHours,
+      actualHours: task.actualHours,
+      completedAt: task.completedAt
     }));
     
     res.json({
