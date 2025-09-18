@@ -81,7 +81,7 @@ export function TimeLogs() {
           const data = await response.json();
           
           // Transform API data to match our TimeLog interface
-          const transformedLogs: TimeLog[] = data.entries.map((entry: any) => ({
+          const transformedLogs: TimeLog[] = (data.entries || []).map((entry: any) => ({
             id: entry.id,
             taskTitle: entry.taskTitle || 'Untitled Task',
             projectName: 'Unknown Project', // TODO: Add project name from API
