@@ -8,14 +8,18 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(cuid()) @db.VarChar(36)
-  email            String    @unique(map: "email") @db.VarChar(255)
-  emailVerified    Boolean?  @default(false)
-  name             String?   @db.VarChar(255)
-  image            String?   @db.VarChar(255)
-  createdAt        DateTime? @default(now()) @db.Timestamp(0)
-  updatedAt        DateTime? @default(now()) @updatedAt @db.Timestamp(0)
-  completedWizards String?   @db.Text
+  id               String      @id @default(cuid()) @db.VarChar(36)
+  email            String      @unique(map: "email") @db.VarChar(255)
+  emailVerified    Boolean?    @default(false)
+  name             String?     @db.VarChar(255)
+  image            String?     @db.VarChar(255)
+  createdAt        DateTime?   @default(now()) @db.Timestamp(0)
+  updatedAt        DateTime?   @default(now()) @updatedAt @db.Timestamp(0)
+  completedWizards String?     @db.Text
+
+  // Relations
+  memberships      Membership[]
+  macroTasks       MacroTask[]
 }
 
 model Organization {
@@ -25,8 +29,11 @@ model Organization {
   createdById String       @db.VarChar(191)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  // Relations
   invites     Invite[]
   memberships Membership[]
+  macroTasks  MacroTask[]
 
   @@index([createdById])
   @@map("organizations")
@@ -39,6 +46,9 @@ model Membership {
   role      Role
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
+
+  // Relations
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@unique([userId, orgId])
@@ -134,6 +144,11 @@ model MacroTask {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @default(now()) @updatedAt
 
+  // Relations
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org            Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  timeLogs       TimeLog[]
+
   @@index([userId, status])
   @@index([orgId])
   @@index([priority])
@@ -160,6 +175,9 @@ model TimeLog {
   exportedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
+
+  // Relations
+  task        MacroTask? @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([userId, begin])
   @@index([begin, end])
