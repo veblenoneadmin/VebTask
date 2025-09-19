@@ -199,19 +199,19 @@ router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, validate
     delete updates.createdBy;
     
     // Handle date fields
-    if (updates.dueDate) {
-      updates.dueDate = new Date(updates.dueDate);
+    if (updates.dueDate !== undefined) {
+      updates.dueDate = updates.dueDate ? new Date(updates.dueDate) : null;
     }
     if (updates.completedAt) {
       updates.completedAt = new Date(updates.completedAt);
     }
     
     // Handle numeric fields
-    if (updates.estimatedHours) {
-      updates.estimatedHours = parseFloat(updates.estimatedHours);
+    if (updates.estimatedHours !== undefined) {
+      updates.estimatedHours = typeof updates.estimatedHours === 'number' ? updates.estimatedHours : parseFloat(updates.estimatedHours) || 0;
     }
-    if (updates.actualHours) {
-      updates.actualHours = parseFloat(updates.actualHours);
+    if (updates.actualHours !== undefined) {
+      updates.actualHours = typeof updates.actualHours === 'number' ? updates.actualHours : parseFloat(updates.actualHours) || 0;
     }
     
     const task = await prisma.macroTask.update({

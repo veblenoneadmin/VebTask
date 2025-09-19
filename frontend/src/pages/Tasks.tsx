@@ -244,7 +244,7 @@ export function Tasks() {
         orgId: currentOrg.id,
         priority: newTaskForm.priority,
         estimatedHours: newTaskForm.estimatedHours,
-        dueDate: newTaskForm.dueDate ? new Date(newTaskForm.dueDate).toISOString() : undefined,
+        dueDate: newTaskForm.dueDate ? new Date(newTaskForm.dueDate + 'T00:00:00.000Z').toISOString() : undefined,
         tags: newTaskForm.tags ? newTaskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined
       };
 
@@ -292,14 +292,34 @@ export function Tasks() {
     try {
       setTaskFormLoading(true);
 
-      const taskData = {
-        title: editTaskForm.title,
-        description: editTaskForm.description,
-        priority: editTaskForm.priority,
-        estimatedHours: editTaskForm.estimatedHours,
-        dueDate: editTaskForm.dueDate ? new Date(editTaskForm.dueDate).toISOString() : undefined,
-        tags: editTaskForm.tags ? editTaskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined
-      };
+      // Clean the form data and only send non-empty values
+      const taskData: any = {};
+
+      if (editTaskForm.title && editTaskForm.title.trim()) {
+        taskData.title = editTaskForm.title.trim();
+      }
+
+      if (editTaskForm.description !== undefined) {
+        taskData.description = editTaskForm.description || '';
+      }
+
+      if (editTaskForm.priority) {
+        taskData.priority = editTaskForm.priority;
+      }
+
+      if (editTaskForm.estimatedHours !== undefined && editTaskForm.estimatedHours >= 0) {
+        taskData.estimatedHours = editTaskForm.estimatedHours;
+      }
+
+      // Handle dueDate - convert date to ISO datetime string
+      if (editTaskForm.dueDate) {
+        taskData.dueDate = new Date(editTaskForm.dueDate + 'T00:00:00.000Z').toISOString();
+      }
+
+      // Handle tags - only send if not empty
+      if (editTaskForm.tags && editTaskForm.tags.trim()) {
+        taskData.tags = editTaskForm.tags.split(',').map(t => t.trim()).filter(Boolean);
+      }
 
       const data = await apiClient.fetch(`/api/tasks/${editingTask.id}`, {
         method: 'PUT',

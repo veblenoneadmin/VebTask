@@ -99,8 +99,8 @@ export const taskSchemas = {
   create: z.object({
     title: z.string().min(1).max(200).trim(),
     description: z.string().max(2000).optional(),
-    priority: z.enum(['Low', 'Medium', 'High']).default('Medium'),
-    status: z.enum(['not_started', 'in_progress', 'completed', 'cancelled']).default('not_started'),
+    priority: z.enum(['Low', 'Medium', 'High', 'Urgent']).default('Medium'),
+    status: z.enum(['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled']).default('not_started'),
     dueDate: z.string().datetime().optional(),
     assigneeId: z.string().optional(),
     projectId: z.string().optional(),
@@ -111,8 +111,8 @@ export const taskSchemas = {
   update: z.object({
     title: z.string().min(1).max(200).trim().optional(),
     description: z.string().max(2000).optional(),
-    priority: z.enum(['Low', 'Medium', 'High']).optional(),
-    status: z.enum(['not_started', 'in_progress', 'completed', 'cancelled']).optional(),
+    priority: z.enum(['Low', 'Medium', 'High', 'Urgent']).optional(),
+    status: z.enum(['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled']).optional(),
     dueDate: z.string().datetime().optional(),
     assigneeId: z.string().optional(),
     projectId: z.string().optional(),
@@ -121,7 +121,7 @@ export const taskSchemas = {
   }),
   
   statusUpdate: z.object({
-    status: z.enum(['not_started', 'in_progress', 'completed', 'cancelled'])
+    status: z.enum(['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled'])
   })
 };
 
