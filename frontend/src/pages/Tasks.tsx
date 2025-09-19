@@ -59,7 +59,6 @@ export function Tasks() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(false);
-  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -212,22 +211,44 @@ export function Tasks() {
     }
   };
 
+  // Convert Tailwind color classes to hex colors
+  const tailwindToHex = (tailwindClass: string): string => {
+    const colorMap: { [key: string]: string } = {
+      'bg-primary': '#3b82f6',    // blue-500
+      'bg-secondary': '#6b7280',  // gray-500
+      'bg-success': '#10b981',    // emerald-500
+      'bg-warning': '#f59e0b',    // amber-500
+      'bg-danger': '#ef4444',     // red-500
+      'bg-info': '#06b6d4',       // cyan-500
+      'bg-purple': '#8b5cf6',     // violet-500
+      'bg-pink': '#ec4899',       // pink-500
+      'bg-indigo': '#6366f1',     // indigo-500
+      'bg-green': '#22c55e',      // green-500
+      'bg-red': '#ef4444',        // red-500
+      'bg-blue': '#3b82f6',       // blue-500
+      'bg-yellow': '#eab308',     // yellow-500
+      'bg-orange': '#f97316',     // orange-500
+      'bg-teal': '#14b8a6',       // teal-500
+      'bg-cyan': '#06b6d4',       // cyan-500
+    };
+    return colorMap[tailwindClass] || '#6b7280';
+  };
+
   // Get project color by projectId
   const getProjectColor = (projectId?: string): string => {
     if (!projectId) return '#6b7280'; // Default gray color
     const project = projects.find(p => p.id === projectId);
-    return project?.color || '#6b7280';
+    if (!project?.color) return '#6b7280';
+
+    // If it's already a hex color, return as is
+    if (project.color.startsWith('#')) {
+      return project.color;
+    }
+
+    // If it's a Tailwind class, convert to hex
+    return tailwindToHex(project.color);
   };
 
-  const toggleTaskSelection = (taskId: string) => {
-    const newSelection = new Set(selectedTasks);
-    if (newSelection.has(taskId)) {
-      newSelection.delete(taskId);
-    } else {
-      newSelection.add(taskId);
-    }
-    setSelectedTasks(newSelection);
-  };
 
   const handleStatusUpdate = async (taskId: string, newStatus: Task['status']) => {
     try {
@@ -263,11 +284,6 @@ export function Tasks() {
 
       if (data.message) {
         setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-        setSelectedTasks(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(taskId);
-          return newSet;
-        });
       }
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -561,16 +577,6 @@ export function Tasks() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Tasks ({filteredTasks.length})</h2>
-            {selectedTasks.size > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {selectedTasks.size} selected
-                </span>
-                <Button size="sm" variant="outline" className="glass-surface">
-                  Bulk Actions
-                </Button>
-              </div>
-            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -588,22 +594,12 @@ export function Tasks() {
               filteredTasks.map((task) => (
               <div
                 key={task.id}
-                className={cn(
-                  "relative flex items-center p-4 border-b border-border last:border-b-0 hover:bg-surface-elevated/50 transition-colors",
-                  selectedTasks.has(task.id) ? "bg-primary/5" : ""
-                )}
+                className="relative flex items-center p-4 border-b border-border last:border-b-0 hover:bg-surface-elevated/50 transition-colors"
               >
                 {/* Project Color Border */}
                 <div
                   className="absolute left-0 top-0 bottom-0 w-1 z-10"
                   style={{ backgroundColor: getProjectColor(task.projectId) }}
-                />
-                {/* Checkbox */}
-                <input
-                  type="checkbox"
-                  checked={selectedTasks.has(task.id)}
-                  onChange={() => toggleTaskSelection(task.id)}
-                  className="mr-4 h-4 w-4 text-primary focus:ring-primary border-border rounded"
                 />
 
                 {/* Task Content */}
