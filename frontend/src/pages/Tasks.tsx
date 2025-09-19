@@ -63,6 +63,15 @@ export function Tasks() {
     tags: ''
   });
   const [taskFormLoading, setTaskFormLoading] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editTaskForm, setEditTaskForm] = useState({
+    title: '',
+    description: '',
+    priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
+    estimatedHours: 0,
+    dueDate: '',
+    tags: ''
+  });
 
   // Fetch user role
   useEffect(() => {
@@ -175,23 +184,50 @@ export function Tasks() {
     setSelectedTasks(newSelection);
   };
 
-  const handleStatusUpdate = (taskId: string, newStatus: Task['status']) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === taskId 
-          ? { ...task, status: newStatus, updatedAt: new Date().toISOString().split('T')[0] }
-          : task
-      )
-    );
+  const handleStatusUpdate = async (taskId: string, newStatus: Task['status']) => {
+    try {
+      const data = await apiClient.fetch(`/api/tasks/${taskId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (data.message) {
+        setTasks(prevTasks =>
+          prevTasks.map(task =>
+            task.id === taskId
+              ? { ...task, status: newStatus, updatedAt: new Date().toISOString().split('T')[0] }
+              : task
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      alert('Failed to update task status. Please try again.');
+    }
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-    setSelectedTasks(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(taskId);
-      return newSet;
-    });
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const data = await apiClient.fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+
+      if (data.message) {
+        setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+        setSelectedTasks(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(taskId);
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task. Please try again.');
+    }
   };
 
   const handleCreateTask = async (e: React.FormEvent) => {
@@ -232,6 +268,59 @@ export function Tasks() {
     } catch (error) {
       console.error('Error creating task:', error);
       alert('Failed to create task. Please try again.');
+    } finally {
+      setTaskFormLoading(false);
+    }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setEditTaskForm({
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      estimatedHours: task.estimatedHours,
+      dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+      tags: Array.isArray(task.tags) ? task.tags.join(', ') : (task.tags || '')
+    });
+  };
+
+  const handleUpdateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTask || !session?.user?.id) return;
+
+    try {
+      setTaskFormLoading(true);
+
+      const taskData = {
+        title: editTaskForm.title,
+        description: editTaskForm.description,
+        priority: editTaskForm.priority,
+        estimatedHours: editTaskForm.estimatedHours,
+        dueDate: editTaskForm.dueDate ? new Date(editTaskForm.dueDate).toISOString() : undefined,
+        tags: editTaskForm.tags ? editTaskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined
+      };
+
+      const data = await apiClient.fetch(`/api/tasks/${editingTask.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(taskData)
+      });
+
+      if (data.task) {
+        await fetchTasks(); // Refresh the task list
+        setEditingTask(null);
+        setEditTaskForm({
+          title: '',
+          description: '',
+          priority: 'Medium',
+          estimatedHours: 0,
+          dueDate: '',
+          tags: ''
+        });
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+      alert('Failed to update task. Please try again.');
     } finally {
       setTaskFormLoading(false);
     }
@@ -495,40 +584,38 @@ export function Tasks() {
                 </div>
 
                 {/* Actions */}
-                {userRole !== 'CLIENT' && (
-                  <div className="flex items-center gap-2 ml-4">
-                    <select
-                      value={task.status}
-                      onChange={(e) => handleStatusUpdate(task.id, e.target.value as Task['status'])}
-                      className="px-2 py-1 text-xs glass-surface border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="not_started">Not Started</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="on_hold">On Hold</option>
-                    </select>
-                    
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                    
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
+                <div className="flex items-center gap-2 ml-4">
+                  <select
+                    value={task.status}
+                    onChange={(e) => handleStatusUpdate(task.id, e.target.value as Task['status'])}
+                    className="px-2 py-1 text-xs glass-surface border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="not_started">Not Started</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="on_hold">On Hold</option>
+                  </select>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                    onClick={() => handleEditTask(task)}
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+
+                  {userRole !== 'CLIENT' && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
                       className="h-8 w-8 p-0 text-error hover:text-error"
                       onClick={() => handleDeleteTask(task.id)}
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
-                  </div>
-                )}
-                {userRole === 'CLIENT' && (
-                  <div className="flex items-center gap-2 ml-4">
-                    <Badge variant="outline" className="text-xs">
-                      Read-only
-                    </Badge>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
               ))
             )}
@@ -655,6 +742,135 @@ export function Tasks() {
                       <>
                         <Save className="h-4 w-4 mr-2" />
                         Create Task
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Task Form Modal */}
+      {editingTask && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Edit Task</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingTask(null)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdateTask} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Title *</label>
+                  <input
+                    type="text"
+                    value={editTaskForm.title}
+                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    value={editTaskForm.description}
+                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    rows={3}
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Priority</label>
+                    <select
+                      value={editTaskForm.priority}
+                      onChange={(e) => setEditTaskForm(prev => ({ ...prev, priority: e.target.value as 'Low' | 'Medium' | 'High' | 'Urgent' }))}
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      disabled={taskFormLoading}
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Estimated Hours</label>
+                    <input
+                      type="number"
+                      value={editTaskForm.estimatedHours}
+                      onChange={(e) => setEditTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      min="0"
+                      step="0.5"
+                      disabled={taskFormLoading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    value={editTaskForm.dueDate}
+                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
+                  <input
+                    type="text"
+                    value={editTaskForm.tags}
+                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, tags: e.target.value }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="urgent, frontend, client"
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingTask(null)}
+                    disabled={taskFormLoading}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={taskFormLoading || !editTaskForm.title.trim()}
+                    className="flex-1"
+                  >
+                    {taskFormLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Update Task
                       </>
                     )}
                   </Button>
