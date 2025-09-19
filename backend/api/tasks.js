@@ -134,14 +134,15 @@ router.get('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (r
 // Create new task
 router.post('/', requireAuth, withOrgScope, validateBody(taskSchemas.create), async (req, res) => {
   try {
-    const { 
-      title, 
-      description, 
-      userId, 
-      orgId, 
-      priority = 'Medium', 
-      estimatedHours = 0, 
+    const {
+      title,
+      description,
+      userId,
+      orgId,
+      priority = 'Medium',
+      estimatedHours = 0,
       category = 'General',
+      projectId,
       dueDate,
       tags
     } = req.body;
@@ -150,6 +151,22 @@ router.post('/', requireAuth, withOrgScope, validateBody(taskSchemas.create), as
       return res.status(400).json({ error: 'title, userId, and orgId are required' });
     }
     
+    // If projectId is provided, fetch project name for category
+    let taskCategory = category;
+    if (projectId) {
+      try {
+        const project = await prisma.project.findUnique({
+          where: { id: projectId },
+          select: { name: true }
+        });
+        if (project) {
+          taskCategory = `Project: ${project.name}`;
+        }
+      } catch (error) {
+        console.error('Error fetching project for task creation:', error);
+      }
+    }
+
     const task = await prisma.macroTask.create({
       data: {
         title,
@@ -159,7 +176,7 @@ router.post('/', requireAuth, withOrgScope, validateBody(taskSchemas.create), as
         createdBy: userId,
         priority,
         estimatedHours: parseFloat(estimatedHours),
-        category,
+        category: taskCategory,
         dueDate: dueDate ? new Date(dueDate) : null,
         tags: tags || null
       },
@@ -220,7 +237,27 @@ router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (r
     if (updates.actualHours !== undefined) {
       updates.actualHours = typeof updates.actualHours === 'number' ? updates.actualHours : parseFloat(updates.actualHours) || 0;
     }
-    
+
+    // Handle projectId - convert to category field
+    if (updates.projectId !== undefined) {
+      if (updates.projectId) {
+        try {
+          const project = await prisma.project.findUnique({
+            where: { id: updates.projectId },
+            select: { name: true }
+          });
+          if (project) {
+            updates.category = `Project: ${project.name}`;
+          }
+        } catch (error) {
+          console.error('Error fetching project for task update:', error);
+        }
+      } else {
+        updates.category = 'General';
+      }
+      delete updates.projectId; // Remove projectId since it's not a field in the DB
+    }
+
     const task = await prisma.macroTask.update({
       where: { id: taskId },
       data: updates,

@@ -34,11 +34,20 @@ interface Task {
   dueDate?: string;
   assignee?: string;
   project?: string;
+  projectId?: string;
   isBillable: boolean;
   hourlyRate?: number;
   tags: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  color: string;
 }
 
 
@@ -47,7 +56,9 @@ export function Tasks() {
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [projectsLoading, setProjectsLoading] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
@@ -58,6 +69,7 @@ export function Tasks() {
     title: '',
     description: '',
     priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
+    projectId: '',
     estimatedHours: 0,
     dueDate: '',
     tags: ''
@@ -68,6 +80,7 @@ export function Tasks() {
     title: '',
     description: '',
     priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
+    projectId: '',
     estimatedHours: 0,
     dueDate: '',
     tags: ''
@@ -100,10 +113,31 @@ export function Tasks() {
     }
   }, [session]);
 
+  // Fetch projects from API
+  const fetchProjects = async () => {
+    if (!session?.user?.id || !currentOrg?.id) return;
+
+    try {
+      setProjectsLoading(true);
+      const data = await apiClient.fetch(`/api/projects?limit=100`);
+      if (data.success) {
+        setProjects(data.projects || []);
+      } else {
+        console.error('Failed to fetch projects:', data.error);
+        setProjects([]);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      setProjects([]);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
   // Fetch tasks from API
   const fetchTasks = async () => {
     if (!session?.user?.id) return;
-    
+
     try {
       setLoading(true);
       const data = await apiClient.fetch(`/api/tasks/recent?userId=${session.user.id}&limit=50`);
@@ -128,6 +162,12 @@ export function Tasks() {
   useEffect(() => {
     fetchTasks();
   }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (showNewTaskForm && session?.user?.id && currentOrg?.id) {
+      fetchProjects();
+    }
+  }, [showNewTaskForm, session?.user?.id, currentOrg?.id]);
 
   // Filter tasks
   const filteredTasks = tasks.filter(task => {
@@ -243,6 +283,7 @@ export function Tasks() {
         userId: session.user.id,
         orgId: currentOrg.id,
         priority: newTaskForm.priority,
+        projectId: newTaskForm.projectId || undefined,
         estimatedHours: newTaskForm.estimatedHours,
         dueDate: newTaskForm.dueDate ? new Date(newTaskForm.dueDate + 'T00:00:00.000Z').toISOString() : undefined,
         tags: newTaskForm.tags ? newTaskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined
@@ -259,6 +300,7 @@ export function Tasks() {
           title: '',
           description: '',
           priority: 'Medium',
+          projectId: '',
           estimatedHours: 0,
           dueDate: '',
           tags: ''
@@ -279,10 +321,16 @@ export function Tasks() {
       title: task.title,
       description: task.description,
       priority: task.priority,
+      projectId: task.projectId || '',
       estimatedHours: task.estimatedHours,
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
       tags: Array.isArray(task.tags) ? task.tags.join(', ') : (task.tags || '')
     });
+
+    // Fetch projects when editing task if not already loaded
+    if (projects.length === 0 && session?.user?.id && currentOrg?.id) {
+      fetchProjects();
+    }
   };
 
   const handleUpdateTask = async (e: React.FormEvent) => {
@@ -310,6 +358,13 @@ export function Tasks() {
 
       // Always include estimatedHours (can be 0)
       taskData.estimatedHours = editTaskForm.estimatedHours || 0;
+
+      // Include projectId if provided
+      if (editTaskForm.projectId && editTaskForm.projectId.trim()) {
+        taskData.projectId = editTaskForm.projectId.trim();
+      } else {
+        taskData.projectId = null;
+      }
 
       // Handle dueDate - convert date to ISO datetime string or send null
       if (editTaskForm.dueDate && editTaskForm.dueDate.trim()) {
@@ -339,6 +394,7 @@ export function Tasks() {
           title: '',
           description: '',
           priority: 'Medium',
+          projectId: '',
           estimatedHours: 0,
           dueDate: '',
           tags: ''
@@ -700,6 +756,26 @@ export function Tasks() {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium mb-1">Project</label>
+                  <select
+                    value={newTaskForm.projectId}
+                    onChange={(e) => setNewTaskForm(prev => ({ ...prev, projectId: e.target.value }))}
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    disabled={taskFormLoading || projectsLoading}
+                  >
+                    <option value="" className="bg-surface-elevated">No Project (General Task)</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id} className="bg-surface-elevated">
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                  {projectsLoading && (
+                    <p className="text-xs text-muted-foreground mt-1">Loading projects...</p>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Priority</label>
@@ -830,6 +906,26 @@ export function Tasks() {
                     rows={3}
                     disabled={taskFormLoading}
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Project</label>
+                  <select
+                    value={editTaskForm.projectId}
+                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, projectId: e.target.value }))}
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    disabled={taskFormLoading || projectsLoading}
+                  >
+                    <option value="" className="bg-surface-elevated">No Project (General Task)</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id} className="bg-surface-elevated">
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                  {projectsLoading && (
+                    <p className="text-xs text-muted-foreground mt-1">Loading projects...</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
