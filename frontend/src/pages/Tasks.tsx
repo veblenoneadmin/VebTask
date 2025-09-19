@@ -212,6 +212,13 @@ export function Tasks() {
     }
   };
 
+  // Get project color by projectId
+  const getProjectColor = (projectId?: string): string => {
+    if (!projectId) return '#6b7280'; // Default gray color
+    const project = projects.find(p => p.id === projectId);
+    return project?.color || '#6b7280';
+  };
+
   const toggleTaskSelection = (taskId: string) => {
     const newSelection = new Set(selectedTasks);
     if (newSelection.has(taskId)) {
@@ -582,10 +589,15 @@ export function Tasks() {
               <div
                 key={task.id}
                 className={cn(
-                  "flex items-center p-4 border-b border-border last:border-b-0 hover:bg-surface-elevated/50 transition-colors",
+                  "relative flex items-center p-4 border-b border-border last:border-b-0 hover:bg-surface-elevated/50 transition-colors",
                   selectedTasks.has(task.id) ? "bg-primary/5" : ""
                 )}
               >
+                {/* Project Color Border */}
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-1 z-10"
+                  style={{ backgroundColor: getProjectColor(task.projectId) }}
+                />
                 {/* Checkbox */}
                 <input
                   type="checkbox"
