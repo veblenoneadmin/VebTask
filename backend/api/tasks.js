@@ -187,10 +187,17 @@ router.post('/', requireAuth, withOrgScope, validateBody(taskSchemas.create), as
 });
 
 // Update task
-router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, validateBody(taskSchemas.update), async (req, res) => {
+router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (req, res) => {
   try {
     const { taskId } = req.params;
     const updates = req.body;
+
+    console.log('🔄 Task update request:', {
+      taskId,
+      updates: JSON.stringify(updates, null, 2),
+      userId: req.user?.id,
+      orgId: req.orgId
+    });
     
     // Remove fields that shouldn't be updated directly
     delete updates.id;

@@ -24,6 +24,7 @@ export function createApiClient() {
       
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Request failed' }));
+        console.error('❌ API Error Response:', error);
         throw new Error(error.error || `HTTP ${response.status}`);
       }
       
@@ -72,6 +73,7 @@ export function useApiClient() {
       
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Request failed' }));
+        console.error('❌ API Error Response:', error);
         throw new Error(error.error || `HTTP ${response.status}`);
       }
       

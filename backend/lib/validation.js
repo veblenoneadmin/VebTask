@@ -114,16 +114,17 @@ export const taskSchemas = {
   
   update: z.object({
     title: z.string().min(1).max(500).trim().optional(),
-    description: z.string().max(2000).optional().nullable(),
+    description: z.union([z.string().max(2000), z.null()]).optional(),
     priority: z.enum(['Low', 'Medium', 'High', 'Urgent']).optional(),
     status: z.enum(['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled']).optional(),
     category: z.string().max(100).optional(),
-    dueDate: z.string().datetime().optional().nullable(),
+    dueDate: z.union([z.string().datetime(), z.null()]).optional(),
     estimatedHours: z.number().min(0).max(1000).optional(),
     actualHours: z.number().min(0).max(1000).optional(),
     tags: z.union([
       z.array(z.string().max(50)).max(10),
-      z.null()
+      z.null(),
+      z.undefined()
     ]).optional()
   }).passthrough(),
   

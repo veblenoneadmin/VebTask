@@ -380,8 +380,11 @@ export function requireTaskOwnership(req, res, next) {
   const checkOwnership = async () => {
     const { taskId } = req.params;
     const orgId = req.orgId;
-    
+
+    console.log('🔍 Checking task ownership:', { taskId, orgId, userId: req.user?.id });
+
     if (!taskId) {
+      console.error('❌ Task ID missing');
       return res.status(400).json({ error: 'Task ID is required' });
     }
 
