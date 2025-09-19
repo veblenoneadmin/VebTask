@@ -46,6 +46,14 @@ export function useTimer() {
       const totalElapsed = Math.floor((now - startTimeRef.current.getTime()) / 1000);
       const activeElapsed = totalElapsed - pausedTime;
       setElapsedTime(Math.max(0, activeElapsed));
+      console.log('⏱️ Timer update:', {
+        totalElapsed,
+        pausedTime,
+        activeElapsed,
+        isPaused
+      });
+    } else if (isPaused) {
+      console.log('⏸️ Timer paused - not updating elapsed time');
     }
   }, [isPaused, pausedTime]);
 
@@ -244,6 +252,7 @@ export function useTimer() {
   const pauseTimer = useCallback(() => {
     if (!activeTimer || isPaused) return;
 
+    console.log('🔸 Pausing timer at:', new Date().toLocaleTimeString());
     setIsPaused(true);
     pauseStartRef.current = new Date();
   }, [activeTimer, isPaused]);
@@ -254,6 +263,7 @@ export function useTimer() {
 
     // Add the paused duration to total paused time
     const pauseDuration = Math.floor((Date.now() - pauseStartRef.current.getTime()) / 1000);
+    console.log('▶️ Resuming timer at:', new Date().toLocaleTimeString(), `(was paused for ${pauseDuration}s)`);
     setPausedTime(prev => prev + pauseDuration);
 
     setIsPaused(false);
