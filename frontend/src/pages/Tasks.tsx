@@ -485,9 +485,10 @@ export function Tasks() {
               className="px-4 py-2 glass-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">All Priority</option>
-              <option value="high">High Priority</option>
-              <option value="medium">Medium Priority</option>
-              <option value="low">Low Priority</option>
+              <option value="Urgent">Urgent Priority</option>
+              <option value="High">High Priority</option>
+              <option value="Medium">Medium Priority</option>
+              <option value="Low">Low Priority</option>
             </select>
           </div>
         </CardContent>
