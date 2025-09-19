@@ -3,14 +3,13 @@ import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { 
+import {
   Clock,
   Calendar,
   Play,
   Filter,
   Download,
   Search,
-  DollarSign,
   Target,
   Building2,
   TrendingUp,
@@ -29,8 +28,6 @@ interface TimeLog {
   duration: number; // in minutes
   description: string;
   isBillable: boolean;
-  hourlyRate?: number;
-  earnings: number;
   tags: string[];
   status: 'logged' | 'approved' | 'invoiced';
 }
@@ -92,8 +89,6 @@ export function TimeLogs() {
             duration: entry.duration ? Math.round(entry.duration / 60) : 0, // Convert seconds to minutes
             description: entry.description || 'No description',
             isBillable: true, // TODO: Add billable field to API
-            hourlyRate: 95, // TODO: Add hourly rate from API
-            earnings: entry.duration ? Math.round(entry.duration / 60 / 60 * 95) : 0, // Calculate earnings
             tags: [entry.category].filter(Boolean),
             status: entry.status === 'running' ? 'logged' : 'logged' // TODO: Add proper status field
           }));
@@ -142,10 +137,8 @@ export function TimeLogs() {
   const timeStats = {
     totalHours: Math.round(filteredLogs.reduce((sum, log) => sum + log.duration, 0) / 60 * 10) / 10,
     billableHours: Math.round(filteredLogs.filter(log => log.isBillable).reduce((sum, log) => sum + log.duration, 0) / 60 * 10) / 10,
-    totalEarnings: filteredLogs.reduce((sum, log) => sum + log.earnings, 0),
-    avgHourlyRate: filteredLogs.filter(log => log.isBillable && log.hourlyRate).length > 0 
-      ? Math.round(filteredLogs.filter(log => log.isBillable && log.hourlyRate).reduce((sum, log) => sum + (log.hourlyRate || 0), 0) / filteredLogs.filter(log => log.isBillable && log.hourlyRate).length)
-      : 0
+    totalEntries: filteredLogs.length,
+    completedTasks: filteredLogs.filter(log => log.status === 'approved' || log.status === 'invoiced').length
   };
 
   const uniqueClients = [...new Set(timeLogs.map(log => log.clientName))];
@@ -239,11 +232,11 @@ export function TimeLogs() {
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="h-12 w-12 rounded-xl bg-gradient-info flex items-center justify-center shadow-glow mr-4">
-                <DollarSign className="h-6 w-6 text-white" />
+                <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold">${timeStats.totalEarnings.toFixed(0)}</p>
-                <p className="text-sm text-muted-foreground">Total Earnings</p>
+                <p className="text-2xl font-bold">{timeStats.totalEntries}</p>
+                <p className="text-sm text-muted-foreground">Total Entries</p>
               </div>
             </div>
           </CardContent>
@@ -253,11 +246,11 @@ export function TimeLogs() {
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="h-12 w-12 rounded-xl bg-gradient-warning flex items-center justify-center shadow-glow mr-4">
-                <BarChart3 className="h-6 w-6 text-white" />
+                <Target className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold">${timeStats.avgHourlyRate}</p>
-                <p className="text-sm text-muted-foreground">Avg. Rate/Hour</p>
+                <p className="text-2xl font-bold">{timeStats.completedTasks}</p>
+                <p className="text-sm text-muted-foreground">Completed Tasks</p>
               </div>
             </div>
           </CardContent>
@@ -342,8 +335,6 @@ export function TimeLogs() {
                   <th className="text-left p-4 font-medium text-muted-foreground">Project</th>
                   <th className="text-left p-4 font-medium text-muted-foreground">Client</th>
                   <th className="text-left p-4 font-medium text-muted-foreground">Duration</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Rate</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Earnings</th>
                   <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
                 </tr>
               </thead>
@@ -382,18 +373,6 @@ export function TimeLogs() {
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">{formatDuration(log.duration)}</span>
                       </div>
-                    </td>
-                    <td className="p-4">
-                      {log.isBillable && log.hourlyRate ? (
-                        <span className="text-sm font-medium">${log.hourlyRate}/hr</span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Non-billable</span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <span className="font-bold text-success">
-                        ${log.earnings.toFixed(2)}
-                      </span>
                     </td>
                     <td className="p-4">
                       <Badge className={cn("text-xs capitalize", getStatusColor(log.status))}>
