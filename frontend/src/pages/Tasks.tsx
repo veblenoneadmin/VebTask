@@ -680,7 +680,8 @@ export function Tasks() {
                     type="text"
                     value={newTaskForm.title}
                     onChange={(e) => setNewTaskForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    placeholder="Enter task title"
                     required
                     disabled={taskFormLoading}
                   />
@@ -691,7 +692,8 @@ export function Tasks() {
                   <textarea
                     value={newTaskForm.description}
                     onChange={(e) => setNewTaskForm(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                    placeholder="Describe the task goals and requirements..."
                     rows={3}
                     disabled={taskFormLoading}
                   />
@@ -703,13 +705,13 @@ export function Tasks() {
                     <select
                       value={newTaskForm.priority}
                       onChange={(e) => setNewTaskForm(prev => ({ ...prev, priority: e.target.value as any }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
+                      className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                       disabled={taskFormLoading}
                     >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Urgent">Urgent</option>
+                      <option value="Low" className="bg-surface-elevated">Low Priority</option>
+                      <option value="Medium" className="bg-surface-elevated">Medium Priority</option>
+                      <option value="High" className="bg-surface-elevated">High Priority</option>
+                      <option value="Urgent" className="bg-surface-elevated">Urgent Priority</option>
                     </select>
                   </div>
 
@@ -719,7 +721,8 @@ export function Tasks() {
                       type="number"
                       value={newTaskForm.estimatedHours}
                       onChange={(e) => setNewTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
+                      className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      placeholder="0"
                       min="0"
                       step="0.5"
                       disabled={taskFormLoading}
@@ -733,7 +736,7 @@ export function Tasks() {
                     type="date"
                     value={newTaskForm.dueDate}
                     onChange={(e) => setNewTaskForm(prev => ({ ...prev, dueDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     disabled={taskFormLoading}
                   />
                 </div>
@@ -744,7 +747,7 @@ export function Tasks() {
                     type="text"
                     value={newTaskForm.tags}
                     onChange={(e) => setNewTaskForm(prev => ({ ...prev, tags: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     placeholder="urgent, frontend, client"
                     disabled={taskFormLoading}
                   />
@@ -809,7 +812,8 @@ export function Tasks() {
                     type="text"
                     value={editTaskForm.title}
                     onChange={(e) => setEditTaskForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    placeholder="Enter task title"
                     required
                     disabled={taskFormLoading}
                   />
@@ -820,7 +824,8 @@ export function Tasks() {
                   <textarea
                     value={editTaskForm.description}
                     onChange={(e) => setEditTaskForm(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                    placeholder="Describe the task goals and requirements..."
                     rows={3}
                     disabled={taskFormLoading}
                   />
@@ -832,13 +837,13 @@ export function Tasks() {
                     <select
                       value={editTaskForm.priority}
                       onChange={(e) => setEditTaskForm(prev => ({ ...prev, priority: e.target.value as 'Low' | 'Medium' | 'High' | 'Urgent' }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
+                      className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                       disabled={taskFormLoading}
                     >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Urgent">Urgent</option>
+                      <option value="Low" className="bg-surface-elevated">Low Priority</option>
+                      <option value="Medium" className="bg-surface-elevated">Medium Priority</option>
+                      <option value="High" className="bg-surface-elevated">High Priority</option>
+                      <option value="Urgent" className="bg-surface-elevated">Urgent Priority</option>
                     </select>
                   </div>
 
@@ -848,7 +853,8 @@ export function Tasks() {
                       type="number"
                       value={editTaskForm.estimatedHours}
                       onChange={(e) => setEditTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
+                      className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      placeholder="0"
                       min="0"
                       step="0.5"
                       disabled={taskFormLoading}
@@ -862,7 +868,7 @@ export function Tasks() {
                     type="date"
                     value={editTaskForm.dueDate}
                     onChange={(e) => setEditTaskForm(prev => ({ ...prev, dueDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     disabled={taskFormLoading}
                   />
                 </div>
@@ -873,7 +879,7 @@ export function Tasks() {
                     type="text"
                     value={editTaskForm.tags}
                     onChange={(e) => setEditTaskForm(prev => ({ ...prev, tags: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     placeholder="urgent, frontend, client"
                     disabled={taskFormLoading}
                   />
