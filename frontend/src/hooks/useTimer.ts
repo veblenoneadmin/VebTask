@@ -24,12 +24,14 @@ export function useTimer() {
   const [error, setError] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [pausedTime, setPausedTime] = useState(0); // Track total paused time
+  const [, setPausedTime] = useState(0); // Track total paused time (for state sync)
 
   // Use ref to track the interval so it persists across renders
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<Date | null>(null);
   const pauseStartRef = useRef<Date | null>(null);
+  const isPausedRef = useRef(false); // Ref for current pause state
+  const pausedTimeRef = useRef(0); // Ref for current paused time
 
   // Clear the interval when component unmounts or timer stops
   const clearTimerInterval = useCallback(() => {
@@ -41,21 +43,21 @@ export function useTimer() {
 
   // Update elapsed time every second for active timer
   const updateElapsedTime = useCallback(() => {
-    if (startTimeRef.current && !isPaused) {
+    if (startTimeRef.current && !isPausedRef.current) {
       const now = Date.now();
       const totalElapsed = Math.floor((now - startTimeRef.current.getTime()) / 1000);
-      const activeElapsed = totalElapsed - pausedTime;
+      const activeElapsed = totalElapsed - pausedTimeRef.current;
       setElapsedTime(Math.max(0, activeElapsed));
       console.log('⏱️ Timer update:', {
         totalElapsed,
-        pausedTime,
+        pausedTime: pausedTimeRef.current,
         activeElapsed,
-        isPaused
+        isPaused: isPausedRef.current
       });
-    } else if (isPaused) {
+    } else if (isPausedRef.current) {
       console.log('⏸️ Timer paused - not updating elapsed time');
     }
-  }, [isPaused, pausedTime]);
+  }, []); // No dependencies since we're using refs
 
   // Start the timer interval
   const startTimerInterval = useCallback(() => {
@@ -126,7 +128,9 @@ export function useTimer() {
       startTimeRef.current = now;
       setElapsedTime(0);
       setIsPaused(false);
+      isPausedRef.current = false; // Reset ref
       setPausedTime(0);
+      pausedTimeRef.current = 0; // Reset ref
       pauseStartRef.current = null;
       startTimerInterval();
 
@@ -201,7 +205,9 @@ export function useTimer() {
         setActiveTimer(null);
         startTimeRef.current = null;
         setIsPaused(false);
+        isPausedRef.current = false; // Reset ref
         setPausedTime(0);
+        pausedTimeRef.current = 0; // Reset ref
         pauseStartRef.current = null;
         clearTimerInterval();
         setElapsedTime(0);
@@ -254,6 +260,7 @@ export function useTimer() {
 
     console.log('🔸 Pausing timer at:', new Date().toLocaleTimeString());
     setIsPaused(true);
+    isPausedRef.current = true; // Update ref immediately
     pauseStartRef.current = new Date();
   }, [activeTimer, isPaused]);
 
@@ -264,9 +271,13 @@ export function useTimer() {
     // Add the paused duration to total paused time
     const pauseDuration = Math.floor((Date.now() - pauseStartRef.current.getTime()) / 1000);
     console.log('▶️ Resuming timer at:', new Date().toLocaleTimeString(), `(was paused for ${pauseDuration}s)`);
-    setPausedTime(prev => prev + pauseDuration);
+
+    const newPausedTime = pausedTimeRef.current + pauseDuration;
+    setPausedTime(newPausedTime);
+    pausedTimeRef.current = newPausedTime; // Update ref immediately
 
     setIsPaused(false);
+    isPausedRef.current = false; // Update ref immediately
     pauseStartRef.current = null;
   }, [activeTimer, isPaused]);
 
