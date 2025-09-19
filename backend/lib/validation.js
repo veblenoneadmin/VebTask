@@ -5,14 +5,18 @@ import { z } from 'zod';
  */
 export function validateBody(schema) {
   return (req, res, next) => {
+    console.log('🔍 Validating request body:', JSON.stringify(req.body, null, 2));
     const validation = schema.safeParse(req.body);
     if (!validation.success) {
+      console.error('❌ Validation failed:', validation.error.errors);
       return res.status(400).json({
         error: 'Invalid request body',
         code: 'VALIDATION_ERROR',
-        details: validation.error.errors
+        details: validation.error.errors,
+        received: req.body
       });
     }
+    console.log('✅ Validation passed');
     req.validatedData = validation.data;
     next();
   };
@@ -109,16 +113,19 @@ export const taskSchemas = {
   }),
   
   update: z.object({
-    title: z.string().min(1).max(200).trim().optional(),
-    description: z.string().max(2000).optional(),
+    title: z.string().min(1).max(500).trim().optional(),
+    description: z.string().max(2000).optional().nullable(),
     priority: z.enum(['Low', 'Medium', 'High', 'Urgent']).optional(),
     status: z.enum(['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled']).optional(),
-    dueDate: z.string().datetime().optional(),
-    assigneeId: z.string().optional(),
-    projectId: z.string().optional(),
+    category: z.string().max(100).optional(),
+    dueDate: z.string().datetime().optional().nullable(),
     estimatedHours: z.number().min(0).max(1000).optional(),
-    tags: z.array(z.string().max(50)).max(10).optional()
-  }),
+    actualHours: z.number().min(0).max(1000).optional(),
+    tags: z.union([
+      z.array(z.string().max(50)).max(10),
+      z.null()
+    ]).optional()
+  }).passthrough(),
   
   statusUpdate: z.object({
     status: z.enum(['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled'])

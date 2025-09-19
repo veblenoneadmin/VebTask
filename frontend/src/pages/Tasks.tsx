@@ -292,34 +292,40 @@ export function Tasks() {
     try {
       setTaskFormLoading(true);
 
-      // Clean the form data and only send non-empty values
+      // Clean the form data and prepare valid request body
       const taskData: any = {};
 
+      // Always include these fields if they have values
       if (editTaskForm.title && editTaskForm.title.trim()) {
         taskData.title = editTaskForm.title.trim();
       }
 
-      if (editTaskForm.description !== undefined) {
-        taskData.description = editTaskForm.description || '';
-      }
+      // Description can be empty string
+      taskData.description = editTaskForm.description || '';
 
+      // Always include priority
       if (editTaskForm.priority) {
         taskData.priority = editTaskForm.priority;
       }
 
-      if (editTaskForm.estimatedHours !== undefined && editTaskForm.estimatedHours >= 0) {
-        taskData.estimatedHours = editTaskForm.estimatedHours;
-      }
+      // Always include estimatedHours (can be 0)
+      taskData.estimatedHours = editTaskForm.estimatedHours || 0;
 
-      // Handle dueDate - convert date to ISO datetime string
-      if (editTaskForm.dueDate) {
+      // Handle dueDate - convert date to ISO datetime string or send null
+      if (editTaskForm.dueDate && editTaskForm.dueDate.trim()) {
         taskData.dueDate = new Date(editTaskForm.dueDate + 'T00:00:00.000Z').toISOString();
+      } else {
+        taskData.dueDate = null;
       }
 
-      // Handle tags - only send if not empty
+      // Handle tags - convert to array or null
       if (editTaskForm.tags && editTaskForm.tags.trim()) {
         taskData.tags = editTaskForm.tags.split(',').map(t => t.trim()).filter(Boolean);
+      } else {
+        taskData.tags = null;
       }
+
+      console.log('📤 Sending task data:', taskData);
 
       const data = await apiClient.fetch(`/api/tasks/${editingTask.id}`, {
         method: 'PUT',
@@ -338,9 +344,15 @@ export function Tasks() {
           tags: ''
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating task:', error);
-      alert('Failed to update task. Please try again.');
+
+      // Try to get more detailed error info
+      if (error.message === 'Invalid request body') {
+        alert(`Validation error: Please check the console for details`);
+      } else {
+        alert('Failed to update task. Please try again.');
+      }
     } finally {
       setTaskFormLoading(false);
     }
