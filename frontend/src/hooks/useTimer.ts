@@ -23,10 +23,13 @@ export function useTimer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
-  
+  const [isPaused, setIsPaused] = useState(false);
+  const [pausedTime, setPausedTime] = useState(0); // Track total paused time
+
   // Use ref to track the interval so it persists across renders
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<Date | null>(null);
+  const pauseStartRef = useRef<Date | null>(null);
 
   // Clear the interval when component unmounts or timer stops
   const clearTimerInterval = useCallback(() => {
@@ -38,11 +41,13 @@ export function useTimer() {
 
   // Update elapsed time every second for active timer
   const updateElapsedTime = useCallback(() => {
-    if (startTimeRef.current) {
-      const elapsed = Math.floor((Date.now() - startTimeRef.current.getTime()) / 1000);
-      setElapsedTime(elapsed);
+    if (startTimeRef.current && !isPaused) {
+      const now = Date.now();
+      const totalElapsed = Math.floor((now - startTimeRef.current.getTime()) / 1000);
+      const activeElapsed = totalElapsed - pausedTime;
+      setElapsedTime(Math.max(0, activeElapsed));
     }
-  }, []);
+  }, [isPaused, pausedTime]);
 
   // Start the timer interval
   const startTimerInterval = useCallback(() => {
@@ -112,6 +117,9 @@ export function useTimer() {
       const now = new Date();
       startTimeRef.current = now;
       setElapsedTime(0);
+      setIsPaused(false);
+      setPausedTime(0);
+      pauseStartRef.current = null;
       startTimerInterval();
 
       // Create temporary timer object for immediate UI update
@@ -184,6 +192,9 @@ export function useTimer() {
       if (data.timer) {
         setActiveTimer(null);
         startTimeRef.current = null;
+        setIsPaused(false);
+        setPausedTime(0);
+        pauseStartRef.current = null;
         clearTimerInterval();
         setElapsedTime(0);
         return data.timer;
@@ -228,6 +239,28 @@ export function useTimer() {
       throw err;
     }
   }, [activeTimer, session?.user?.id, currentOrg?.id]);
+
+  // Pause the timer
+  const pauseTimer = useCallback(() => {
+    if (!activeTimer || isPaused) return;
+
+    setIsPaused(true);
+    pauseStartRef.current = new Date();
+    clearTimerInterval();
+  }, [activeTimer, isPaused, clearTimerInterval]);
+
+  // Resume the timer
+  const resumeTimer = useCallback(() => {
+    if (!activeTimer || !isPaused || !pauseStartRef.current) return;
+
+    // Add the paused duration to total paused time
+    const pauseDuration = Math.floor((Date.now() - pauseStartRef.current.getTime()) / 1000);
+    setPausedTime(prev => prev + pauseDuration);
+
+    setIsPaused(false);
+    pauseStartRef.current = null;
+    startTimerInterval();
+  }, [activeTimer, isPaused, startTimerInterval]);
 
   // Format elapsed time as HH:MM:SS
   const formatElapsedTime = useCallback((seconds: number) => {
@@ -302,8 +335,11 @@ export function useTimer() {
     startTimer,
     stopTimer,
     updateTimer,
+    pauseTimer,
+    resumeTimer,
     refreshTimer: fetchActiveTimer,
     clearError: () => setError(null),
-    isRunning: !!activeTimer
+    isRunning: !!activeTimer,
+    isPaused
   };
 }

@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import {
   Play,
+  Pause,
   Square,
   Clock,
   Target,
@@ -27,7 +28,10 @@ export function Timer() {
     startTimer,
     stopTimer,
     updateTimer,
-    isRunning
+    pauseTimer,
+    resumeTimer,
+    isRunning,
+    isPaused
   } = useTimer();
 
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
@@ -158,8 +162,8 @@ export function Timer() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Time Tracker</h1>
-        <Badge variant={isRunning ? "default" : "secondary"}>
-          {isRunning ? "Running" : "Stopped"}
+        <Badge variant={isRunning && !isPaused ? "default" : isPaused ? "destructive" : "secondary"}>
+          {isRunning && !isPaused ? "Running" : isPaused ? "Paused" : "Stopped"}
         </Badge>
       </div>
 
@@ -194,14 +198,22 @@ export function Timer() {
             <div className="text-center">
               <div className={cn(
                 "text-6xl font-mono font-bold transition-colors duration-300",
-                isRunning ? "text-primary" : "text-muted-foreground"
+                isRunning && !isPaused ? "text-primary" : isPaused ? "text-warning" : "text-muted-foreground"
               )}>
                 {formattedElapsedTime}
               </div>
               {activeTimer && (
-                <p className="text-sm text-muted-foreground mt-2 transition-opacity duration-300">
-                  {activeTimer.taskTitle}
-                </p>
+                <div className="mt-2">
+                  <p className="text-sm text-muted-foreground transition-opacity duration-300">
+                    {activeTimer.taskTitle}
+                  </p>
+                  {isPaused && (
+                    <p className="text-xs text-warning mt-1 flex items-center justify-center gap-1">
+                      <Pause className="h-3 w-3" />
+                      Timer Paused
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
@@ -218,15 +230,35 @@ export function Timer() {
                   <span>Start Timer</span>
                 </Button>
               ) : (
-                <Button
-                  onClick={handleStopTimer}
-                  variant="destructive"
-                  size="lg"
-                  className="flex items-center space-x-2"
-                >
-                  <Square className="h-4 w-4" />
-                  <span>Stop Timer</span>
-                </Button>
+                <>
+                  <Button
+                    onClick={isPaused ? resumeTimer : pauseTimer}
+                    size="lg"
+                    variant={isPaused ? "default" : "secondary"}
+                    className="flex items-center space-x-2"
+                  >
+                    {isPaused ? (
+                      <>
+                        <Play className="h-4 w-4" />
+                        <span>Resume</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="h-4 w-4" />
+                        <span>Pause</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleStopTimer}
+                    variant="destructive"
+                    size="lg"
+                    className="flex items-center space-x-2"
+                  >
+                    <Square className="h-4 w-4" />
+                    <span>Stop</span>
+                  </Button>
+                </>
               )}
             </div>
 
