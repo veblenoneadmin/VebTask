@@ -66,7 +66,6 @@ export function Tasks() {
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [userRole, setUserRole] = useState<string>('CLIENT');
   const [newTaskForm, setNewTaskForm] = useState({
-    title: '',
     description: '',
     priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
     projectId: '',
@@ -77,7 +76,6 @@ export function Tasks() {
   const [taskFormLoading, setTaskFormLoading] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editTaskForm, setEditTaskForm] = useState({
-    title: '',
     description: '',
     priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
     projectId: '',
@@ -277,8 +275,12 @@ export function Tasks() {
     try {
       setTaskFormLoading(true);
       
+      // Generate title based on selected project
+      const selectedProject = projects.find(p => p.id === newTaskForm.projectId);
+      const title = selectedProject ? `${selectedProject.name} Task` : 'General Task';
+
       const taskData = {
-        title: newTaskForm.title,
+        title: title,
         description: newTaskForm.description,
         userId: session.user.id,
         orgId: currentOrg.id,
@@ -297,7 +299,6 @@ export function Tasks() {
       if (data.task) {
         await fetchTasks(); // Refresh the task list
         setNewTaskForm({
-          title: '',
           description: '',
           priority: 'Medium',
           projectId: '',
@@ -318,7 +319,6 @@ export function Tasks() {
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setEditTaskForm({
-      title: task.title,
       description: task.description,
       priority: task.priority,
       projectId: task.projectId || '',
@@ -343,10 +343,10 @@ export function Tasks() {
       // Clean the form data and prepare valid request body
       const taskData: any = {};
 
-      // Always include these fields if they have values
-      if (editTaskForm.title && editTaskForm.title.trim()) {
-        taskData.title = editTaskForm.title.trim();
-      }
+      // Generate title based on selected project
+      const selectedProject = projects.find(p => p.id === editTaskForm.projectId);
+      const title = selectedProject ? `${selectedProject.name} Task` : 'General Task';
+      taskData.title = title;
 
       // Description can be empty string
       taskData.description = editTaskForm.description || '';
@@ -391,7 +391,6 @@ export function Tasks() {
         await fetchTasks(); // Refresh the task list
         setEditingTask(null);
         setEditTaskForm({
-          title: '',
           description: '',
           priority: 'Medium',
           projectId: '',
@@ -732,16 +731,24 @@ export function Tasks() {
             <CardContent>
               <form onSubmit={handleCreateTask} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Title *</label>
-                  <input
-                    type="text"
-                    value={newTaskForm.title}
-                    onChange={(e) => setNewTaskForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    placeholder="Enter task title"
+                  <label className="block text-sm font-medium mb-1">Project *</label>
+                  <select
+                    value={newTaskForm.projectId}
+                    onChange={(e) => setNewTaskForm(prev => ({ ...prev, projectId: e.target.value }))}
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    disabled={taskFormLoading || projectsLoading}
                     required
-                    disabled={taskFormLoading}
-                  />
+                  >
+                    <option value="" className="bg-surface-elevated">Select a project...</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id} className="bg-surface-elevated">
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                  {projectsLoading && (
+                    <p className="text-xs text-muted-foreground mt-1">Loading projects...</p>
+                  )}
                 </div>
 
                 <div>
@@ -756,25 +763,6 @@ export function Tasks() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Project</label>
-                  <select
-                    value={newTaskForm.projectId}
-                    onChange={(e) => setNewTaskForm(prev => ({ ...prev, projectId: e.target.value }))}
-                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    disabled={taskFormLoading || projectsLoading}
-                  >
-                    <option value="" className="bg-surface-elevated">No Project (General Task)</option>
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id} className="bg-surface-elevated">
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                  {projectsLoading && (
-                    <p className="text-xs text-muted-foreground mt-1">Loading projects...</p>
-                  )}
-                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -842,7 +830,7 @@ export function Tasks() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={taskFormLoading || !newTaskForm.title.trim()}
+                    disabled={taskFormLoading || !newTaskForm.projectId}
                     className="flex-1"
                   >
                     {taskFormLoading ? (
@@ -884,16 +872,24 @@ export function Tasks() {
             <CardContent>
               <form onSubmit={handleUpdateTask} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Title *</label>
-                  <input
-                    type="text"
-                    value={editTaskForm.title}
-                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    placeholder="Enter task title"
+                  <label className="block text-sm font-medium mb-1">Project *</label>
+                  <select
+                    value={editTaskForm.projectId}
+                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, projectId: e.target.value }))}
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    disabled={taskFormLoading || projectsLoading}
                     required
-                    disabled={taskFormLoading}
-                  />
+                  >
+                    <option value="" className="bg-surface-elevated">Select a project...</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id} className="bg-surface-elevated">
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                  {projectsLoading && (
+                    <p className="text-xs text-muted-foreground mt-1">Loading projects...</p>
+                  )}
                 </div>
 
                 <div>
@@ -908,25 +904,6 @@ export function Tasks() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Project</label>
-                  <select
-                    value={editTaskForm.projectId}
-                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, projectId: e.target.value }))}
-                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    disabled={taskFormLoading || projectsLoading}
-                  >
-                    <option value="" className="bg-surface-elevated">No Project (General Task)</option>
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id} className="bg-surface-elevated">
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                  {projectsLoading && (
-                    <p className="text-xs text-muted-foreground mt-1">Loading projects...</p>
-                  )}
-                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -994,7 +971,7 @@ export function Tasks() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={taskFormLoading || !editTaskForm.title.trim()}
+                    disabled={taskFormLoading || !editTaskForm.projectId}
                     className="flex-1"
                   >
                     {taskFormLoading ? (
