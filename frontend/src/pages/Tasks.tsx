@@ -680,7 +680,7 @@ export function Tasks() {
                     type="text"
                     value={newTaskForm.title}
                     onChange={(e) => setNewTaskForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
                     required
                     disabled={taskFormLoading}
                   />
@@ -691,7 +691,7 @@ export function Tasks() {
                   <textarea
                     value={newTaskForm.description}
                     onChange={(e) => setNewTaskForm(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
                     rows={3}
                     disabled={taskFormLoading}
                   />
@@ -703,7 +703,7 @@ export function Tasks() {
                     <select
                       value={newTaskForm.priority}
                       onChange={(e) => setNewTaskForm(prev => ({ ...prev, priority: e.target.value as any }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
                       disabled={taskFormLoading}
                     >
                       <option value="Low">Low</option>
@@ -719,7 +719,7 @@ export function Tasks() {
                       type="number"
                       value={newTaskForm.estimatedHours}
                       onChange={(e) => setNewTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
                       min="0"
                       step="0.5"
                       disabled={taskFormLoading}
@@ -832,7 +832,7 @@ export function Tasks() {
                     <select
                       value={editTaskForm.priority}
                       onChange={(e) => setEditTaskForm(prev => ({ ...prev, priority: e.target.value as 'Low' | 'Medium' | 'High' | 'Urgent' }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
                       disabled={taskFormLoading}
                     >
                       <option value="Low">Low</option>
@@ -848,7 +848,7 @@ export function Tasks() {
                       type="number"
                       value={editTaskForm.estimatedHours}
                       onChange={(e) => setEditTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-black"
                       min="0"
                       step="0.5"
                       disabled={taskFormLoading}
