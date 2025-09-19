@@ -236,17 +236,32 @@ export function Tasks() {
 
   // Get project color by projectId
   const getProjectColor = (projectId?: string): string => {
-    if (!projectId) return '#6b7280'; // Default gray color
+    console.log('🎨 getProjectColor called with projectId:', projectId);
+    console.log('🎨 Available projects:', projects.map(p => ({ id: p.id, name: p.name, color: p.color })));
+
+    if (!projectId) {
+      console.log('🎨 No projectId, returning default gray');
+      return '#6b7280'; // Default gray color
+    }
+
     const project = projects.find(p => p.id === projectId);
-    if (!project?.color) return '#6b7280';
+    console.log('🎨 Found project:', project);
+
+    if (!project?.color) {
+      console.log('🎨 No project or color found, returning default gray');
+      return '#6b7280';
+    }
 
     // If it's already a hex color, return as is
     if (project.color.startsWith('#')) {
+      console.log('🎨 Color is already hex:', project.color);
       return project.color;
     }
 
     // If it's a Tailwind class, convert to hex
-    return tailwindToHex(project.color);
+    const hexColor = tailwindToHex(project.color);
+    console.log('🎨 Converted Tailwind class', project.color, 'to hex:', hexColor);
+    return hexColor;
   };
 
 
@@ -591,16 +606,21 @@ export function Tasks() {
                 <p className="text-muted-foreground">No tasks found. Create your first task!</p>
               </div>
             ) : (
-              filteredTasks.map((task) => (
-              <div
-                key={task.id}
-                className="relative flex items-center p-4 border-b border-border last:border-b-0 hover:bg-surface-elevated/50 transition-colors"
-              >
-                {/* Project Color Border */}
+              filteredTasks.map((task) => {
+                console.log('🎯 Rendering task:', { id: task.id, title: task.title, projectId: task.projectId, project: task.project });
+                const taskColor = getProjectColor(task.projectId);
+                console.log('🎯 Task color for', task.title, ':', taskColor);
+
+                return (
                 <div
-                  className="absolute left-0 top-0 bottom-0 w-1 z-10"
-                  style={{ backgroundColor: getProjectColor(task.projectId) }}
-                />
+                  key={task.id}
+                  className="relative flex items-center p-4 border-b border-border last:border-b-0 hover:bg-surface-elevated/50 transition-colors"
+                >
+                  {/* Project Color Border */}
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-1 z-10"
+                    style={{ backgroundColor: taskColor }}
+                  />
 
                 {/* Task Content */}
                 <div className="flex-1 min-w-0">
@@ -713,7 +733,8 @@ export function Tasks() {
                   )}
                 </div>
               </div>
-              ))
+              );
+              })
             )}
           </div>
         </CardContent>
