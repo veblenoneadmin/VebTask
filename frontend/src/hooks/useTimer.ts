@@ -246,8 +246,7 @@ export function useTimer() {
 
     setIsPaused(true);
     pauseStartRef.current = new Date();
-    clearTimerInterval();
-  }, [activeTimer, isPaused, clearTimerInterval]);
+  }, [activeTimer, isPaused]);
 
   // Resume the timer
   const resumeTimer = useCallback(() => {
@@ -259,8 +258,7 @@ export function useTimer() {
 
     setIsPaused(false);
     pauseStartRef.current = null;
-    startTimerInterval();
-  }, [activeTimer, isPaused, startTimerInterval]);
+  }, [activeTimer, isPaused]);
 
   // Format elapsed time as HH:MM:SS
   const formatElapsedTime = useCallback((seconds: number) => {
