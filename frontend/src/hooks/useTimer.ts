@@ -256,17 +256,26 @@ export function useTimer() {
 
   // Pause the timer
   const pauseTimer = useCallback(() => {
-    if (!activeTimer || isPaused) return;
+    console.log('🔸 pauseTimer called, activeTimer:', !!activeTimer, 'isPaused:', isPaused);
+    if (!activeTimer || isPaused) {
+      console.log('🔸 pauseTimer early return');
+      return;
+    }
 
     console.log('🔸 Pausing timer at:', new Date().toLocaleTimeString());
     setIsPaused(true);
     isPausedRef.current = true; // Update ref immediately
     pauseStartRef.current = new Date();
+    console.log('🔸 Set isPausedRef.current to:', isPausedRef.current);
   }, [activeTimer, isPaused]);
 
   // Resume the timer
   const resumeTimer = useCallback(() => {
-    if (!activeTimer || !isPaused || !pauseStartRef.current) return;
+    console.log('▶️ resumeTimer called, activeTimer:', !!activeTimer, 'isPaused:', isPaused, 'pauseStartRef:', !!pauseStartRef.current);
+    if (!activeTimer || !isPaused || !pauseStartRef.current) {
+      console.log('▶️ resumeTimer early return');
+      return;
+    }
 
     // Add the paused duration to total paused time
     const pauseDuration = Math.floor((Date.now() - pauseStartRef.current.getTime()) / 1000);
@@ -279,6 +288,7 @@ export function useTimer() {
     setIsPaused(false);
     isPausedRef.current = false; // Update ref immediately
     pauseStartRef.current = null;
+    console.log('▶️ Set isPausedRef.current to:', isPausedRef.current);
   }, [activeTimer, isPaused]);
 
   // Format elapsed time as HH:MM:SS

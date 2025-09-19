@@ -232,7 +232,16 @@ export function Timer() {
               ) : (
                 <>
                   <Button
-                    onClick={isPaused ? resumeTimer : pauseTimer}
+                    onClick={() => {
+                      console.log('🔘 Button clicked, isPaused:', isPaused);
+                      if (isPaused) {
+                        console.log('📞 Calling resumeTimer');
+                        resumeTimer();
+                      } else {
+                        console.log('📞 Calling pauseTimer');
+                        pauseTimer();
+                      }
+                    }}
                     size="lg"
                     variant={isPaused ? "default" : "secondary"}
                     className="flex items-center space-x-2"
