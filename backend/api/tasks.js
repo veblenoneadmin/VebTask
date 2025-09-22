@@ -5,6 +5,79 @@ import { requireAuth, withOrgScope, requireTaskOwnership } from '../lib/rbac.js'
 import { validateBody, validateQuery, commonSchemas, taskSchemas } from '../lib/validation.js';
 const router = express.Router();
 
+// Get tasks (main endpoint)
+router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
+  try {
+    const { orgId, userId, status, priority, limit = 50, offset = 0 } = req.query;
+
+    if (!orgId) {
+      return res.status(400).json({ error: 'orgId is required' });
+    }
+
+    console.log('📋 Fetching tasks:', { orgId, userId, status, priority, limit, offset });
+
+    const where = { orgId };
+
+    // Apply filters
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
+    if (userId) where.userId = userId;
+
+    const tasks = await prisma.macroTask.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { dueDate: 'asc' },
+        { createdAt: 'desc' }
+      ],
+      take: parseInt(limit),
+      skip: parseInt(offset)
+    });
+
+    const total = await prisma.macroTask.count({ where });
+
+    console.log(`✅ Found ${tasks.length} tasks for orgId: ${orgId}`);
+
+    // Format tasks for frontend compatibility
+    const formattedTasks = tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      priority: task.priority,
+      estimatedHours: task.estimatedHours,
+      actualHours: task.actualHours || 0,
+      dueDate: task.dueDate,
+      assignee: task.user?.name,
+      project: task.category?.startsWith('Project: ') ? task.category.replace('Project: ', '') : null,
+      projectId: null, // Will be handled when we have proper project relations
+      isBillable: false, // Default for now
+      hourlyRate: 0,
+      tags: task.tags ? (Array.isArray(task.tags) ? task.tags : []) : [],
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt
+    }));
+
+    res.json({
+      success: true,
+      tasks: formattedTasks,
+      total
+    });
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch tasks' });
+  }
+});
+
 // Get recent tasks
 router.get('/recent', requireAuth, withOrgScope, validateQuery(commonSchemas.pagination), async (req, res) => {
   try {
@@ -203,7 +276,7 @@ router.post('/', requireAuth, withOrgScope, validateBody(taskSchemas.create), as
   }
 });
 
-// Update task
+// Update task (PUT)
 router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (req, res) => {
   try {
     const { taskId } = req.params;
@@ -280,6 +353,87 @@ router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (r
     });
   } catch (error) {
     console.error('Error updating task:', error);
+    res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+// Update task (PATCH - same as PUT for compatibility)
+router.patch('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const updates = req.body;
+
+    console.log('🔄 Task PATCH request:', {
+      taskId,
+      updates: JSON.stringify(updates, null, 2),
+      userId: req.user?.id,
+      orgId: req.orgId
+    });
+
+    // Remove fields that shouldn't be updated directly
+    delete updates.id;
+    delete updates.createdAt;
+    delete updates.updatedAt;
+    delete updates.createdBy;
+
+    // Handle date fields
+    if (updates.dueDate !== undefined) {
+      updates.dueDate = updates.dueDate ? new Date(updates.dueDate) : null;
+    }
+    if (updates.completedAt) {
+      updates.completedAt = new Date(updates.completedAt);
+    }
+
+    // Handle numeric fields
+    if (updates.estimatedHours !== undefined) {
+      updates.estimatedHours = typeof updates.estimatedHours === 'number' ? updates.estimatedHours : parseFloat(updates.estimatedHours) || 0;
+    }
+    if (updates.actualHours !== undefined) {
+      updates.actualHours = typeof updates.actualHours === 'number' ? updates.actualHours : parseFloat(updates.actualHours) || 0;
+    }
+
+    // Handle projectId - convert to category field
+    if (updates.projectId !== undefined) {
+      if (updates.projectId) {
+        try {
+          const project = await prisma.project.findUnique({
+            where: { id: updates.projectId },
+            select: { name: true }
+          });
+          if (project) {
+            updates.category = `Project: ${project.name}`;
+          }
+        } catch (error) {
+          console.error('Error fetching project for task update:', error);
+        }
+      } else {
+        updates.category = 'General';
+      }
+      delete updates.projectId; // Remove projectId since it's not a field in the DB
+    }
+
+    const task = await prisma.macroTask.update({
+      where: { id: taskId },
+      data: updates,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    console.log(`📝 PATCH Updated task ${taskId}`);
+
+    res.json({
+      task: task,
+      message: 'Task updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating task (PATCH):', error);
     res.status(500).json({ error: 'Failed to update task' });
   }
 });
