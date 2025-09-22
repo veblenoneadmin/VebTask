@@ -17,7 +17,7 @@ import timerRoutes from './api/timer.js';
 import tasksRoutes from './api/tasks.js';
 import projectsRoutes from './api/projects.js';
 import clientsRoutes from './api/clients.js';
-import expensesRoutes from './api/expenses.js';
+// import expensesRoutes from './api/expenses.js';
 import reportsRoutes from './api/reports.js';
 import onboardingRoutes from './api/onboarding.js';
 import adminRoutes from './api/admin.js';
@@ -344,7 +344,7 @@ app.use('/api/time-logs', timersRoutes); // Add time-logs alias for Timer compon
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/clients', clientsRoutes);
-app.use('/api/expenses', expensesRoutes);
+// app.use('/api/expenses', expensesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/admin', adminRoutes);

@@ -13,7 +13,6 @@ import { Timer } from './pages/Timer';
 import { Projects } from './pages/Projects';
 import { TimeLogs } from './pages/TimeLogs';
 import { Clients } from './pages/Clients';
-import { Expenses } from './pages/Expenses';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { Admin } from './pages/Admin';
@@ -123,7 +122,6 @@ function AppContent() {
             <Route path="projects" element={<Projects />} />
             <Route path="timesheets" element={<TimeLogs />} />
             <Route path="clients" element={<Clients />} />
-            <Route path="expenses" element={<Expenses />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
             <Route path="admin" element={<Admin />} />

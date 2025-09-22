@@ -29,7 +29,6 @@ const getAllNavigationItems = () => [
   { name: 'Projects', href: '/projects', icon: Building2, roles: ['OWNER', 'ADMIN', 'STAFF'] },
   { name: 'Time Logs', href: '/timesheets', icon: Clock, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
   { name: 'Clients', href: '/clients', icon: Users, roles: ['OWNER', 'ADMIN', 'STAFF'] },
-  { name: 'Expenses', href: '/expenses', icon: DollarSign, roles: ['OWNER', 'ADMIN', 'STAFF'] },
   { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['OWNER', 'ADMIN', 'STAFF'] },
   { name: 'Administration', href: '/admin', icon: Shield, roles: ['OWNER', 'ADMIN'] },
   { name: 'Settings', href: '/settings', icon: Settings, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
