@@ -13,7 +13,6 @@ import {
   Settings, 
   LogOut,
   BarChart3,
-  Timer,
   Building2,
   Users,
   DollarSign,
@@ -25,8 +24,7 @@ import { cn } from '../../lib/utils';
 const getAllNavigationItems = () => [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
   { name: 'Brain Dump', href: '/brain-dump', icon: Brain, roles: ['OWNER', 'ADMIN', 'STAFF'] },
-  { name: 'Timer', href: '/timer', icon: Timer, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
-  { name: 'My Tasks', href: '/tasks', icon: CheckSquare, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
+  { name: 'Tasks & Timer', href: '/tasks', icon: CheckSquare, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
   { name: 'Projects', href: '/projects', icon: Building2, roles: ['OWNER', 'ADMIN', 'STAFF'] },
   { name: 'Time Logs', href: '/timesheets', icon: Clock, roles: ['OWNER', 'ADMIN', 'STAFF', 'CLIENT'] },
   { name: 'Clients', href: '/clients', icon: Users, roles: ['OWNER', 'ADMIN', 'STAFF'] },
