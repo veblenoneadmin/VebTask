@@ -95,6 +95,31 @@ export function TasksAndTimer() {
   // Active tab state
   const [activeTab, setActiveTab] = useState<'timer' | 'tasks'>('timer');
 
+  // Task form state
+  const [taskFormLoading, setTaskFormLoading] = useState(false);
+  const [newTaskForm, setNewTaskForm] = useState({
+    title: '',
+    description: '',
+    priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
+    projectId: '',
+    estimatedHours: 0,
+    dueDate: '',
+    tags: '',
+    isBillable: false,
+    hourlyRate: 0
+  });
+  const [editTaskForm, setEditTaskForm] = useState({
+    title: '',
+    description: '',
+    priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
+    projectId: '',
+    estimatedHours: 0,
+    dueDate: '',
+    tags: '',
+    isBillable: false,
+    hourlyRate: 0
+  });
+
   // Timer error handling
   const [showError, setShowError] = useState(false);
   const [dismissedErrors, setDismissedErrors] = useState<Set<string>>(new Set());
@@ -336,6 +361,108 @@ export function TasksAndTimer() {
     } catch (error) {
       console.error('Error deleting task:', error);
       alert('Failed to delete task. Please try again.');
+    }
+  };
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.user?.id || !currentOrg?.id) return;
+
+    try {
+      setTaskFormLoading(true);
+
+      const taskData = {
+        title: newTaskForm.title,
+        description: newTaskForm.description,
+        userId: session.user.id,
+        orgId: currentOrg.id,
+        priority: newTaskForm.priority,
+        projectId: newTaskForm.projectId || undefined,
+        estimatedHours: newTaskForm.estimatedHours,
+        dueDate: newTaskForm.dueDate ? new Date(newTaskForm.dueDate + 'T00:00:00.000Z').toISOString() : undefined,
+        tags: newTaskForm.tags ? newTaskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
+        isBillable: newTaskForm.isBillable,
+        hourlyRate: newTaskForm.isBillable ? newTaskForm.hourlyRate : undefined
+      };
+
+      const data = await apiClient.fetch('/api/tasks', {
+        method: 'POST',
+        body: JSON.stringify(taskData)
+      });
+
+      if (data.task) {
+        await fetchTasks(); // Refresh the task list
+        setNewTaskForm({
+          title: '',
+          description: '',
+          priority: 'Medium',
+          projectId: '',
+          estimatedHours: 0,
+          dueDate: '',
+          tags: '',
+          isBillable: false,
+          hourlyRate: 0
+        });
+        setIsModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+      alert('Failed to create task. Please try again.');
+    } finally {
+      setTaskFormLoading(false);
+    }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setEditTaskForm({
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      projectId: task.projectId || '',
+      estimatedHours: task.estimatedHours,
+      dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+      tags: Array.isArray(task.tags) ? task.tags.join(', ') : (task.tags || ''),
+      isBillable: task.isBillable,
+      hourlyRate: task.hourlyRate || 0
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleUpdateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTask || !session?.user?.id) return;
+
+    try {
+      setTaskFormLoading(true);
+
+      const taskData = {
+        title: editTaskForm.title,
+        description: editTaskForm.description,
+        priority: editTaskForm.priority,
+        projectId: editTaskForm.projectId || undefined,
+        estimatedHours: editTaskForm.estimatedHours,
+        dueDate: editTaskForm.dueDate ? new Date(editTaskForm.dueDate + 'T00:00:00.000Z').toISOString() : undefined,
+        tags: editTaskForm.tags ? editTaskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
+        isBillable: editTaskForm.isBillable,
+        hourlyRate: editTaskForm.isBillable ? editTaskForm.hourlyRate : undefined
+      };
+
+      const data = await apiClient.fetch(`/api/tasks/${editingTask.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(taskData)
+      });
+
+      if (data.task) {
+        await fetchTasks(); // Refresh the task list
+        setEditingTask(null);
+        setIsModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+      alert('Failed to update task. Please try again.');
+    } finally {
+      setTaskFormLoading(false);
     }
   };
 
@@ -772,10 +899,7 @@ export function TasksAndTimer() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setEditingTask(task);
-                            setIsModalOpen(true);
-                          }}
+                          onClick={() => handleEditTask(task)}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
@@ -798,30 +922,259 @@ export function TasksAndTimer() {
         </div>
       )}
 
-      {/* Task Modal would go here - keeping the same modal from Tasks.tsx */}
+      {/* Task Creation/Editing Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">
-              {editingTask ? 'Edit Task' : 'Create New Task'}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Task modal functionality would be implemented here...
-            </p>
-            <div className="flex justify-end space-x-2 mt-4">
+          <div className="bg-background p-6 rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">
+                {editingTask ? 'Edit Task' : 'Create New Task'}
+              </h2>
               <Button
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setIsModalOpen(false);
                   setEditingTask(null);
                 }}
+                className="h-8 w-8 p-0"
               >
-                Cancel
-              </Button>
-              <Button>
-                {editingTask ? 'Update' : 'Create'}
+                <X className="h-4 w-4" />
               </Button>
             </div>
+
+            <form onSubmit={editingTask ? handleUpdateTask : handleCreateTask} className="space-y-6">
+              {/* Title Field */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Task Title *</label>
+                <input
+                  type="text"
+                  value={editingTask ? editTaskForm.title : newTaskForm.title}
+                  onChange={(e) => {
+                    if (editingTask) {
+                      setEditTaskForm(prev => ({ ...prev, title: e.target.value }));
+                    } else {
+                      setNewTaskForm(prev => ({ ...prev, title: e.target.value }));
+                    }
+                  }}
+                  className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  placeholder="Enter task title..."
+                  required
+                  disabled={taskFormLoading}
+                />
+              </div>
+
+              {/* Project Selection */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Project</label>
+                <select
+                  value={editingTask ? editTaskForm.projectId : newTaskForm.projectId}
+                  onChange={(e) => {
+                    if (editingTask) {
+                      setEditTaskForm(prev => ({ ...prev, projectId: e.target.value }));
+                    } else {
+                      setNewTaskForm(prev => ({ ...prev, projectId: e.target.value }));
+                    }
+                  }}
+                  className="w-full p-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  disabled={taskFormLoading}
+                >
+                  <option value="">Select a project (optional)</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Description</label>
+                <textarea
+                  value={editingTask ? editTaskForm.description : newTaskForm.description}
+                  onChange={(e) => {
+                    if (editingTask) {
+                      setEditTaskForm(prev => ({ ...prev, description: e.target.value }));
+                    } else {
+                      setNewTaskForm(prev => ({ ...prev, description: e.target.value }));
+                    }
+                  }}
+                  className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                  placeholder="Describe the task goals and requirements..."
+                  rows={3}
+                  disabled={taskFormLoading}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Priority */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Priority</label>
+                  <select
+                    value={editingTask ? editTaskForm.priority : newTaskForm.priority}
+                    onChange={(e) => {
+                      if (editingTask) {
+                        setEditTaskForm(prev => ({ ...prev, priority: e.target.value as Task['priority'] }));
+                      } else {
+                        setNewTaskForm(prev => ({ ...prev, priority: e.target.value as Task['priority'] }));
+                      }
+                    }}
+                    className="w-full p-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    disabled={taskFormLoading}
+                  >
+                    <option value="Low">Low Priority</option>
+                    <option value="Medium">Medium Priority</option>
+                    <option value="High">High Priority</option>
+                    <option value="Urgent">Urgent Priority</option>
+                  </select>
+                </div>
+
+                {/* Estimated Hours */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Estimated Hours</label>
+                  <input
+                    type="number"
+                    value={editingTask ? editTaskForm.estimatedHours : newTaskForm.estimatedHours}
+                    onChange={(e) => {
+                      if (editingTask) {
+                        setEditTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }));
+                      } else {
+                        setNewTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }));
+                      }
+                    }}
+                    className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    placeholder="0"
+                    min="0"
+                    step="0.5"
+                    disabled={taskFormLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Due Date */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Due Date</label>
+                <input
+                  type="date"
+                  value={editingTask ? editTaskForm.dueDate : newTaskForm.dueDate}
+                  onChange={(e) => {
+                    if (editingTask) {
+                      setEditTaskForm(prev => ({ ...prev, dueDate: e.target.value }));
+                    } else {
+                      setNewTaskForm(prev => ({ ...prev, dueDate: e.target.value }));
+                    }
+                  }}
+                  className="w-full p-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  disabled={taskFormLoading}
+                />
+              </div>
+
+              {/* Billing Information */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="isBillable"
+                    checked={editingTask ? editTaskForm.isBillable : newTaskForm.isBillable}
+                    onChange={(e) => {
+                      if (editingTask) {
+                        setEditTaskForm(prev => ({ ...prev, isBillable: e.target.checked }));
+                      } else {
+                        setNewTaskForm(prev => ({ ...prev, isBillable: e.target.checked }));
+                      }
+                    }}
+                    className="rounded border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    disabled={taskFormLoading}
+                  />
+                  <label htmlFor="isBillable" className="text-sm font-medium">
+                    This task is billable
+                  </label>
+                </div>
+
+                {(editingTask ? editTaskForm.isBillable : newTaskForm.isBillable) && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Hourly Rate ($)</label>
+                    <input
+                      type="number"
+                      value={editingTask ? editTaskForm.hourlyRate : newTaskForm.hourlyRate}
+                      onChange={(e) => {
+                        if (editingTask) {
+                          setEditTaskForm(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }));
+                        } else {
+                          setNewTaskForm(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }));
+                        }
+                      }}
+                      className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      disabled={taskFormLoading}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Tags (comma separated)</label>
+                <input
+                  type="text"
+                  value={editingTask ? editTaskForm.tags : newTaskForm.tags}
+                  onChange={(e) => {
+                    if (editingTask) {
+                      setEditTaskForm(prev => ({ ...prev, tags: e.target.value }));
+                    } else {
+                      setNewTaskForm(prev => ({ ...prev, tags: e.target.value }));
+                    }
+                  }}
+                  className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  placeholder="urgent, frontend, client"
+                  disabled={taskFormLoading}
+                />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingTask(null);
+                  }}
+                  disabled={taskFormLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={taskFormLoading || (editingTask ? !editTaskForm.title : !newTaskForm.title)}
+                  className="bg-gradient-primary hover:bg-gradient-primary/90 text-white"
+                >
+                  {taskFormLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {editingTask ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    <>
+                      {editingTask ? (
+                        <>
+                          <Edit2 className="h-4 w-4 mr-2" />
+                          Update Task
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Task
+                        </>
+                      )}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
