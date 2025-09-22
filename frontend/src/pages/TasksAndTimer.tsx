@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSession } from '../lib/auth-client';
 import { useApiClient } from '../lib/api-client';
 import { useOrganization } from '../contexts/OrganizationContext';
@@ -925,238 +926,309 @@ export function TasksAndTimer() {
       )}
 
       {/* Task Creation/Editing Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background p-6 rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">
-                {editingTask ? 'Edit Task' : 'Create New Task'}
-              </h2>
-              <Button
-                variant="ghost"
-                size="sm"
+      {isModalOpen && createPortal(
+        <div
+          className="modal-overlay glass"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsModalOpen(false);
+              setEditingTask(null);
+            }
+          }}
+        >
+          <div
+            className="modal-content glass shadow-elevation"
+            style={{
+              maxWidth: '600px',
+              width: '95%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+              backgroundColor: '#1a1a1a',
+              borderRadius: '12px',
+              border: '1px solid #333'
+            }}
+          >
+            {/* Enhanced Header */}
+            <div className="modal-header" style={{
+              background: 'linear-gradient(135deg, #646cff, #8b5cf6)',
+              borderRadius: '8px 8px 0 0',
+              padding: '24px',
+              color: 'white'
+            }}>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Target className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold m-0">
+                    {editingTask ? 'Edit Task' : 'Create New Task'}
+                  </h2>
+                  <p className="text-white/80 text-sm m-0 mt-1">
+                    {editingTask ? 'Update task details' : 'Set up a new task to track progress'}
+                  </p>
+                </div>
+              </div>
+              <button
+                className="modal-close bg-white/20 hover:bg-white/30 rounded-lg p-2"
                 onClick={() => {
                   setIsModalOpen(false);
                   setEditingTask(null);
                 }}
-                className="h-8 w-8 p-0"
               >
-                <X className="h-4 w-4" />
-              </Button>
+                <X size={20} />
+              </button>
             </div>
 
-            <form onSubmit={editingTask ? handleUpdateTask : handleCreateTask} className="space-y-6">
-              {editingTask ? (
-                /* Title Field - Only for editing existing tasks */
-                <div>
-                  <label className="block text-sm font-medium mb-2">Task Title *</label>
-                  <input
-                    type="text"
-                    value={editTaskForm.title}
-                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    placeholder="Enter task title..."
-                    required
-                    disabled={taskFormLoading}
-                  />
-                </div>
-              ) : null}
-
-              {/* Project Selection - Primary field for new tasks */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Project {!editingTask ? '*' : ''}
-                </label>
-                <select
-                  value={editingTask ? editTaskForm.projectId : newTaskForm.projectId}
-                  onChange={(e) => {
-                    if (editingTask) {
-                      setEditTaskForm(prev => ({ ...prev, projectId: e.target.value }));
-                    } else {
-                      setNewTaskForm(prev => ({ ...prev, projectId: e.target.value }));
-                    }
-                  }}
-                  className="w-full p-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  disabled={taskFormLoading}
-                  required={!editingTask}
-                >
-                  <option value="">
-                    {editingTask ? 'Select a project (optional)' : 'Select a project to create task for *'}
-                  </option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-                {!editingTask && (
-                  <div className="mt-2">
-                    <p className="text-xs text-muted-foreground">
-                      Task title will be automatically generated based on the selected project
-                    </p>
-                    {newTaskForm.projectId && (
-                      <div className="mt-1 p-2 bg-muted/30 border border-muted rounded text-sm">
-                        <span className="text-muted-foreground">Generated title: </span>
-                        <span className="font-medium">
-                          {projects.find(p => p.id === newTaskForm.projectId)?.name} Task
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Description</label>
-                <textarea
-                  value={editingTask ? editTaskForm.description : newTaskForm.description}
-                  onChange={(e) => {
-                    if (editingTask) {
-                      setEditTaskForm(prev => ({ ...prev, description: e.target.value }));
-                    } else {
-                      setNewTaskForm(prev => ({ ...prev, description: e.target.value }));
-                    }
-                  }}
-                  className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-                  placeholder="Describe the task goals and requirements..."
-                  rows={3}
-                  disabled={taskFormLoading}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Priority */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Priority</label>
-                  <select
-                    value={editingTask ? editTaskForm.priority : newTaskForm.priority}
-                    onChange={(e) => {
-                      if (editingTask) {
-                        setEditTaskForm(prev => ({ ...prev, priority: e.target.value as Task['priority'] }));
-                      } else {
-                        setNewTaskForm(prev => ({ ...prev, priority: e.target.value as Task['priority'] }));
-                      }
-                    }}
-                    className="w-full p-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    disabled={taskFormLoading}
-                  >
-                    <option value="Low">Low Priority</option>
-                    <option value="Medium">Medium Priority</option>
-                    <option value="High">High Priority</option>
-                    <option value="Urgent">Urgent Priority</option>
-                  </select>
-                </div>
-
-                {/* Estimated Hours */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Estimated Hours</label>
-                  <input
-                    type="number"
-                    value={editingTask ? editTaskForm.estimatedHours : newTaskForm.estimatedHours}
-                    onChange={(e) => {
-                      if (editingTask) {
-                        setEditTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }));
-                      } else {
-                        setNewTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }));
-                      }
-                    }}
-                    className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    placeholder="0"
-                    min="0"
-                    step="0.5"
-                    disabled={taskFormLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Due Date */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Due Date</label>
-                <input
-                  type="date"
-                  value={editingTask ? editTaskForm.dueDate : newTaskForm.dueDate}
-                  onChange={(e) => {
-                    if (editingTask) {
-                      setEditTaskForm(prev => ({ ...prev, dueDate: e.target.value }));
-                    } else {
-                      setNewTaskForm(prev => ({ ...prev, dueDate: e.target.value }));
-                    }
-                  }}
-                  className="w-full p-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  disabled={taskFormLoading}
-                />
-              </div>
-
-              {/* Billing Information */}
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    id="isBillable"
-                    checked={editingTask ? editTaskForm.isBillable : newTaskForm.isBillable}
-                    onChange={(e) => {
-                      if (editingTask) {
-                        setEditTaskForm(prev => ({ ...prev, isBillable: e.target.checked }));
-                      } else {
-                        setNewTaskForm(prev => ({ ...prev, isBillable: e.target.checked }));
-                      }
-                    }}
-                    className="rounded border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    disabled={taskFormLoading}
-                  />
-                  <label htmlFor="isBillable" className="text-sm font-medium">
-                    This task is billable
-                  </label>
-                </div>
-
-                {(editingTask ? editTaskForm.isBillable : newTaskForm.isBillable) && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Hourly Rate ($)</label>
+            <form onSubmit={editingTask ? handleUpdateTask : handleCreateTask} className="modal-form" style={{ padding: '24px' }}>
+              <div className="space-y-6">
+                {editingTask ? (
+                  /* Title Field - Only for editing existing tasks */
+                  <div className="form-group">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                      <Target className="w-4 h-4" />
+                      Task Title *
+                    </label>
                     <input
-                      type="number"
-                      value={editingTask ? editTaskForm.hourlyRate : newTaskForm.hourlyRate}
-                      onChange={(e) => {
-                        if (editingTask) {
-                          setEditTaskForm(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }));
-                        } else {
-                          setNewTaskForm(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }));
-                        }
-                      }}
-                      className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      value={editTaskForm.title}
+                      onChange={(e) => setEditTaskForm(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      placeholder="Enter task title..."
+                      required
                       disabled={taskFormLoading}
                     />
                   </div>
-                )}
+                ) : null}
+
+                {/* Project Selection - Primary field for new tasks */}
+                <div className="form-group">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                    <CheckSquare className="w-4 h-4" />
+                    Project {!editingTask ? '*' : ''}
+                  </label>
+                  <select
+                    value={editingTask ? editTaskForm.projectId : newTaskForm.projectId}
+                    onChange={(e) => {
+                      if (editingTask) {
+                        setEditTaskForm(prev => ({ ...prev, projectId: e.target.value }));
+                      } else {
+                        setNewTaskForm(prev => ({ ...prev, projectId: e.target.value }));
+                      }
+                    }}
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    disabled={taskFormLoading}
+                    required={!editingTask}
+                  >
+                    <option value="" className="bg-surface-elevated">
+                      {editingTask ? 'Select a project (optional)' : 'Select a project to create task for *'}
+                    </option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id} className="bg-surface-elevated">
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!editingTask && (
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        Task title will be automatically generated based on the selected project
+                      </p>
+                      {newTaskForm.projectId && (
+                        <div className="mt-1 p-2 bg-muted/30 border border-muted rounded text-sm">
+                          <span className="text-muted-foreground">Generated title: </span>
+                          <span className="font-medium">
+                            {projects.find(p => p.id === newTaskForm.projectId)?.name} Task
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div className="form-group">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                    <Edit2 className="w-4 h-4" />
+                    Description
+                  </label>
+                  <textarea
+                    value={editingTask ? editTaskForm.description : newTaskForm.description}
+                    onChange={(e) => {
+                      if (editingTask) {
+                        setEditTaskForm(prev => ({ ...prev, description: e.target.value }));
+                      } else {
+                        setNewTaskForm(prev => ({ ...prev, description: e.target.value }));
+                      }
+                    }}
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                    placeholder="Describe the task goals and requirements..."
+                    rows={3}
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Priority */}
+                  <div className="form-group">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                      <AlertCircle className="w-4 h-4" />
+                      Priority
+                    </label>
+                    <select
+                      value={editingTask ? editTaskForm.priority : newTaskForm.priority}
+                      onChange={(e) => {
+                        if (editingTask) {
+                          setEditTaskForm(prev => ({ ...prev, priority: e.target.value as Task['priority'] }));
+                        } else {
+                          setNewTaskForm(prev => ({ ...prev, priority: e.target.value as Task['priority'] }));
+                        }
+                      }}
+                      className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      disabled={taskFormLoading}
+                    >
+                      <option value="Low" className="bg-surface-elevated">Low Priority</option>
+                      <option value="Medium" className="bg-surface-elevated">Medium Priority</option>
+                      <option value="High" className="bg-surface-elevated">High Priority</option>
+                      <option value="Urgent" className="bg-surface-elevated">Urgent Priority</option>
+                    </select>
+                  </div>
+
+                  {/* Estimated Hours */}
+                  <div className="form-group">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                      <Clock className="w-4 h-4" />
+                      Estimated Hours
+                    </label>
+                    <input
+                      type="number"
+                      value={editingTask ? editTaskForm.estimatedHours : newTaskForm.estimatedHours}
+                      onChange={(e) => {
+                        if (editingTask) {
+                          setEditTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }));
+                        } else {
+                          setNewTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 0 }));
+                        }
+                      }}
+                      className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      placeholder="0"
+                      min="0"
+                      step="0.5"
+                      disabled={taskFormLoading}
+                    />
+                  </div>
+                </div>
+
+                {/* Due Date */}
+                <div className="form-group">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                    <Calendar className="w-4 h-4" />
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editingTask ? editTaskForm.dueDate : newTaskForm.dueDate}
+                    onChange={(e) => {
+                      if (editingTask) {
+                        setEditTaskForm(prev => ({ ...prev, dueDate: e.target.value }));
+                      } else {
+                        setNewTaskForm(prev => ({ ...prev, dueDate: e.target.value }));
+                      }
+                    }}
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    disabled={taskFormLoading}
+                  />
+                </div>
+
+                {/* Billing Information */}
+                <div className="form-group space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="isBillable"
+                      checked={editingTask ? editTaskForm.isBillable : newTaskForm.isBillable}
+                      onChange={(e) => {
+                        if (editingTask) {
+                          setEditTaskForm(prev => ({ ...prev, isBillable: e.target.checked }));
+                        } else {
+                          setNewTaskForm(prev => ({ ...prev, isBillable: e.target.checked }));
+                        }
+                      }}
+                      className="rounded border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      disabled={taskFormLoading}
+                    />
+                    <label htmlFor="isBillable" className="text-sm font-semibold text-white flex items-center gap-2">
+                      <DollarSign className="w-4 h-4" />
+                      This task is billable
+                    </label>
+                  </div>
+
+                  {(editingTask ? editTaskForm.isBillable : newTaskForm.isBillable) && (
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                        <DollarSign className="w-4 h-4" />
+                        Hourly Rate ($)
+                      </label>
+                      <input
+                        type="number"
+                        value={editingTask ? editTaskForm.hourlyRate : newTaskForm.hourlyRate}
+                        onChange={(e) => {
+                          if (editingTask) {
+                            setEditTaskForm(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }));
+                          } else {
+                            setNewTaskForm(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }));
+                          }
+                        }}
+                        className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        disabled={taskFormLoading}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Tags */}
+                <div className="form-group">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                    <CheckSquare className="w-4 h-4" />
+                    Tags (comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingTask ? editTaskForm.tags : newTaskForm.tags}
+                    onChange={(e) => {
+                      if (editingTask) {
+                        setEditTaskForm(prev => ({ ...prev, tags: e.target.value }));
+                      } else {
+                        setNewTaskForm(prev => ({ ...prev, tags: e.target.value }));
+                      }
+                    }}
+                    className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    placeholder="urgent, frontend, client"
+                    disabled={taskFormLoading}
+                  />
+                </div>
               </div>
 
-              {/* Tags */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Tags (comma separated)</label>
-                <input
-                  type="text"
-                  value={editingTask ? editTaskForm.tags : newTaskForm.tags}
-                  onChange={(e) => {
-                    if (editingTask) {
-                      setEditTaskForm(prev => ({ ...prev, tags: e.target.value }));
-                    } else {
-                      setNewTaskForm(prev => ({ ...prev, tags: e.target.value }));
-                    }
-                  }}
-                  className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  placeholder="urgent, frontend, client"
-                  disabled={taskFormLoading}
-                />
-              </div>
-
-              {/* Form Actions */}
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button
+              {/* Enhanced Action Buttons */}
+              <div className="modal-actions flex justify-end gap-3 pt-6 mt-6 border-t border-border">
+                <button
                   type="button"
-                  variant="outline"
+                  className="px-6 py-2 bg-surface-elevated hover:bg-muted border border-border rounded-lg text-white transition-all"
                   onClick={() => {
                     setIsModalOpen(false);
                     setEditingTask(null);
@@ -1164,37 +1236,39 @@ export function TasksAndTimer() {
                   disabled={taskFormLoading}
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="submit"
+                  className="px-6 py-2 rounded-lg text-white font-medium transition-all flex items-center gap-2 shadow-glow"
+                  style={{ background: 'linear-gradient(135deg, #646cff, #8b5cf6)' }}
                   disabled={taskFormLoading || (editingTask ? !editTaskForm.title : !newTaskForm.projectId)}
-                  className="bg-gradient-primary hover:bg-gradient-primary/90 text-white"
                 >
                   {taskFormLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       {editingTask ? 'Updating...' : 'Creating...'}
                     </>
                   ) : (
                     <>
                       {editingTask ? (
                         <>
-                          <Edit2 className="h-4 w-4 mr-2" />
+                          <Edit2 size={16} />
                           Update Task
                         </>
                       ) : (
                         <>
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus size={16} />
                           Create Task
                         </>
                       )}
                     </>
                   )}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
