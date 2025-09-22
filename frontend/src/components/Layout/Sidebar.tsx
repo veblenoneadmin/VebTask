@@ -5,17 +5,16 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { hasAdminAccess } from '../../config/internal';
-import { 
-  LayoutDashboard, 
-  CheckSquare, 
-  Clock, 
+import {
+  LayoutDashboard,
+  CheckSquare,
+  Clock,
   Brain,
-  Settings, 
+  Settings,
   LogOut,
   BarChart3,
   Building2,
   Users,
-  DollarSign,
   Shield
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
