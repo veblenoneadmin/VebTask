@@ -98,10 +98,9 @@ export function TasksAndTimer() {
   // Task form state
   const [taskFormLoading, setTaskFormLoading] = useState(false);
   const [newTaskForm, setNewTaskForm] = useState({
-    title: '',
+    projectId: '',
     description: '',
     priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
-    projectId: '',
     estimatedHours: 0,
     dueDate: '',
     tags: '',
@@ -371,8 +370,12 @@ export function TasksAndTimer() {
     try {
       setTaskFormLoading(true);
 
+      // Generate title based on selected project
+      const selectedProject = projects.find(p => p.id === newTaskForm.projectId);
+      const title = selectedProject ? `${selectedProject.name} Task` : 'General Task';
+
       const taskData = {
-        title: newTaskForm.title,
+        title: title,
         description: newTaskForm.description,
         userId: session.user.id,
         orgId: currentOrg.id,
@@ -393,10 +396,9 @@ export function TasksAndTimer() {
       if (data.task) {
         await fetchTasks(); // Refresh the task list
         setNewTaskForm({
-          title: '',
+          projectId: '',
           description: '',
           priority: 'Medium',
-          projectId: '',
           estimatedHours: 0,
           dueDate: '',
           tags: '',
@@ -944,29 +946,27 @@ export function TasksAndTimer() {
             </div>
 
             <form onSubmit={editingTask ? handleUpdateTask : handleCreateTask} className="space-y-6">
-              {/* Title Field */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Task Title *</label>
-                <input
-                  type="text"
-                  value={editingTask ? editTaskForm.title : newTaskForm.title}
-                  onChange={(e) => {
-                    if (editingTask) {
-                      setEditTaskForm(prev => ({ ...prev, title: e.target.value }));
-                    } else {
-                      setNewTaskForm(prev => ({ ...prev, title: e.target.value }));
-                    }
-                  }}
-                  className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  placeholder="Enter task title..."
-                  required
-                  disabled={taskFormLoading}
-                />
-              </div>
+              {editingTask ? (
+                /* Title Field - Only for editing existing tasks */
+                <div>
+                  <label className="block text-sm font-medium mb-2">Task Title *</label>
+                  <input
+                    type="text"
+                    value={editTaskForm.title}
+                    onChange={(e) => setEditTaskForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full p-3 border border-border rounded-lg bg-background placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    placeholder="Enter task title..."
+                    required
+                    disabled={taskFormLoading}
+                  />
+                </div>
+              ) : null}
 
-              {/* Project Selection */}
+              {/* Project Selection - Primary field for new tasks */}
               <div>
-                <label className="block text-sm font-medium mb-2">Project</label>
+                <label className="block text-sm font-medium mb-2">
+                  Project {!editingTask ? '*' : ''}
+                </label>
                 <select
                   value={editingTask ? editTaskForm.projectId : newTaskForm.projectId}
                   onChange={(e) => {
@@ -978,14 +978,32 @@ export function TasksAndTimer() {
                   }}
                   className="w-full p-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   disabled={taskFormLoading}
+                  required={!editingTask}
                 >
-                  <option value="">Select a project (optional)</option>
+                  <option value="">
+                    {editingTask ? 'Select a project (optional)' : 'Select a project to create task for *'}
+                  </option>
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name}
                     </option>
                   ))}
                 </select>
+                {!editingTask && (
+                  <div className="mt-2">
+                    <p className="text-xs text-muted-foreground">
+                      Task title will be automatically generated based on the selected project
+                    </p>
+                    {newTaskForm.projectId && (
+                      <div className="mt-1 p-2 bg-muted/30 border border-muted rounded text-sm">
+                        <span className="text-muted-foreground">Generated title: </span>
+                        <span className="font-medium">
+                          {projects.find(p => p.id === newTaskForm.projectId)?.name} Task
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -1149,7 +1167,7 @@ export function TasksAndTimer() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={taskFormLoading || (editingTask ? !editTaskForm.title : !newTaskForm.title)}
+                  disabled={taskFormLoading || (editingTask ? !editTaskForm.title : !newTaskForm.projectId)}
                   className="bg-gradient-primary hover:bg-gradient-primary/90 text-white"
                 >
                   {taskFormLoading ? (
