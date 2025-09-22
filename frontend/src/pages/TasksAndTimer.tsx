@@ -58,7 +58,7 @@ interface Project {
 
 export function TasksAndTimer() {
   const { data: session } = useSession();
-  const { orgId } = useOrganization();
+  const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
 
   // Timer hooks
@@ -117,7 +117,7 @@ export function TasksAndTimer() {
     if (!activeTimer) return;
 
     try {
-      await updateTimer(activeTimer.id, { notes });
+      await updateTimer({ description: notes });
       setSessionNotes(notes);
     } catch (error) {
       console.error('Failed to update notes:', error);
@@ -132,12 +132,7 @@ export function TasksAndTimer() {
     if (!selectedTask) return;
 
     try {
-      await startTimer({
-        taskId: selectedTaskId,
-        taskTitle: selectedTask.title,
-        category: 'work',
-        notes: sessionNotes
-      });
+      await startTimer(selectedTaskId, sessionNotes, 'work');
     } catch (error) {
       console.error('Failed to start timer:', error);
     }
@@ -147,7 +142,7 @@ export function TasksAndTimer() {
     if (!activeTimer) return;
 
     try {
-      await stopTimer(activeTimer.id, { notes: sessionNotes });
+      await stopTimer();
       setSessionNotes('');
       setSelectedTaskId('');
     } catch (error) {
@@ -178,11 +173,11 @@ export function TasksAndTimer() {
   // Fetch tasks and projects
   useEffect(() => {
     fetchTasks();
-  }, [session, orgId]);
+  }, [session, currentOrg]);
 
   useEffect(() => {
     fetchProjects();
-  }, [session, orgId]);
+  }, [session, currentOrg]);
 
   const fetchTasks = async () => {
     if (!session?.user?.id) return;
