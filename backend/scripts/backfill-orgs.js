@@ -138,13 +138,6 @@ async function migrateUserData(tx, userId, orgId) {
     `;
     stats.timeLogs = timeLogResult;
 
-    // Migrate calendar events
-    const calendarResult = await tx.$executeRaw`
-      UPDATE calendar_events 
-      SET orgId = ${orgId} 
-      WHERE userId = ${userId} AND (orgId IS NULL OR orgId = '')
-    `;
-    stats.calendarEvents = calendarResult;
 
   } catch (error) {
     console.warn(`  ⚠️  Data migration warning for user ${userId}:`, error.message);
@@ -207,15 +200,13 @@ async function verifyBackfill() {
     const dataMigrationStats = await Promise.all([
       prisma.$queryRaw`SELECT COUNT(*) as count FROM brain_dumps WHERE orgId IS NULL OR orgId = ''`,
       prisma.$queryRaw`SELECT COUNT(*) as count FROM macro_tasks WHERE orgId IS NULL OR orgId = ''`,
-      prisma.$queryRaw`SELECT COUNT(*) as count FROM time_logs WHERE orgId IS NULL OR orgId = ''`,
-      prisma.$queryRaw`SELECT COUNT(*) as count FROM calendar_events WHERE orgId IS NULL OR orgId = ''`
+      prisma.$queryRaw`SELECT COUNT(*) as count FROM time_logs WHERE orgId IS NULL OR orgId = ''`
     ]);
 
     console.log('📋 Data without orgId:');
     console.log(`  🧠 Brain dumps: ${dataMigrationStats[0][0]?.count || 0}`);
     console.log(`  📋 Tasks: ${dataMigrationStats[1][0]?.count || 0}`);
     console.log(`  ⏰ Time logs: ${dataMigrationStats[2][0]?.count || 0}`);
-    console.log(`  📅 Calendar events: ${dataMigrationStats[3][0]?.count || 0}`);
 
   } catch (error) {
     console.error('❌ Error during verification:', error);

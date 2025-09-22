@@ -186,31 +186,6 @@ model TimeLog {
   @@map("time_logs")
 }
 
-model CalendarEvent {
-  id               String   @id @default(cuid()) @db.VarChar(50)
-  userId           String   @db.VarChar(36)
-  orgId            String
-  title            String   @db.VarChar(500)
-  description      String?  @db.Text
-  startTime        DateTime
-  endTime          DateTime
-  type             String   @default("task") @db.VarChar(20)
-  taskId           String?  @db.VarChar(50)
-  color            String   @default("#6366f1") @db.VarChar(20)
-  location         String?  @db.VarChar(255)
-  attendees        Json?
-  isRecurring      Boolean  @default(false)
-  recurringPattern Json?
-  status           String   @default("scheduled") @db.VarChar(20)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now()) @updatedAt
-
-  @@index([userId, startTime, endTime])
-  @@index([orgId])
-  @@index([taskId])
-  @@index([type])
-  @@map("calendar_events")
-}
 
 model Project {
   id              String   @id @default(cuid())

@@ -142,28 +142,6 @@ CREATE TABLE IF NOT EXISTS brain_dumps (
   FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE
 );
 
--- Calendar events
-CREATE TABLE IF NOT EXISTS calendar_events (
-  id VARCHAR(255) PRIMARY KEY,
-  userId VARCHAR(255) NOT NULL,
-  title VARCHAR(500) NOT NULL,
-  description TEXT,
-  startTime DATETIME NOT NULL,
-  endTime DATETIME NOT NULL,
-  isAllDay BOOLEAN DEFAULT FALSE,
-  type ENUM('task', 'meeting', 'break', 'personal', 'client') DEFAULT 'task',
-  taskId VARCHAR(255),
-  projectId VARCHAR(255),
-  recurrence JSON, -- for recurring events
-  color VARCHAR(7) DEFAULT '#6366f1',
-  location VARCHAR(255),
-  attendees JSON,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE,
-  FOREIGN KEY (taskId) REFERENCES macro_tasks(id) ON DELETE SET NULL,
-  FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE SET NULL
-);
 
 -- Invoices for client billing
 CREATE TABLE IF NOT EXISTS invoices (
@@ -269,8 +247,6 @@ CREATE INDEX IF NOT EXISTS idx_time_logs_userId ON time_logs(userId);
 CREATE INDEX IF NOT EXISTS idx_time_logs_taskId ON time_logs(taskId);
 CREATE INDEX IF NOT EXISTS idx_time_logs_startTime ON time_logs(startTime);
 CREATE INDEX IF NOT EXISTS idx_brain_dumps_userId ON brain_dumps(userId);
-CREATE INDEX IF NOT EXISTS idx_calendar_events_userId ON calendar_events(userId);
-CREATE INDEX IF NOT EXISTS idx_calendar_events_startTime ON calendar_events(startTime);
 CREATE INDEX IF NOT EXISTS idx_invoices_clientId ON invoices(clientId);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 CREATE INDEX IF NOT EXISTS idx_invoice_items_invoiceId ON invoice_items(invoiceId);

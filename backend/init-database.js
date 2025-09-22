@@ -225,29 +225,6 @@ async function initDatabase() {
     `);
     console.log('✅ Created brain_dumps table');
 
-    // Calendar events table
-    await pool.execute(`
-      CREATE TABLE calendar_events (
-        id VARCHAR(36) PRIMARY KEY,
-        userId VARCHAR(36) NOT NULL,
-        title VARCHAR(500) NOT NULL,
-        description TEXT,
-        startTime DATETIME NOT NULL,
-        endTime DATETIME NOT NULL,
-        isAllDay BOOLEAN DEFAULT FALSE,
-        type ENUM('task', 'meeting', 'break', 'personal', 'client') DEFAULT 'task',
-        taskId VARCHAR(36),
-        projectId VARCHAR(36),
-        color VARCHAR(7) DEFAULT '#6366f1',
-        location VARCHAR(255),
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE,
-        FOREIGN KEY (taskId) REFERENCES macro_tasks(id) ON DELETE SET NULL,
-        FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE SET NULL
-      )
-    `);
-    console.log('✅ Created calendar_events table');
 
     // Security events table for audit logging
     await pool.execute(`

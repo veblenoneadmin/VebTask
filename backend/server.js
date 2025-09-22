@@ -15,7 +15,6 @@ import statsRoutes from './api/stats.js';
 import timersRoutes from './api/timers.js';
 import timerRoutes from './api/timer.js';
 import tasksRoutes from './api/tasks.js';
-import calendarRoutes from './api/calendar.js';
 import invoicesRoutes from './api/invoices.js';
 import projectsRoutes from './api/projects.js';
 import clientsRoutes from './api/clients.js';
@@ -344,7 +343,6 @@ app.use('/api/timers', timersRoutes);
 app.use('/api/timer', timerRoutes); // Mount the timer.js routes at /api/timer
 app.use('/api/time-logs', timersRoutes); // Add time-logs alias for Timer component
 app.use('/api/tasks', tasksRoutes);
-app.use('/api/calendar', calendarRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/clients', clientsRoutes);
@@ -1993,7 +1991,6 @@ app.post('/api/brain-dump/save-tasks', async (req, res) => {
 
     const pool = await getDbPool();
     const savedTasks = [];
-    const savedEvents = [];
 
     // Begin transaction
     const connection = await pool.getConnection();
@@ -2035,38 +2032,6 @@ app.post('/api/brain-dump/save-tasks', async (req, res) => {
           ...task
         });
 
-        // Create calendar event for optimal time slot if specified
-        if (task.optimalTimeSlot && dailySchedule?.timeBlocks) {
-          const timeBlock = dailySchedule.timeBlocks.find(block => block.taskId === task.id);
-          if (timeBlock) {
-            const eventId = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const today = new Date();
-            const [startTime, endTime] = parseTimeSlot(timeBlock.time);
-            
-            await connection.execute(
-              `INSERT INTO calendar_events (
-                id, userId, title, description, startTime, endTime, type, taskId, 
-                color, createdAt
-              ) VALUES (?, ?, ?, ?, ?, ?, 'task', ?, '#6366f1', NOW())`,
-              [
-                eventId,
-                userId,
-                `🎯 ${task.title}`,
-                `${task.description}\n\nRationale: ${timeBlock.rationale}`,
-                formatDateTime(today, startTime),
-                formatDateTime(today, endTime),
-                taskId
-              ]
-            );
-
-            savedEvents.push({
-              id: eventId,
-              taskId: taskId,
-              timeSlot: timeBlock.time,
-              rationale: timeBlock.rationale
-            });
-          }
-        }
       }
 
       // Save brain dump record
@@ -2096,10 +2061,8 @@ app.post('/api/brain-dump/save-tasks', async (req, res) => {
         data: {
           brainDumpId,
           savedTasks,
-          savedEvents,
           dailySchedule,
-          totalTasksCreated: savedTasks.length,
-          totalEventsCreated: savedEvents.length
+          totalTasksCreated: savedTasks.length
         }
       });
 
@@ -2116,31 +2079,6 @@ app.post('/api/brain-dump/save-tasks', async (req, res) => {
   }
 });
 
-// Helper functions for calendar event creation
-function parseTimeSlot(timeSlot) {
-  const [start, end] = timeSlot.split(' - ');
-  return [parseTime(start), parseTime(end)];
-}
-
-function parseTime(timeStr) {
-  const [time, period] = timeStr.split(' ');
-  const [hours, minutes] = time.split(':').map(Number);
-  let hour24 = hours;
-  
-  if (period === 'PM' && hours !== 12) {
-    hour24 += 12;
-  } else if (period === 'AM' && hours === 12) {
-    hour24 = 0;
-  }
-  
-  return { hours: hour24, minutes: minutes || 0 };
-}
-
-function formatDateTime(date, time) {
-  const newDate = new Date(date);
-  newDate.setHours(time.hours, time.minutes, 0, 0);
-  return newDate.toISOString().slice(0, 19).replace('T', ' ');
-}
 
 // Time logs API endpoint
 app.post('/api/time-logs', async (req, res) => {
