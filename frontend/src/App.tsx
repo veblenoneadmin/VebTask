@@ -8,7 +8,8 @@ import { EmailVerified } from './pages/EmailVerified';
 import { Onboarding } from './pages/Onboarding';
 import { Dashboard } from './pages/Dashboard';
 import { BrainDump } from './pages/BrainDump';
-import { TasksAndTimer } from './pages/TasksAndTimer';
+import { Tasks } from './pages/Tasks';
+import { Timer } from './pages/Timer';
 import { Projects } from './pages/Projects';
 import { TimeLogs } from './pages/TimeLogs';
 import { Clients } from './pages/Clients';
@@ -117,7 +118,8 @@ function AppContent() {
           >
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="brain-dump" element={<BrainDump />} />
-            <Route path="tasks" element={<TasksAndTimer />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="timer" element={<Timer />} />
             <Route path="projects" element={<Projects />} />
             <Route path="timesheets" element={<TimeLogs />} />
             <Route path="clients" element={<Clients />} />
