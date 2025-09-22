@@ -29,7 +29,7 @@ interface TimeLog {
   description: string;
   isBillable: boolean;
   tags: string[];
-  status: 'logged' | 'approved' | 'invoiced';
+  status: 'logged' | 'approved';
 }
 
 
@@ -122,7 +122,6 @@ export function TimeLogs() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved': return 'text-success bg-success/10 border-success/20';
-      case 'invoiced': return 'text-info bg-info/10 border-info/20';
       case 'logged': return 'text-warning bg-warning/10 border-warning/20';
       default: return 'text-muted-foreground bg-muted/10 border-border';
     }
@@ -138,7 +137,7 @@ export function TimeLogs() {
     totalHours: Math.round(filteredLogs.reduce((sum, log) => sum + log.duration, 0) / 60 * 10) / 10,
     billableHours: Math.round(filteredLogs.filter(log => log.isBillable).reduce((sum, log) => sum + log.duration, 0) / 60 * 10) / 10,
     totalEntries: filteredLogs.length,
-    completedTasks: filteredLogs.filter(log => log.status === 'approved' || log.status === 'invoiced').length
+    completedTasks: filteredLogs.filter(log => log.status === 'approved').length
   };
 
   const uniqueClients = [...new Set(timeLogs.map(log => log.clientName))];
@@ -294,7 +293,6 @@ export function TimeLogs() {
               <option value="all">All Status</option>
               <option value="logged">Logged</option>
               <option value="approved">Approved</option>
-              <option value="invoiced">Invoiced</option>
             </select>
 
             {/* Client Filter */}

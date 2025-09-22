@@ -530,7 +530,6 @@ async function seedVeblenData() {
       await prisma.macroTask.deleteMany({ where: { orgId: existingOrg.id } });
       await prisma.brainDump.deleteMany({ where: { orgId: existingOrg.id } });
       await prisma.expense.deleteMany({ where: { orgId: existingOrg.id } });
-      await prisma.invoice.deleteMany({ where: { orgId: existingOrg.id } });
       await prisma.project.deleteMany({ where: { orgId: existingOrg.id } });
       await prisma.client.deleteMany({ where: { orgId: existingOrg.id } });
       await prisma.membership.deleteMany({ where: { orgId: existingOrg.id } });
@@ -760,7 +759,7 @@ async function seedVeblenData() {
         - Advanced reporting and analytics dashboard
         - Client portal for project visibility
         - Team performance insights and recommendations
-        - Automated invoice generation from time logs`,
+        - Automated billing tracking from time logs`,
         processedContent: {
           summary: 'VebTask v2.0 roadmap with AI features and integrations',
           actionItems: ['AI time tracking', 'Predictive analytics', 'Tool integrations', 'Mobile app']

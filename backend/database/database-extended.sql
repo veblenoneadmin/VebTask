@@ -143,43 +143,6 @@ CREATE TABLE IF NOT EXISTS brain_dumps (
 );
 
 
--- Invoices for client billing
-CREATE TABLE IF NOT EXISTS invoices (
-  id VARCHAR(255) PRIMARY KEY,
-  invoiceNumber VARCHAR(100) UNIQUE NOT NULL,
-  clientId VARCHAR(255) NOT NULL,
-  projectId VARCHAR(255),
-  status ENUM('draft', 'sent', 'paid', 'overdue', 'cancelled') DEFAULT 'draft',
-  issueDate DATE NOT NULL,
-  dueDate DATE NOT NULL,
-  subtotal DECIMAL(12,2) NOT NULL,
-  taxRate DECIMAL(5,2) DEFAULT 0.00,
-  taxAmount DECIMAL(12,2) DEFAULT 0.00,
-  total DECIMAL(12,2) NOT NULL,
-  paidAmount DECIMAL(12,2) DEFAULT 0.00,
-  notes TEXT,
-  createdBy VARCHAR(255) NOT NULL,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (clientId) REFERENCES clients(id) ON DELETE RESTRICT,
-  FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE SET NULL,
-  FOREIGN KEY (createdBy) REFERENCES user(id) ON DELETE RESTRICT
-);
-
--- Invoice line items
-CREATE TABLE IF NOT EXISTS invoice_items (
-  id VARCHAR(255) PRIMARY KEY,
-  invoiceId VARCHAR(255) NOT NULL,
-  description TEXT NOT NULL,
-  quantity DECIMAL(10,2) NOT NULL,
-  rate DECIMAL(10,2) NOT NULL,
-  amount DECIMAL(12,2) NOT NULL,
-  taskId VARCHAR(255),
-  timeLogIds JSON, -- array of time log IDs
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (invoiceId) REFERENCES invoices(id) ON DELETE CASCADE,
-  FOREIGN KEY (taskId) REFERENCES macro_tasks(id) ON DELETE SET NULL
-);
 
 -- Expenses tracking
 CREATE TABLE IF NOT EXISTS expenses (
@@ -247,9 +210,6 @@ CREATE INDEX IF NOT EXISTS idx_time_logs_userId ON time_logs(userId);
 CREATE INDEX IF NOT EXISTS idx_time_logs_taskId ON time_logs(taskId);
 CREATE INDEX IF NOT EXISTS idx_time_logs_startTime ON time_logs(startTime);
 CREATE INDEX IF NOT EXISTS idx_brain_dumps_userId ON brain_dumps(userId);
-CREATE INDEX IF NOT EXISTS idx_invoices_clientId ON invoices(clientId);
-CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
-CREATE INDEX IF NOT EXISTS idx_invoice_items_invoiceId ON invoice_items(invoiceId);
 CREATE INDEX IF NOT EXISTS idx_expenses_projectId ON expenses(projectId);
 CREATE INDEX IF NOT EXISTS idx_expenses_userId ON expenses(userId);
 CREATE INDEX IF NOT EXISTS idx_security_events_userId ON security_events(userId);

@@ -28,7 +28,6 @@ interface ReportData {
   hoursTracked: number;
   projectsCompleted: number;
   clientsActive: number;
-  invoicesSent: number;
   averageHourlyRate: number;
 }
 
@@ -41,7 +40,6 @@ const mockReportData: ReportData[] = [
     hoursTracked: 168,
     projectsCompleted: 3,
     clientsActive: 5,
-    invoicesSent: 8,
     averageHourlyRate: 94
   },
   {
@@ -52,7 +50,6 @@ const mockReportData: ReportData[] = [
     hoursTracked: 195,
     projectsCompleted: 4,
     clientsActive: 6,
-    invoicesSent: 12,
     averageHourlyRate: 93
   },
   {
@@ -63,7 +60,6 @@ const mockReportData: ReportData[] = [
     hoursTracked: 145,
     projectsCompleted: 2,
     clientsActive: 4,
-    invoicesSent: 6,
     averageHourlyRate: 86
   },
   {
@@ -74,7 +70,6 @@ const mockReportData: ReportData[] = [
     hoursTracked: 225,
     projectsCompleted: 5,
     clientsActive: 7,
-    invoicesSent: 15,
     averageHourlyRate: 95
   }
 ];
@@ -413,7 +408,7 @@ export function Reports() {
                         <div>
                           <p className="font-semibold">{new Date(data.period + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                           <p className="text-sm text-muted-foreground">
-                            {data.hoursTracked}h tracked • {data.invoicesSent} invoices sent
+                            {data.hoursTracked}h tracked
                           </p>
                         </div>
                         <div className="text-right">
@@ -612,7 +607,7 @@ export function Reports() {
           <div className="space-y-3">
             <div className="flex items-center space-x-3 p-3 glass-surface rounded-lg">
               <div className="h-2 w-2 bg-error rounded-full" />
-              <span className="text-sm">Follow up on overdue invoices (${mockReportData[0].revenue * 0.15} pending)</span>
+              <span className="text-sm">Follow up on outstanding payments (${mockReportData[0].revenue * 0.15} pending)</span>
             </div>
             <div className="flex items-center space-x-3 p-3 glass-surface rounded-lg">
               <div className="h-2 w-2 bg-warning rounded-full" />

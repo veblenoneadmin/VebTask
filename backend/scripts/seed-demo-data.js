@@ -281,7 +281,6 @@ async function seedDemoData() {
     await prisma.macroTask.deleteMany();
     await prisma.brainDump.deleteMany();
     await prisma.expense.deleteMany();
-    await prisma.invoice.deleteMany();
     await prisma.project.deleteMany();
     await prisma.client.deleteMany();
     await prisma.membership.deleteMany();
