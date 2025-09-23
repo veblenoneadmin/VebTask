@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -44,6 +45,7 @@ interface ReportModalProps {
 
 function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
   const { data: session } = useSession();
+  const { currentOrg } = useOrganization();
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedProject, setSelectedProject] = useState('');
@@ -62,7 +64,7 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
   const fetchProjectsAndTasks = async () => {
     setLoading(true);
     try {
-      const orgId = session?.user?.orgId;
+      const orgId = currentOrg?.id;
       if (!orgId) {
         console.error('No organization ID found');
         return;
