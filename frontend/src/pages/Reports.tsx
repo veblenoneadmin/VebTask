@@ -34,8 +34,13 @@ interface Task {
   title: string;
   description: string;
   status: string;
-  projectId?: string;
-  hoursSpent?: number;
+  priority: string;
+  projectId: string | null;
+  project: string | null;
+  estimatedHours: number;
+  actualHours: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ReportModalProps {
@@ -89,8 +94,13 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
       if (tasksData.success) {
         setTasks(tasksData.tasks || []);
         console.log('📋 Loaded tasks for reports:', tasksData.tasks?.length || 0);
-        console.log('📋 Sample task data:', tasksData.tasks?.[0]);
-        console.log('📋 Tasks with projectId:', tasksData.tasks?.filter(t => t.projectId).length || 0);
+        if (tasksData.tasks?.length > 0) {
+          console.log('📋 Sample task:', {
+            id: tasksData.tasks[0].id,
+            title: tasksData.tasks[0].title,
+            projectId: tasksData.tasks[0].projectId
+          });
+        }
       } else {
         console.warn('Failed to fetch tasks:', tasksData.error);
         setTasks([]);
@@ -259,18 +269,21 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                   className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                 >
                   <option value="" className="bg-surface-elevated">Choose a task...</option>
-                  {(() => {
-                    const filteredTasks = tasks.filter(task => task.projectId === selectedProject);
-                    console.log(`🔍 Filtering tasks for project ${selectedProject}:`, filteredTasks.length, 'tasks found');
-                    console.log(`🔍 All tasks:`, tasks.map(t => ({ id: t.id, title: t.title, projectId: t.projectId })));
-                    return filteredTasks.map((task) => (
+                  {tasks
+                    .filter(task => {
+                      const matches = task.projectId === selectedProject;
+                      if (selectedProject) {
+                        console.log(`🔍 Task "${task.title}" has projectId "${task.projectId}", selected project is "${selectedProject}", matches: ${matches}`);
+                      }
+                      return matches;
+                    })
+                    .map((task) => (
                       <option key={task.id} value={task.id} className="bg-surface-elevated">
                         {task.title}
                       </option>
-                    ));
-                  })()}
+                    ))}
                 </select>
-                {tasks.filter(task => task.projectId === selectedProject).length === 0 && (
+                {selectedProject && tasks.filter(task => task.projectId === selectedProject).length === 0 && (
                   <p className="text-sm text-yellow-400 mt-1">No tasks available for this project</p>
                 )}
               </div>
@@ -397,10 +410,10 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                             {task.description && (
                               <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
                             )}
-                            {task.hoursSpent && (
+                            {task.actualHours > 0 && (
                               <div className="text-sm">
                                 <span className="text-muted-foreground">Hours spent: </span>
-                                <span className="font-semibold text-white">{task.hoursSpent}h</span>
+                                <span className="font-semibold text-white">{task.actualHours}h</span>
                               </div>
                             )}
                           </div>
