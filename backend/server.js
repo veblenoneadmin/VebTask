@@ -39,6 +39,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 console.log('🚀 Starting server...');
+console.log('📊 User Reports API: ENABLED');
 
 // Environment variable validation (non-blocking)
 const requiredEnvVars = ['DATABASE_URL'];
