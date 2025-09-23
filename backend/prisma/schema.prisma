@@ -132,6 +132,7 @@ model MacroTask {
   description    String?   @db.Text
   userId         String    @db.VarChar(36)
   orgId          String
+  projectId      String?   // Optional project association
   createdBy      String    @db.VarChar(36)
   priority       String    @default("Medium") @db.VarChar(10)
   estimatedHours Decimal   @default(0.00) @db.Decimal(5, 2)
@@ -147,10 +148,12 @@ model MacroTask {
   // Relations
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   org            Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project        Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   timeLogs       TimeLog[]
 
   @@index([userId, status])
   @@index([orgId])
+  @@index([projectId])
   @@index([priority])
   @@index([dueDate])
   @@fulltext([title, description], map: "title")
@@ -206,10 +209,11 @@ model Project {
   orgId           String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   // Relations
-  client          Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  
+  client          Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  tasks           MacroTask[] // Tasks belonging to this project
+
   @@index([orgId])
   @@index([status])
   @@index([priority])

@@ -82,7 +82,7 @@ export function ProjectReportModal({ isOpen, onClose, onSave }: ProjectReportMod
       }
 
       // Fetch tasks
-      const tasksResponse = await apiClient.fetch(`/api/tasks?limit=100`);
+      const tasksResponse = await apiClient.fetch(`/api/tasks?orgId=${orgId}&limit=100`);
       if (tasksResponse.success) {
         setTasks(tasksResponse.tasks || []);
       }

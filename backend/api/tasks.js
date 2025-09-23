@@ -32,6 +32,14 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
             name: true,
             email: true
           }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            status: true
+          }
         }
       },
       orderBy: [
@@ -58,8 +66,10 @@ router.get('/', requireAuth, withOrgScope, validateQuery(commonSchemas.paginatio
       actualHours: task.actualHours || 0,
       dueDate: task.dueDate,
       assignee: task.user?.name,
-      project: task.category?.startsWith('Project: ') ? task.category.replace('Project: ', '') : null,
-      projectId: null, // Will be handled when we have proper project relations
+      project: task.project?.name || null,
+      projectId: task.projectId,
+      projectColor: task.project?.color,
+      projectStatus: task.project?.status,
       isBillable: false, // Default for now
       hourlyRate: 0,
       tags: task.tags ? (Array.isArray(task.tags) ? task.tags : []) : [],
