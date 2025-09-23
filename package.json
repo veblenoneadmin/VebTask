@@ -17,6 +17,7 @@
     "db:seed": "cd backend && node scripts/backfill-orgs.js",
     "db:seed-demo": "cd backend && node scripts/seed-demo-data.js",
     "db:seed-veblen": "cd backend && node scripts/seed-veblen-data.js",
+    "db:seed-project-demo": "cd backend && node scripts/seed-project-task-demo.js",
     "postinstall": "cd backend && prisma generate"
   },
   "dependencies": {
