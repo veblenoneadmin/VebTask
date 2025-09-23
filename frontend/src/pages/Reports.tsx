@@ -47,7 +47,10 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedProject, setSelectedProject] = useState('');
+  const [selectedTask, setSelectedTask] = useState('');
   const [userName, setUserName] = useState('');
+  const [description, setDescription] = useState('');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -59,9 +62,15 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
   const fetchProjectsAndTasks = async () => {
     setLoading(true);
     try {
+      const orgId = session?.user?.orgId;
+      if (!orgId) {
+        console.error('No organization ID found');
+        return;
+      }
+
       const [projectsRes, tasksRes] = await Promise.all([
         fetch('/api/projects'),
-        fetch('/api/tasks')
+        fetch(`/api/tasks?orgId=${orgId}`)
       ]);
 
       if (projectsRes.ok) {
@@ -80,20 +89,40 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedImage(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const selectedProjectData = projects.find(p => p.id === selectedProject);
-    const relatedTasks = tasks.filter(t => t.projectId === selectedProject);
+    const selectedTaskData = tasks.find(t => t.id === selectedTask);
 
     const reportData = {
       userName,
       project: selectedProjectData,
-      tasks: relatedTasks,
+      task: selectedTaskData,
+      description,
+      image: uploadedImage,
       createdAt: new Date().toISOString()
     };
 
     onSave(reportData);
+
+    // Reset form
+    setSelectedProject('');
+    setSelectedTask('');
+    setUserName('');
+    setDescription('');
+    setUploadedImage(null);
     onClose();
   };
 
@@ -185,7 +214,10 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
               </label>
               <select
                 value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
+                onChange={(e) => {
+                  setSelectedProject(e.target.value);
+                  setSelectedTask(''); // Reset task when project changes
+                }}
                 required
                 className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               >
@@ -196,6 +228,82 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Task Selection */}
+            {selectedProject && (
+              <div className="form-group">
+                <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                  <Activity className="w-4 h-4" />
+                  Select Task *
+                </label>
+                <select
+                  value={selectedTask}
+                  onChange={(e) => setSelectedTask(e.target.value)}
+                  required
+                  className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                >
+                  <option value="" className="bg-surface-elevated">Choose a task...</option>
+                  {tasks
+                    .filter(task => task.projectId === selectedProject)
+                    .map((task) => (
+                      <option key={task.id} value={task.id} className="bg-surface-elevated">
+                        {task.title}
+                      </option>
+                    ))}
+                </select>
+                {tasks.filter(task => task.projectId === selectedProject).length === 0 && (
+                  <p className="text-sm text-yellow-400 mt-1">No tasks available for this project</p>
+                )}
+              </div>
+            )}
+
+            {/* Description */}
+            <div className="form-group">
+              <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                <FileText className="w-4 h-4" />
+                Report Description *
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                placeholder="Describe the report details, progress, issues, or any relevant information..."
+                rows={4}
+                className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+              />
+            </div>
+
+            {/* Image Upload */}
+            <div className="form-group">
+              <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                <Plus className="w-4 h-4" />
+                Upload Screenshot/Image
+              </label>
+              <div className="space-y-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
+                />
+                {uploadedImage && (
+                  <div className="relative">
+                    <img
+                      src={uploadedImage}
+                      alt="Uploaded screenshot"
+                      className="w-full max-h-48 object-cover rounded-lg border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setUploadedImage(null)}
+                      className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Project Breakdown */}
@@ -303,7 +411,7 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
             </button>
             <button
               type="submit"
-              disabled={loading || !userName || !selectedProject}
+              disabled={loading || !userName || !selectedProject || !selectedTask || !description}
               className="px-6 py-2 rounded-lg text-white font-medium transition-all flex items-center gap-2 shadow-glow disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #646cff, #8b5cf6)' }}
             >
@@ -377,7 +485,29 @@ export function Reports() {
                 </CardHeader>
                 <CardContent>
                   <h3 className="font-semibold text-lg mb-2">{report.project?.name || 'Project Report'}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Created by {report.userName}</p>
+                  <p className="text-sm text-muted-foreground mb-2">Created by {report.userName}</p>
+
+                  {report.task && (
+                    <p className="text-sm text-muted-foreground mb-3">Task: {report.task.title}</p>
+                  )}
+
+                  {report.description && (
+                    <p className="text-sm text-white mb-4 bg-surface-elevated rounded p-2">
+                      {report.description.length > 100
+                        ? `${report.description.substring(0, 100)}...`
+                        : report.description}
+                    </p>
+                  )}
+
+                  {report.image && (
+                    <div className="mb-4">
+                      <img
+                        src={report.image}
+                        alt="Report screenshot"
+                        className="w-full h-32 object-cover rounded border border-border"
+                      />
+                    </div>
+                  )}
 
                   {report.project && (
                     <div className="space-y-2">
@@ -391,10 +521,6 @@ export function Reports() {
                         )}>
                           {report.project.status}
                         </Badge>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tasks:</span>
-                        <span className="font-medium">{report.tasks?.length || 0}</span>
                       </div>
                       {report.project.budget && (
                         <div className="flex justify-between text-sm">
