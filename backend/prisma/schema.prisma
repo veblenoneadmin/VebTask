@@ -20,6 +20,7 @@ model User {
   // Relations
   memberships      Membership[]
   macroTasks       MacroTask[]
+  reports          Report[]
 }
 
 model Organization {
@@ -34,6 +35,7 @@ model Organization {
   invites     Invite[]
   memberships Membership[]
   macroTasks  MacroTask[]
+  reports     Report[]
 
   @@index([createdById])
   @@map("organizations")
@@ -213,6 +215,7 @@ model Project {
   // Relations
   client          Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
   tasks           MacroTask[] // Tasks belonging to this project
+  reports         Report[]    // Reports for this project
 
   @@index([orgId])
   @@index([status])
@@ -250,4 +253,28 @@ enum InviteStatus {
   ACCEPTED
   EXPIRED
   REVOKED
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  title       String?  @db.VarChar(255)
+  description String   @db.Text
+  userName    String   @db.VarChar(255)
+  image       String?  @db.Text // Base64 encoded image
+  projectId   String?
+  userId      String   @db.VarChar(36)
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org         Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project     Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([projectId])
+  @@index([createdAt])
+  @@map("reports")
 }

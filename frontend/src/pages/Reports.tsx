@@ -335,12 +335,78 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
 }
 
 export function Reports() {
+  const { data: session } = useSession();
+  const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
   const [showReportModal, setShowReportModal] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSaveReport = (reportData: any) => {
-    console.log('Report saved:', reportData);
-    setReports(prev => [...prev, { ...reportData, id: Date.now().toString() }]);
+  // Fetch reports from database
+  const fetchReports = async () => {
+    if (!session?.user?.id || !currentOrg?.id) return;
+
+    setLoading(true);
+    try {
+      const orgId = currentOrg.id;
+      console.log('🔧 Fetching reports with orgId:', orgId);
+
+      const data = await apiClient.fetch(`/api/user-reports?orgId=${orgId}&limit=100`);
+
+      if (data.success) {
+        setReports(data.reports || []);
+        console.log('📊 Loaded reports:', data.reports?.length || 0);
+      } else {
+        console.warn('Failed to fetch reports:', data.error);
+        setReports([]);
+      }
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      setReports([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load reports on component mount
+  useEffect(() => {
+    fetchReports();
+  }, [session?.user?.id, currentOrg?.id]);
+
+  const handleSaveReport = async (reportData: any) => {
+    if (!session?.user?.id || !currentOrg?.id) {
+      console.error('No user or organization found');
+      return;
+    }
+
+    try {
+      const orgId = currentOrg.id;
+      console.log('💾 Saving report:', reportData);
+
+      const data = await apiClient.fetch(`/api/user-reports?orgId=${orgId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: reportData.project?.name || 'Project Report',
+          description: reportData.description,
+          userName: reportData.userName,
+          image: reportData.image,
+          projectId: reportData.project?.id
+        }),
+      });
+
+      if (data.success) {
+        console.log('✅ Report saved successfully');
+        // Refresh the reports list
+        await fetchReports();
+      } else {
+        console.error('Failed to save report:', data.error);
+      }
+    } catch (error) {
+      console.error('Error saving report:', error);
+    }
   };
 
   return (
@@ -362,7 +428,15 @@ export function Reports() {
 
       {/* Reports List */}
       <div className="space-y-6">
-        {reports.length === 0 ? (
+        {loading ? (
+          <Card className="glass shadow-elevation">
+            <CardContent className="p-12 text-center">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <h3 className="text-xl font-semibold mb-2">Loading Reports...</h3>
+              <p className="text-muted-foreground">Please wait while we fetch your reports.</p>
+            </CardContent>
+          </Card>
+        ) : reports.length === 0 ? (
           <Card className="glass shadow-elevation">
             <CardContent className="p-12 text-center">
               <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
