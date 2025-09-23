@@ -6,19 +6,12 @@ import { Badge } from '../components/ui/badge';
 import {
   FileText,
   Plus,
-  Download,
-  RefreshCw,
-  DollarSign,
-  Clock,
   Users,
   Target,
   Activity,
   X,
   Save,
   Building2,
-  Star,
-  Calendar,
-  Zap
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { createPortal } from 'react-dom';
@@ -245,8 +238,7 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                       </div>
                     </div>
                   ) : null;
-                })()
-                )}
+                })()}
               </div>
             )}
 
@@ -295,8 +287,7 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                       )}
                     </div>
                   );
-                })()
-                )}
+                })()}
               </div>
             )}
           </div>
