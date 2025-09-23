@@ -10,7 +10,6 @@ import {
   Plus,
   Users,
   Target,
-  Activity,
   X,
   Save,
   Building2,
@@ -29,19 +28,6 @@ interface Project {
   color: string;
 }
 
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  projectId: string | null;
-  project: string | null;
-  estimatedHours: number;
-  actualHours: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -54,9 +40,7 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
   const { currentOrg } = useOrganization();
   const apiClient = useApiClient();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedProject, setSelectedProject] = useState('');
-  const [selectedTask, setSelectedTask] = useState('');
   const [userName, setUserName] = useState('');
   const [description, setDescription] = useState('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -75,7 +59,7 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
     try {
       // Use the same orgId logic as Projects page
       const orgId = currentOrg?.id || 'org_1757046595553';
-      console.log('🔧 Fetching projects and tasks with orgId:', orgId);
+      console.log('🔧 Fetching projects with orgId:', orgId);
 
       // Fetch projects using apiClient like Projects page
       const projectsData = await apiClient.fetch(`/api/projects?userId=${session.user.id}&orgId=${orgId}&limit=100`);
@@ -87,28 +71,9 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
         console.warn('Failed to fetch projects:', projectsData.error);
         setProjects([]);
       }
-
-      // Fetch tasks using apiClient
-      const tasksData = await apiClient.fetch(`/api/tasks?orgId=${orgId}&limit=100`);
-
-      if (tasksData.success) {
-        setTasks(tasksData.tasks || []);
-        console.log('📋 Loaded tasks for reports:', tasksData.tasks?.length || 0);
-        if (tasksData.tasks?.length > 0) {
-          console.log('📋 Sample task:', {
-            id: tasksData.tasks[0].id,
-            title: tasksData.tasks[0].title,
-            projectId: tasksData.tasks[0].projectId
-          });
-        }
-      } else {
-        console.warn('Failed to fetch tasks:', tasksData.error);
-        setTasks([]);
-      }
     } catch (error) {
       console.error('Error fetching data:', error);
       setProjects([]);
-      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -129,12 +94,10 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
     e.preventDefault();
 
     const selectedProjectData = projects.find(p => p.id === selectedProject);
-    const selectedTaskData = tasks.find(t => t.id === selectedTask);
 
     const reportData = {
       userName,
       project: selectedProjectData,
-      task: selectedTaskData,
       description,
       image: uploadedImage,
       createdAt: new Date().toISOString()
@@ -144,7 +107,6 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
 
     // Reset form
     setSelectedProject('');
-    setSelectedTask('');
     setUserName('');
     setDescription('');
     setUploadedImage(null);
@@ -239,10 +201,7 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
               </label>
               <select
                 value={selectedProject}
-                onChange={(e) => {
-                  setSelectedProject(e.target.value);
-                  setSelectedTask(''); // Reset task when project changes
-                }}
+                onChange={(e) => setSelectedProject(e.target.value)}
                 required
                 className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               >
@@ -254,45 +213,6 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                 ))}
               </select>
             </div>
-
-            {/* Task Selection */}
-            {selectedProject && (
-              <div className="form-group">
-                <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
-                  <Activity className="w-4 h-4" />
-                  Select Task *
-                </label>
-                <select
-                  value={selectedTask}
-                  onChange={(e) => setSelectedTask(e.target.value)}
-                  required
-                  className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                >
-                  <option value="" className="bg-surface-elevated">Choose a task...</option>
-                  {tasks
-                    .filter(task => {
-                      // Handle both null and string "null" cases
-                      const taskProjectId = task.projectId === "null" ? null : task.projectId;
-                      const matches = taskProjectId === selectedProject;
-                      if (selectedProject) {
-                        console.log(`🔍 Task "${task.title}" has projectId "${task.projectId}" (normalized: "${taskProjectId}"), selected project is "${selectedProject}", matches: ${matches}`);
-                      }
-                      return matches;
-                    })
-                    .map((task) => (
-                      <option key={task.id} value={task.id} className="bg-surface-elevated">
-                        {task.title}
-                      </option>
-                    ))}
-                </select>
-                {selectedProject && tasks.filter(task => {
-                  const taskProjectId = task.projectId === "null" ? null : task.projectId;
-                  return taskProjectId === selectedProject;
-                }).length === 0 && (
-                  <p className="text-sm text-yellow-400 mt-1">No tasks available for this project</p>
-                )}
-              </div>
-            )}
 
             {/* Description */}
             <div className="form-group">
@@ -386,54 +306,6 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
               </div>
             )}
 
-            {/* Task Breakdown */}
-            {selectedProject && (
-              <div className="form-group">
-                <label className="flex items-center gap-2 text-sm font-semibold text-white mb-3">
-                  <Activity className="w-4 h-4" />
-                  Task Breakdown
-                </label>
-                {(() => {
-                  const relatedTasks = tasks.filter(t => t.projectId === selectedProject);
-                  return (
-                    <div className="space-y-3">
-                      {relatedTasks.length > 0 ? (
-                        relatedTasks.map((task) => (
-                          <div key={task.id} className="p-3 glass-surface rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium text-white">{task.title}</h4>
-                              <Badge className={cn(
-                                "text-xs",
-                                task.status === 'completed' ? 'bg-success/20 text-success' :
-                                task.status === 'in_progress' ? 'bg-info/20 text-info' :
-                                task.status === 'pending' ? 'bg-warning/20 text-warning' :
-                                'bg-muted/20 text-muted-foreground'
-                              )}>
-                                {task.status.replace('_', ' ')}
-                              </Badge>
-                            </div>
-                            {task.description && (
-                              <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
-                            )}
-                            {task.actualHours > 0 && (
-                              <div className="text-sm">
-                                <span className="text-muted-foreground">Hours spent: </span>
-                                <span className="font-semibold text-white">{task.actualHours}h</span>
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="p-4 glass-surface rounded-lg text-center text-muted-foreground">
-                          <Activity className="w-8 h-8 mx-auto mb-2" />
-                          <p>No tasks found for this project</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
           </div>
 
           {/* Action Buttons */}
@@ -447,7 +319,7 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
             </button>
             <button
               type="submit"
-              disabled={loading || !userName || !selectedProject || !selectedTask || !description}
+              disabled={loading || !userName || !selectedProject || !description}
               className="px-6 py-2 rounded-lg text-white font-medium transition-all flex items-center gap-2 shadow-glow disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #646cff, #8b5cf6)' }}
             >
@@ -522,10 +394,6 @@ export function Reports() {
                 <CardContent>
                   <h3 className="font-semibold text-lg mb-2">{report.project?.name || 'Project Report'}</h3>
                   <p className="text-sm text-muted-foreground mb-2">Created by {report.userName}</p>
-
-                  {report.task && (
-                    <p className="text-sm text-muted-foreground mb-3">Task: {report.task.title}</p>
-                  )}
 
                   {report.description && (
                     <p className="text-sm text-white mb-4 bg-surface-elevated rounded p-2">
