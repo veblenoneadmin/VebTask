@@ -21,10 +21,12 @@ import {
   Edit3,
   Trash2,
   Eye,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ProjectModal } from '../components/ProjectModal';
+import { ProjectReportModal } from '../components/ProjectReportModal';
 
 interface DatabaseProject {
   id: string;
@@ -89,6 +91,8 @@ export function Projects() {
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [showFullTitle, setShowFullTitle] = useState<string | null>(null);
   const [showFullDescription, setShowFullDescription] = useState<string | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reports, setReports] = useState<any[]>([]);
 
   // Fetch projects from server
   const fetchProjects = async () => {
@@ -296,6 +300,14 @@ export function Projects() {
       console.error('❌ Error creating project:', error);
     }
   };
+
+  const handleSaveReport = (reportData: any) => {
+    console.log('Report saved:', reportData);
+    setReports(prev => [...prev, reportData]);
+
+    // Show success message
+    alert(`Report created successfully for ${reportData.project?.name || 'project'}!\nTotal reports: ${reports.length + 1}`);
+  };
   
   // Use the function to prevent unused warning
 
@@ -417,7 +429,14 @@ export function Projects() {
               List
             </button>
           </div>
-          <Button 
+          <Button
+            onClick={() => setShowReportModal(true)}
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-glow"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Create Report
+          </Button>
+          <Button
             onClick={() => setShowNewProjectModal(true)}
             className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
           >
@@ -992,6 +1011,13 @@ export function Projects() {
         </div>,
         document.body
       )}
+
+      {/* Project Report Modal */}
+      <ProjectReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSave={handleSaveReport}
+      />
     </div>
   );
 }
