@@ -271,9 +271,11 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                   <option value="" className="bg-surface-elevated">Choose a task...</option>
                   {tasks
                     .filter(task => {
-                      const matches = task.projectId === selectedProject;
+                      // Handle both null and string "null" cases
+                      const taskProjectId = task.projectId === "null" ? null : task.projectId;
+                      const matches = taskProjectId === selectedProject;
                       if (selectedProject) {
-                        console.log(`🔍 Task "${task.title}" has projectId "${task.projectId}", selected project is "${selectedProject}", matches: ${matches}`);
+                        console.log(`🔍 Task "${task.title}" has projectId "${task.projectId}" (normalized: "${taskProjectId}"), selected project is "${selectedProject}", matches: ${matches}`);
                       }
                       return matches;
                     })
@@ -283,7 +285,10 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                       </option>
                     ))}
                 </select>
-                {selectedProject && tasks.filter(task => task.projectId === selectedProject).length === 0 && (
+                {selectedProject && tasks.filter(task => {
+                  const taskProjectId = task.projectId === "null" ? null : task.projectId;
+                  return taskProjectId === selectedProject;
+                }).length === 0 && (
                   <p className="text-sm text-yellow-400 mt-1">No tasks available for this project</p>
                 )}
               </div>
