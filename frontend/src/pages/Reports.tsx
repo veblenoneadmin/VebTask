@@ -3,11 +3,9 @@ import { useSession } from '../lib/auth-client';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { 
-  BarChart3,
-  PieChart,
-  TrendingUp,
-  TrendingDown,
+import {
+  FileText,
+  Plus,
   Download,
   RefreshCw,
   DollarSign,
@@ -15,611 +13,419 @@ import {
   Users,
   Target,
   Activity,
-  Zap,
-  AlertTriangle
+  X,
+  Save,
+  Building2,
+  Star,
+  Calendar,
+  Zap
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { createPortal } from 'react-dom';
 
-interface ReportData {
-  period: string;
-  revenue: number;
-  expenses: number;
-  profit: number;
-  hoursTracked: number;
-  projectsCompleted: number;
-  clientsActive: number;
-  averageHourlyRate: number;
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  budget?: number;
+  spent?: number;
+  completion?: number;
+  color: string;
 }
 
-const mockReportData: ReportData[] = [
-  {
-    period: '2024-01',
-    revenue: 15750,
-    expenses: 3200,
-    profit: 12550,
-    hoursTracked: 168,
-    projectsCompleted: 3,
-    clientsActive: 5,
-    averageHourlyRate: 94
-  },
-  {
-    period: '2023-12',
-    revenue: 18200,
-    expenses: 2800,
-    profit: 15400,
-    hoursTracked: 195,
-    projectsCompleted: 4,
-    clientsActive: 6,
-    averageHourlyRate: 93
-  },
-  {
-    period: '2023-11',
-    revenue: 12400,
-    expenses: 2950,
-    profit: 9450,
-    hoursTracked: 145,
-    projectsCompleted: 2,
-    clientsActive: 4,
-    averageHourlyRate: 86
-  },
-  {
-    period: '2023-10',
-    revenue: 21300,
-    expenses: 4100,
-    profit: 17200,
-    hoursTracked: 225,
-    projectsCompleted: 5,
-    clientsActive: 7,
-    averageHourlyRate: 95
-  }
-];
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  projectId?: string;
+  hoursSpent?: number;
+}
 
-const projectPerformance = [
-  { name: 'E-commerce Platform', completion: 85, budget: 95000, spent: 78500, status: 'on-track' },
-  { name: 'Customer Portal', completion: 100, budget: 45000, spent: 42000, status: 'completed' },
-  { name: 'Mobile App MVP', completion: 60, budget: 35000, spent: 28000, status: 'on-track' },
-  { name: 'Analytics Dashboard', completion: 30, budget: 55000, spent: 45000, status: 'over-budget' },
-  { name: 'Marketing Website', completion: 95, budget: 25000, spent: 24500, status: 'on-track' }
-];
+interface ReportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (report: any) => void;
+}
 
-const clientMetrics = [
-  { name: 'TechCorp Solutions', revenue: 28500, hours: 320, projects: 8, satisfaction: 4.9 },
-  { name: 'GlobalBank Inc.', revenue: 17100, hours: 180, projects: 3, satisfaction: 4.8 },
-  { name: 'StartupXYZ', revenue: 8075, hours: 95, projects: 2, satisfaction: 4.6 },
-  { name: 'DataDriven LLC', revenue: 4275, hours: 45, projects: 1, satisfaction: 4.7 },
-  { name: 'Creative Agency Pro', revenue: 0, hours: 0, projects: 0, satisfaction: 0 }
-];
+function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
+  const { data: session } = useSession();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedProject, setSelectedProject] = useState('');
+  const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && session?.user?.id) {
+      fetchProjectsAndTasks();
+    }
+  }, [isOpen, session?.user?.id]);
+
+  const fetchProjectsAndTasks = async () => {
+    setLoading(true);
+    try {
+      const [projectsRes, tasksRes] = await Promise.all([
+        fetch('/api/projects'),
+        fetch('/api/tasks')
+      ]);
+
+      if (projectsRes.ok) {
+        const projectsData = await projectsRes.json();
+        setProjects(projectsData.projects || []);
+      }
+
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json();
+        setTasks(tasksData.tasks || []);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const selectedProjectData = projects.find(p => p.id === selectedProject);
+    const relatedTasks = tasks.filter(t => t.projectId === selectedProject);
+
+    const reportData = {
+      userName,
+      project: selectedProjectData,
+      tasks: relatedTasks,
+      createdAt: new Date().toISOString()
+    };
+
+    onSave(reportData);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div
+      className="modal-overlay glass"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 99999
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="modal-content glass shadow-elevation"
+        style={{
+          maxWidth: '700px',
+          width: '95%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          position: 'relative',
+          backgroundColor: '#1a1a1a',
+          borderRadius: '12px',
+          border: '1px solid #333'
+        }}
+      >
+        {/* Header */}
+        <div className="modal-header" style={{
+          background: 'linear-gradient(135deg, #646cff, #8b5cf6)',
+          borderRadius: '8px 8px 0 0',
+          padding: '24px',
+          color: 'white'
+        }}>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold m-0">Create New Report</h2>
+              <p className="text-white/80 text-sm m-0 mt-1">
+                Generate a report with project and task breakdown
+              </p>
+            </div>
+          </div>
+          <button
+            className="modal-close bg-white/20 hover:bg-white/30 rounded-lg p-2"
+            onClick={onClose}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="modal-form" style={{ padding: '24px' }}>
+          <div className="space-y-6">
+            {/* User Name */}
+            <div className="form-group">
+              <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                <Users className="w-4 h-4" />
+                Your Name *
+              </label>
+              <input
+                type="text"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                required
+                placeholder="Enter your name"
+                className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+            </div>
+
+            {/* Project Selection */}
+            <div className="form-group">
+              <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                <Building2 className="w-4 h-4" />
+                Select Project *
+              </label>
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                required
+                className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              >
+                <option value="" className="bg-surface-elevated">Choose a project...</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id} className="bg-surface-elevated">
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Project Breakdown */}
+            {selectedProject && (
+              <div className="form-group">
+                <label className="flex items-center gap-2 text-sm font-semibold text-white mb-3">
+                  <Target className="w-4 h-4" />
+                  Project Breakdown
+                </label>
+                {(() => {
+                  const project = projects.find(p => p.id === selectedProject);
+                  return project ? (
+                    <div className="p-4 glass-surface rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-white">{project.name}</h3>
+                        <Badge className={cn(
+                          "text-xs capitalize",
+                          project.status === 'completed' ? 'bg-success/20 text-success' :
+                          project.status === 'active' ? 'bg-info/20 text-info' :
+                          project.status === 'planning' ? 'bg-warning/20 text-warning' :
+                          'bg-muted/20 text-muted-foreground'
+                        )}>
+                          {project.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">{project.description}</p>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        {project.budget && (
+                          <div>
+                            <span className="text-muted-foreground">Budget: </span>
+                            <span className="font-semibold text-white">${project.budget.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {project.completion !== undefined && (
+                          <div>
+                            <span className="text-muted-foreground">Progress: </span>
+                            <span className="font-semibold text-white">{project.completion}%</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : null;
+                })()
+                )}
+              </div>
+            )}
+
+            {/* Task Breakdown */}
+            {selectedProject && (
+              <div className="form-group">
+                <label className="flex items-center gap-2 text-sm font-semibold text-white mb-3">
+                  <Activity className="w-4 h-4" />
+                  Task Breakdown
+                </label>
+                {(() => {
+                  const relatedTasks = tasks.filter(t => t.projectId === selectedProject);
+                  return (
+                    <div className="space-y-3">
+                      {relatedTasks.length > 0 ? (
+                        relatedTasks.map((task) => (
+                          <div key={task.id} className="p-3 glass-surface rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-white">{task.title}</h4>
+                              <Badge className={cn(
+                                "text-xs",
+                                task.status === 'completed' ? 'bg-success/20 text-success' :
+                                task.status === 'in_progress' ? 'bg-info/20 text-info' :
+                                task.status === 'pending' ? 'bg-warning/20 text-warning' :
+                                'bg-muted/20 text-muted-foreground'
+                              )}>
+                                {task.status.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                            {task.description && (
+                              <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
+                            )}
+                            {task.hoursSpent && (
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Hours spent: </span>
+                                <span className="font-semibold text-white">{task.hoursSpent}h</span>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-4 glass-surface rounded-lg text-center text-muted-foreground">
+                          <Activity className="w-8 h-8 mx-auto mb-2" />
+                          <p>No tasks found for this project</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="modal-actions flex justify-end gap-3 pt-6 mt-6 border-t border-border">
+            <button
+              type="button"
+              className="px-6 py-2 bg-surface-elevated hover:bg-muted border border-border rounded-lg text-white transition-all"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !userName || !selectedProject}
+              className="px-6 py-2 rounded-lg text-white font-medium transition-all flex items-center gap-2 shadow-glow disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #646cff, #8b5cf6)' }}
+            >
+              <Save size={16} />
+              Create Report
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 export function Reports() {
-  const { data: session } = useSession();
-  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
-  const [selectedReport, setSelectedReport] = useState<'overview' | 'financial' | 'projects' | 'clients'>('overview');
-  const [loading, setLoading] = useState(true);
-  const [orgId, setOrgId] = useState('default');
-  
-  // API Data State
-  const [financialData, setFinancialData] = useState<ReportData[]>([]);
-  const [projectData, setProjectData] = useState<any[]>([]);
-  const [clientData, setClientData] = useState<any[]>([]);
-  const [summaryData, setSummaryData] = useState<any>({});
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reports, setReports] = useState<any[]>([]);
 
-  // Fetch user's organization
-  useEffect(() => {
-    const fetchUserOrgInfo = async () => {
-      if (!session?.user?.id) return;
-      
-      try {
-        const response = await fetch(`/api/organizations?userId=${session.user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.organizations && data.organizations.length > 0) {
-            setOrgId(data.organizations[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch user organization:', error);
-      }
-    };
-
-    if (session?.user?.id) {
-      fetchUserOrgInfo();
-    }
-  }, [session]);
-
-  // Fetch report data
-  useEffect(() => {
-    const fetchReportData = async () => {
-      if (!session?.user?.id || orgId === 'default') return;
-      
-      setLoading(true);
-      try {
-        const [financialRes, projectRes, clientRes, summaryRes] = await Promise.all([
-          fetch(`/api/reports/financial?orgId=${orgId}&period=${selectedPeriod}`),
-          fetch(`/api/reports/projects?orgId=${orgId}`),
-          fetch(`/api/reports/clients?orgId=${orgId}`),
-          fetch(`/api/reports/summary?orgId=${orgId}`)
-        ]);
-
-        if (financialRes.ok) {
-          const financial = await financialRes.json();
-          setFinancialData(financial.data || []);
-        }
-
-        if (projectRes.ok) {
-          const projects = await projectRes.json();
-          setProjectData(projects.data || []);
-        }
-
-        if (clientRes.ok) {
-          const clients = await clientRes.json();
-          setClientData(clients.data || []);
-        }
-
-        if (summaryRes.ok) {
-          const summary = await summaryRes.json();
-          setSummaryData(summary.summary || {});
-        }
-      } catch (error) {
-        console.error('Failed to fetch report data:', error);
-        // Fallback to mock data
-        setFinancialData(mockReportData);
-        setProjectData(projectPerformance);
-        setClientData(clientMetrics);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReportData();
-  }, [session, orgId, selectedPeriod]);
-
-  const currentData = financialData[0] || mockReportData[0];
-  const previousData = financialData[1] || mockReportData[1];
-
-  const calculateGrowth = (current: number, previous: number) => {
-    if (previous === 0) return 0;
-    return ((current - previous) / previous) * 100;
+  const handleSaveReport = (reportData: any) => {
+    console.log('Report saved:', reportData);
+    setReports(prev => [...prev, { ...reportData, id: Date.now().toString() }]);
   };
-
-  const revenueGrowth = summaryData.revenue?.trend || calculateGrowth(currentData.revenue, previousData.revenue);
-  const profitGrowth = summaryData.profit?.trend || calculateGrowth(currentData.profit, previousData.profit);
-  const hoursGrowth = summaryData.hours?.trend || calculateGrowth(currentData.hoursTracked, previousData.hoursTracked);
-
-  const getProjectStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'text-success bg-success/10 border-success/20';
-      case 'on-track': return 'text-info bg-info/10 border-info/20';
-      case 'over-budget': return 'text-error bg-error/10 border-error/20';
-      case 'delayed': return 'text-warning bg-warning/10 border-warning/20';
-      default: return 'text-muted-foreground bg-muted/10 border-border';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold gradient-text">Reports & Analytics</h1>
-            <p className="text-muted-foreground mt-2">Loading business insights...</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="glass p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-muted rounded w-1/2 mb-4"></div>
-                <div className="h-3 bg-muted rounded w-2/3"></div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Reports & Analytics</h1>
-          <p className="text-muted-foreground mt-2">Business insights and performance metrics</p>
+          <h1 className="text-3xl font-bold gradient-text">Reports</h1>
+          <p className="text-muted-foreground mt-2">Create and manage your project reports</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value as any)}
-            className="px-4 py-2 glass-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
-          </select>
-          <Button variant="outline" className="glass-surface">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline" className="glass-surface">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
+        <Button
+          onClick={() => setShowReportModal(true)}
+          className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Report
+        </Button>
       </div>
 
-      {/* Report Type Selector */}
-      <div className="flex items-center space-x-1 bg-surface-elevated rounded-lg p-1">
-        {[
-          { key: 'overview', label: 'Overview', icon: <Activity className="h-4 w-4" /> },
-          { key: 'financial', label: 'Financial', icon: <DollarSign className="h-4 w-4" /> },
-          { key: 'projects', label: 'Projects', icon: <Target className="h-4 w-4" /> },
-          { key: 'clients', label: 'Clients', icon: <Users className="h-4 w-4" /> }
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setSelectedReport(tab.key as any)}
-            className={cn(
-              "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
-              selectedReport === tab.key
-                ? "bg-primary text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {tab.icon}
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Overview Report */}
-      {selectedReport === 'overview' && (
-        <div className="space-y-6">
-          {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="glass shadow-elevation">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
-                    <p className="text-2xl font-bold">${currentData.revenue.toLocaleString()}</p>
-                    <div className={cn("flex items-center text-sm", revenueGrowth >= 0 ? "text-success" : "text-error")}>
-                      {revenueGrowth >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
-                      {Math.abs(revenueGrowth).toFixed(1)}% vs last month
-                    </div>
-                  </div>
-                  <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass shadow-elevation">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Net Profit</p>
-                    <p className="text-2xl font-bold">${currentData.profit.toLocaleString()}</p>
-                    <div className={cn("flex items-center text-sm", profitGrowth >= 0 ? "text-success" : "text-error")}>
-                      {profitGrowth >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
-                      {Math.abs(profitGrowth).toFixed(1)}% vs last month
-                    </div>
-                  </div>
-                  <div className="h-12 w-12 rounded-xl bg-gradient-success flex items-center justify-center shadow-glow">
-                    <TrendingUp className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass shadow-elevation">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Hours Tracked</p>
-                    <p className="text-2xl font-bold">{currentData.hoursTracked}h</p>
-                    <div className={cn("flex items-center text-sm", hoursGrowth >= 0 ? "text-success" : "text-error")}>
-                      {hoursGrowth >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
-                      {Math.abs(hoursGrowth).toFixed(1)}% vs last month
-                    </div>
-                  </div>
-                  <div className="h-12 w-12 rounded-xl bg-gradient-info flex items-center justify-center shadow-glow">
-                    <Clock className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass shadow-elevation">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Avg. Hourly Rate</p>
-                    <p className="text-2xl font-bold">${currentData.averageHourlyRate}</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Zap className="h-4 w-4 mr-1" />
-                      Per hour rate
-                    </div>
-                  </div>
-                  <div className="h-12 w-12 rounded-xl bg-gradient-warning flex items-center justify-center shadow-glow">
-                    <BarChart3 className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="glass shadow-elevation">
-              <CardHeader>
-                <h3 className="text-lg font-semibold flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2" />
-                  Revenue Trend
-                </h3>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 mx-auto mb-4" />
-                    <p>Revenue chart visualization</p>
-                    <p className="text-sm">Integration with chart library needed</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass shadow-elevation">
-              <CardHeader>
-                <h3 className="text-lg font-semibold flex items-center">
-                  <PieChart className="h-5 w-5 mr-2" />
-                  Expense Breakdown
-                </h3>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <PieChart className="h-12 w-12 mx-auto mb-4" />
-                    <p>Expense breakdown chart</p>
-                    <p className="text-sm">Integration with chart library needed</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {/* Financial Report */}
-      {selectedReport === 'financial' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <Card className="glass shadow-elevation">
+      {/* Reports List */}
+      <div className="space-y-6">
+        {reports.length === 0 ? (
+          <Card className="glass shadow-elevation">
+            <CardContent className="p-12 text-center">
+              <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No Reports Yet</h3>
+              <p className="text-muted-foreground mb-6">Create your first report to get started with project analysis and documentation.</p>
+              <Button
+                onClick={() => setShowReportModal(true)}
+                className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Report
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reports.map((report) => (
+              <Card key={report.id} className="glass shadow-elevation hover:shadow-glow transition-all">
                 <CardHeader>
-                  <h3 className="text-lg font-semibold">Financial Performance</h3>
+                  <div className="flex items-center justify-between">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <Badge className="bg-success/20 text-success">
+                      {new Date(report.createdAt).toLocaleDateString()}
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {mockReportData.map((data) => (
-                      <div key={data.period} className="flex items-center justify-between p-4 glass-surface rounded-lg">
-                        <div>
-                          <p className="font-semibold">{new Date(data.period + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {data.hoursTracked}h tracked
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-success">${data.revenue.toLocaleString()}</p>
-                          <p className="text-sm text-muted-foreground">Revenue</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold">${data.profit.toLocaleString()}</p>
-                          <p className="text-sm text-muted-foreground">Profit</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <h3 className="font-semibold text-lg mb-2">{report.project?.name || 'Project Report'}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Created by {report.userName}</p>
 
-            <div className="space-y-6">
-              <Card className="glass shadow-elevation">
-                <CardHeader>
-                  <h3 className="font-semibold">Quick Stats</h3>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Projects Completed</span>
-                    <span className="font-semibold">{currentData.projectsCompleted}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Active Clients</span>
-                    <span className="font-semibold">{currentData.clientsActive}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total Expenses</span>
-                    <span className="font-semibold">${currentData.expenses.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Profit Margin</span>
-                    <span className="font-semibold text-success">
-                      {((currentData.profit / currentData.revenue) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Projects Report */}
-      {selectedReport === 'projects' && (
-        <div className="space-y-6">
-          <Card className="glass shadow-elevation">
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Project Performance</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {projectData.map((project) => (
-                  <div key={project.name} className="p-4 glass-surface rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h4 className="font-semibold">{project.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          ${project.spent.toLocaleString()} of ${project.budget.toLocaleString()} budget
-                        </p>
-                      </div>
-                      <Badge className={cn("text-xs capitalize", getProjectStatusColor(project.status))}>
-                        {project.status.replace('-', ' ')}
-                      </Badge>
-                    </div>
-                    
+                  {report.project && (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{project.completion}%</span>
-                      </div>
-                      <div className="w-full bg-muted/20 rounded-full h-2">
-                        <div 
-                          className={cn(
-                            "h-2 rounded-full transition-all",
-                            project.status === 'completed' ? "bg-success" : 
-                            project.status === 'over-budget' ? "bg-error" : "bg-primary"
-                          )}
-                          style={{ width: `${project.completion}%` }}
-                        />
-                      </div>
-                      
-                      <div className="flex justify-between text-sm">
-                        <span>Budget Usage</span>
-                        <span className={cn(
-                          project.spent > project.budget ? "text-error" : "text-muted-foreground"
+                        <span className="text-muted-foreground">Status:</span>
+                        <Badge className={cn(
+                          "text-xs",
+                          report.project.status === 'completed' ? 'bg-success/20 text-success' :
+                          report.project.status === 'active' ? 'bg-info/20 text-info' :
+                          'bg-warning/20 text-warning'
                         )}>
-                          {((project.spent / project.budget) * 100).toFixed(1)}%
-                        </span>
+                          {report.project.status}
+                        </Badge>
                       </div>
-                      <div className="w-full bg-muted/20 rounded-full h-2">
-                        <div 
-                          className={cn(
-                            "h-2 rounded-full transition-all",
-                            project.spent > project.budget ? "bg-error" : "bg-info"
-                          )}
-                          style={{ width: `${Math.min((project.spent / project.budget) * 100, 100)}%` }}
-                        />
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Tasks:</span>
+                        <span className="font-medium">{report.tasks?.length || 0}</span>
                       </div>
+                      {report.project.budget && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Budget:</span>
+                          <span className="font-medium">${report.project.budget.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Clients Report */}
-      {selectedReport === 'clients' && (
-        <div className="space-y-6">
-          <Card className="glass shadow-elevation">
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Client Performance</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left p-4 font-medium text-muted-foreground">Client</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Revenue</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Hours</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Projects</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Satisfaction</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clientData.map((client) => (
-                      <tr key={client.name} className="border-b border-border hover:bg-surface-elevated/50 transition-colors">
-                        <td className="p-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="h-10 w-10 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow">
-                              <Users className="h-5 w-5 text-white" />
-                            </div>
-                            <span className="font-medium">{client.name}</span>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span className="font-bold text-success">
-                            ${client.revenue.toLocaleString()}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className="font-medium">{client.hours}h</span>
-                        </td>
-                        <td className="p-4">
-                          <span className="font-medium">{client.projects}</span>
-                        </td>
-                        <td className="p-4">
-                          {client.satisfaction > 0 ? (
-                            <div className="flex items-center space-x-2">
-                              <div className="flex">
-                                {[...Array(5)].map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className={cn(
-                                      "h-4 w-4 text-xs",
-                                      i < Math.floor(client.satisfaction) ? "text-warning" : "text-muted-foreground"
-                                    )}
-                                  >
-                                    ★
-                                  </div>
-                                ))}
-                              </div>
-                              <span className="text-sm font-medium">{client.satisfaction}</span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">No data</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Action Items */}
-      <Card className="glass shadow-elevation">
-        <CardHeader>
-          <h3 className="text-lg font-semibold flex items-center">
-            <AlertTriangle className="h-5 w-5 mr-2 text-warning" />
-            Action Items
-          </h3>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 glass-surface rounded-lg">
-              <div className="h-2 w-2 bg-error rounded-full" />
-              <span className="text-sm">Follow up on outstanding payments (${mockReportData[0].revenue * 0.15} pending)</span>
-            </div>
-            <div className="flex items-center space-x-3 p-3 glass-surface rounded-lg">
-              <div className="h-2 w-2 bg-warning rounded-full" />
-              <span className="text-sm">Review over-budget projects and adjust scope</span>
-            </div>
-            <div className="flex items-center space-x-3 p-3 glass-surface rounded-lg">
-              <div className="h-2 w-2 bg-info rounded-full" />
-              <span className="text-sm">Prepare monthly financial report for stakeholders</span>
-            </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSave={handleSaveReport}
+      />
     </div>
   );
 }
