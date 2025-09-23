@@ -89,6 +89,8 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
       if (tasksData.success) {
         setTasks(tasksData.tasks || []);
         console.log('📋 Loaded tasks for reports:', tasksData.tasks?.length || 0);
+        console.log('📋 Sample task data:', tasksData.tasks?.[0]);
+        console.log('📋 Tasks with projectId:', tasksData.tasks?.filter(t => t.projectId).length || 0);
       } else {
         console.warn('Failed to fetch tasks:', tasksData.error);
         setTasks([]);
@@ -257,13 +259,16 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                   className="w-full p-3 bg-surface-elevated border border-border rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                 >
                   <option value="" className="bg-surface-elevated">Choose a task...</option>
-                  {tasks
-                    .filter(task => task.projectId === selectedProject)
-                    .map((task) => (
+                  {(() => {
+                    const filteredTasks = tasks.filter(task => task.projectId === selectedProject);
+                    console.log(`🔍 Filtering tasks for project ${selectedProject}:`, filteredTasks.length, 'tasks found');
+                    console.log(`🔍 All tasks:`, tasks.map(t => ({ id: t.id, title: t.title, projectId: t.projectId })));
+                    return filteredTasks.map((task) => (
                       <option key={task.id} value={task.id} className="bg-surface-elevated">
                         {task.title}
                       </option>
-                    ))}
+                    ));
+                  })()}
                 </select>
                 {tasks.filter(task => task.projectId === selectedProject).length === 0 && (
                   <p className="text-sm text-yellow-400 mt-1">No tasks available for this project</p>
