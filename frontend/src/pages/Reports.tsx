@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '../lib/auth-client';
+import { useApiClient } from '../lib/api-client';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -46,6 +47,7 @@ interface ReportModalProps {
 function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
   const { data: session } = useSession();
   const { currentOrg } = useOrganization();
+  const apiClient = useApiClient();
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedProject, setSelectedProject] = useState('');
@@ -59,33 +61,42 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
     if (isOpen && session?.user?.id) {
       fetchProjectsAndTasks();
     }
-  }, [isOpen, session?.user?.id]);
+  }, [isOpen, session?.user?.id, currentOrg?.id]);
 
   const fetchProjectsAndTasks = async () => {
+    if (!session?.user?.id) return;
+
     setLoading(true);
     try {
-      const orgId = currentOrg?.id;
-      if (!orgId) {
-        console.error('No organization ID found');
-        return;
-      }
+      // Use the same orgId logic as Projects page
+      const orgId = currentOrg?.id || 'org_1757046595553';
+      console.log('🔧 Fetching projects and tasks with orgId:', orgId);
 
-      const [projectsRes, tasksRes] = await Promise.all([
-        fetch('/api/projects'),
-        fetch(`/api/tasks?orgId=${orgId}`)
-      ]);
+      // Fetch projects using apiClient like Projects page
+      const projectsData = await apiClient.fetch(`/api/projects?userId=${session.user.id}&orgId=${orgId}&limit=100`);
 
-      if (projectsRes.ok) {
-        const projectsData = await projectsRes.json();
+      if (projectsData.success) {
         setProjects(projectsData.projects || []);
+        console.log('📊 Loaded projects for reports:', projectsData.projects?.length || 0);
+      } else {
+        console.warn('Failed to fetch projects:', projectsData.error);
+        setProjects([]);
       }
 
-      if (tasksRes.ok) {
-        const tasksData = await tasksRes.json();
+      // Fetch tasks using apiClient
+      const tasksData = await apiClient.fetch(`/api/tasks?orgId=${orgId}&limit=100`);
+
+      if (tasksData.success) {
         setTasks(tasksData.tasks || []);
+        console.log('📋 Loaded tasks for reports:', tasksData.tasks?.length || 0);
+      } else {
+        console.warn('Failed to fetch tasks:', tasksData.error);
+        setTasks([]);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      setProjects([]);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
