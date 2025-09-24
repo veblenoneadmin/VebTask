@@ -376,6 +376,7 @@ export function Reports() {
   const handleSaveReport = async (reportData: any) => {
     if (!session?.user?.id || !currentOrg?.id) {
       console.error('No user or organization found');
+      alert('Please make sure you are logged in and have selected an organization.');
       return;
     }
 
@@ -383,29 +384,37 @@ export function Reports() {
       const orgId = currentOrg.id;
       console.log('💾 Saving report:', reportData);
 
-      const data = await apiClient.fetch(`/api/user-reports?orgId=${orgId}`, {
+      // Create the payload that matches the backend expectation
+      const requestPayload = {
+        title: reportData.project?.name || 'Project Report',
+        description: reportData.description,
+        userName: reportData.userName,
+        image: reportData.image,
+        projectId: reportData.project?.id || null
+      };
+
+      console.log('📤 Request payload:', requestPayload);
+
+      const data = await apiClient.fetch(`/api/user-reports`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: reportData.project?.name || 'Project Report',
-          description: reportData.description,
-          userName: reportData.userName,
-          image: reportData.image,
-          projectId: reportData.project?.id
-        }),
+        body: JSON.stringify(requestPayload),
       });
 
       if (data.success) {
         console.log('✅ Report saved successfully');
+        alert('Report created successfully!');
         // Refresh the reports list
         await fetchReports();
       } else {
         console.error('Failed to save report:', data.error);
+        alert(`Failed to save report: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error saving report:', error);
+      alert(`Error saving report: ${error.message || 'Unknown error'}`);
     }
   };
 

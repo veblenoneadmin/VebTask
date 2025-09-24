@@ -88,25 +88,42 @@ router.post('/', requireAuth, withOrgScope, async (req, res) => {
   try {
     const { orgId } = req.query;
     const { title, description, userName, image, projectId } = req.body;
-    const userId = req.user.id;
+    const userId = req.user?.id;
+
+    console.log('📝 Received report creation request:', {
+      hasOrgId: !!orgId,
+      hasUserId: !!userId,
+      hasUser: !!req.user,
+      orgId,
+      userId,
+      body: { title, description, userName, hasImage: !!image, projectId }
+    });
+
+    // Check for user authentication
+    if (!req.user || !userId) {
+      console.error('❌ No authenticated user found');
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
 
     if (!orgId) {
-      return res.status(400).json({ error: 'orgId is required' });
+      console.error('❌ No orgId provided');
+      return res.status(400).json({ success: false, error: 'Organization ID is required' });
     }
 
     if (!description || !userName) {
-      return res.status(400).json({ error: 'Description and userName are required' });
+      console.error('❌ Missing required fields:', { hasDescription: !!description, hasUserName: !!userName });
+      return res.status(400).json({ success: false, error: 'Description and userName are required' });
     }
 
     console.log('📝 Creating user report:', { orgId, userId, projectId, userName });
 
     const report = await prisma.report.create({
       data: {
-        title,
+        title: title || null,
         description,
         userName,
-        image,
-        projectId,
+        image: image || null,
+        projectId: projectId || null,
         userId,
         orgId
       },
@@ -156,8 +173,16 @@ router.post('/', requireAuth, withOrgScope, async (req, res) => {
       report: formattedReport
     });
   } catch (error) {
-    console.error('Error creating user report:', error);
-    res.status(500).json({ success: false, error: 'Failed to create user report' });
+    console.error('❌ Error creating user report:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n')
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create user report',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
