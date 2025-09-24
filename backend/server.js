@@ -1319,13 +1319,26 @@ app.post('/api/simple/user-reports', async (req, res) => {
       orgName: anyOrg.name
     });
 
+    // Handle image size limit (truncate if too large)
+    let processedImage = null;
+    if (image) {
+      // Limit image to reasonable size for TEXT column (65KB)
+      const maxImageSize = 65000;
+      if (image.length > maxImageSize) {
+        console.log(`⚠️ Image too large (${image.length} chars), truncating to ${maxImageSize}`);
+        processedImage = image.substring(0, maxImageSize);
+      } else {
+        processedImage = image;
+      }
+    }
+
     // Create report with available user/org
     const report = await prisma.report.create({
       data: {
         title: title || 'User Report',
         description: description,
         userName: userName,
-        image: image || null,
+        image: processedImage,
         projectId: null, // Skip project to avoid constraint issues
         userId: anyUser.id,
         orgId: anyOrg.id
@@ -1387,13 +1400,25 @@ app.post('/api/bulletproof/user-reports', async (req, res) => {
       });
     }
 
+    // Handle image size limit (truncate if too large)
+    let processedImage = null;
+    if (image) {
+      const maxImageSize = 65000;
+      if (image.length > maxImageSize) {
+        console.log(`⚠️ BULLETPROOF: Image too large (${image.length} chars), truncating to ${maxImageSize}`);
+        processedImage = image.substring(0, maxImageSize);
+      } else {
+        processedImage = image;
+      }
+    }
+
     // Simple, direct database insert with minimal validation
     const report = await prisma.report.create({
       data: {
         title: title || 'User Report',
         description: description,
         userName: userName,
-        image: image || null,
+        image: processedImage,
         projectId: projectId || null,
         userId: userId,
         orgId: orgId
