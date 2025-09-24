@@ -260,7 +260,7 @@ model Report {
   title       String?  @db.VarChar(255)
   description String   @db.Text
   userName    String   @db.VarChar(255)
-  image       String?  @db.Text // Base64 encoded image
+  image       String?  @db.LongText // Base64 encoded image (supports large images)
   projectId   String?
   userId      String   @db.VarChar(36)
   orgId       String

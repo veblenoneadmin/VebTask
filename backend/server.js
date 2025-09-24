@@ -1210,6 +1210,32 @@ app.get('/api/emergency/setup-user-org', async (req, res) => {
   }
 });
 
+// DATABASE COLUMN UPDATE ENDPOINT - Update image column to LONGTEXT
+app.get('/api/migrate/image-column', async (req, res) => {
+  try {
+    console.log('🔄 MIGRATE: Updating image column to LONGTEXT');
+
+    // Execute raw SQL to modify the image column
+    await prisma.$executeRaw`ALTER TABLE reports MODIFY COLUMN image LONGTEXT`;
+
+    console.log('✅ Successfully updated image column to LONGTEXT');
+
+    res.json({
+      success: true,
+      message: 'Image column successfully updated to support large images',
+      details: 'Column type changed from TEXT to LONGTEXT'
+    });
+
+  } catch (error) {
+    console.error('❌ Image column migration failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update image column',
+      details: error.message
+    });
+  }
+});
+
 // DATABASE INSPECTION ENDPOINT
 app.get('/api/inspect/database', async (req, res) => {
   try {
@@ -1319,26 +1345,13 @@ app.post('/api/simple/user-reports', async (req, res) => {
       orgName: anyOrg.name
     });
 
-    // Handle image size limit (truncate if too large)
-    let processedImage = null;
-    if (image) {
-      // Limit image to reasonable size for TEXT column (65KB)
-      const maxImageSize = 65000;
-      if (image.length > maxImageSize) {
-        console.log(`⚠️ Image too large (${image.length} chars), truncating to ${maxImageSize}`);
-        processedImage = image.substring(0, maxImageSize);
-      } else {
-        processedImage = image;
-      }
-    }
-
-    // Create report with available user/org
+    // Create report with available user/org (now supports full-size images with LongText column)
     const report = await prisma.report.create({
       data: {
         title: title || 'User Report',
         description: description,
         userName: userName,
-        image: processedImage,
+        image: image || null, // Full image data now supported
         projectId: null, // Skip project to avoid constraint issues
         userId: anyUser.id,
         orgId: anyOrg.id
@@ -1400,25 +1413,13 @@ app.post('/api/bulletproof/user-reports', async (req, res) => {
       });
     }
 
-    // Handle image size limit (truncate if too large)
-    let processedImage = null;
-    if (image) {
-      const maxImageSize = 65000;
-      if (image.length > maxImageSize) {
-        console.log(`⚠️ BULLETPROOF: Image too large (${image.length} chars), truncating to ${maxImageSize}`);
-        processedImage = image.substring(0, maxImageSize);
-      } else {
-        processedImage = image;
-      }
-    }
-
-    // Simple, direct database insert with minimal validation
+    // Simple, direct database insert with minimal validation (full image support)
     const report = await prisma.report.create({
       data: {
         title: title || 'User Report',
         description: description,
         userName: userName,
-        image: processedImage,
+        image: image || null, // Full image data now supported with LongText column
         projectId: projectId || null,
         userId: userId,
         orgId: orgId
