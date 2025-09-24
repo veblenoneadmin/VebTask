@@ -394,7 +394,7 @@ export function Reports() {
 
       console.log('📤 Request payload:', requestPayload);
 
-      const data = await apiClient.fetch(`/api/user-reports`, {
+      const data = await apiClient.fetch(`/api/user-reports?orgId=${currentOrg.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
