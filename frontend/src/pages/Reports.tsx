@@ -381,7 +381,6 @@ export function Reports() {
     }
 
     try {
-      const orgId = currentOrg.id;
       console.log('💾 Saving report:', reportData);
 
       // Create the payload that matches the backend expectation
@@ -414,7 +413,7 @@ export function Reports() {
       }
     } catch (error) {
       console.error('Error saving report:', error);
-      alert(`Error saving report: ${error.message || 'Unknown error'}`);
+      alert(`Error saving report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
