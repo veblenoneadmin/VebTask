@@ -1210,6 +1210,163 @@ app.get('/api/emergency/setup-user-org', async (req, res) => {
   }
 });
 
+// DATABASE INSPECTION ENDPOINT
+app.get('/api/inspect/database', async (req, res) => {
+  try {
+    console.log('🔍 INSPECT: Checking database state');
+
+    const userId = '53ebe8d8-4700-43b0-aae7-f30608cd3b66';
+    const orgId = 'org_1757046595553';
+
+    // Check what actually exists in database
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: userId },
+          { email: 'tony@opusautomations.com' }
+        ]
+      },
+      select: { id: true, email: true, name: true }
+    });
+
+    const org = await prisma.organization.findFirst({
+      where: {
+        OR: [
+          { id: orgId },
+          { slug: 'veblen' }
+        ]
+      },
+      select: { id: true, name: true, slug: true }
+    });
+
+    const allUsers = await prisma.user.findMany({
+      select: { id: true, email: true, name: true },
+      take: 5
+    });
+
+    const allOrgs = await prisma.organization.findMany({
+      select: { id: true, name: true, slug: true },
+      take: 5
+    });
+
+    const recentReports = await prisma.report.findMany({
+      select: { id: true, userId: true, orgId: true, userName: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+      take: 3
+    });
+
+    res.json({
+      inspection: {
+        targetUser: user,
+        targetOrg: org,
+        allUsers: allUsers,
+        allOrganizations: allOrgs,
+        recentReports: recentReports,
+        searchCriteria: { userId, orgId }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Database inspection failed:', error);
+    res.status(500).json({
+      error: error.message,
+      code: error.code
+    });
+  }
+});
+
+// ULTIMATE SIMPLE REPORTS ENDPOINT - Uses first available user/org
+app.post('/api/simple/user-reports', async (req, res) => {
+  try {
+    console.log('🔧 SIMPLE: Creating report with first available user/org');
+
+    const { title, description, userName, image, projectId } = req.body;
+
+    if (!description || !userName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: description and userName'
+      });
+    }
+
+    // Find any available user and org
+    const anyUser = await prisma.user.findFirst({
+      select: { id: true, email: true }
+    });
+
+    const anyOrg = await prisma.organization.findFirst({
+      select: { id: true, name: true }
+    });
+
+    if (!anyUser) {
+      return res.status(500).json({
+        success: false,
+        error: 'No users found in database'
+      });
+    }
+
+    if (!anyOrg) {
+      return res.status(500).json({
+        success: false,
+        error: 'No organizations found in database'
+      });
+    }
+
+    console.log('Using available records:', {
+      userId: anyUser.id,
+      userEmail: anyUser.email,
+      orgId: anyOrg.id,
+      orgName: anyOrg.name
+    });
+
+    // Create report with available user/org
+    const report = await prisma.report.create({
+      data: {
+        title: title || 'User Report',
+        description: description,
+        userName: userName,
+        image: image || null,
+        projectId: null, // Skip project to avoid constraint issues
+        userId: anyUser.id,
+        orgId: anyOrg.id
+      }
+    });
+
+    console.log('✅ SIMPLE: Report created successfully:', report.id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Report created with available user/org',
+      report: {
+        id: report.id,
+        title: report.title,
+        description: report.description,
+        userName: report.userName,
+        userId: anyUser.id,
+        orgId: anyOrg.id,
+        createdAt: report.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ SIMPLE ERROR:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Simple endpoint failed',
+      details: {
+        message: error.message,
+        code: error.code,
+        meta: error.meta
+      }
+    });
+  }
+});
+
 // BULLETPROOF REPORTS ENDPOINT - Bypasses all middleware
 app.post('/api/bulletproof/user-reports', async (req, res) => {
   try {

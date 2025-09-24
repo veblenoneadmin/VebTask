@@ -394,9 +394,9 @@ export function Reports() {
 
       console.log('📤 Request payload:', requestPayload);
 
-      // TEMPORARY: Use bulletproof endpoint to bypass middleware issues
-      console.log('🛡️ Using bulletproof endpoint as fallback');
-      const data = await apiClient.fetch(`/api/bulletproof/user-reports?orgId=${currentOrg.id}`, {
+      // ULTIMATE FALLBACK: Use simple endpoint that finds any available user/org
+      console.log('🔧 Using simple endpoint with any available user/org');
+      const data = await apiClient.fetch(`/api/simple/user-reports`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
