@@ -115,6 +115,46 @@ router.post('/', requireAuth, withOrgScope, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Description and userName are required' });
     }
 
+    // Validate that the user exists in database
+    const userExists = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true }
+    });
+
+    if (!userExists) {
+      console.error('❌ User not found in database:', userId);
+      return res.status(400).json({ success: false, error: 'User not found in database' });
+    }
+
+    // Validate that the organization exists in database
+    const orgExists = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { id: true, name: true }
+    });
+
+    if (!orgExists) {
+      console.error('❌ Organization not found in database:', orgId);
+      return res.status(400).json({ success: false, error: 'Organization not found in database' });
+    }
+
+    // Validate project if provided
+    if (projectId) {
+      const projectExists = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { id: true, orgId: true }
+      });
+
+      if (!projectExists) {
+        console.error('❌ Project not found:', projectId);
+        return res.status(400).json({ success: false, error: 'Project not found' });
+      }
+
+      if (projectExists.orgId !== orgId) {
+        console.error('❌ Project belongs to different organization:', { projectId, projectOrgId: projectExists.orgId, requestOrgId: orgId });
+        return res.status(400).json({ success: false, error: 'Project belongs to different organization' });
+      }
+    }
+
     console.log('📝 Creating user report:', { orgId, userId, projectId, userName });
 
     const report = await prisma.report.create({
@@ -176,12 +216,45 @@ router.post('/', requireAuth, withOrgScope, async (req, res) => {
     console.error('❌ Error creating user report:', {
       message: error.message,
       code: error.code,
-      stack: error.stack?.split('\n').slice(0, 3).join('\n')
+      meta: error.meta,
+      stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+      requestData: {
+        orgId: req.query.orgId,
+        userId: req.user?.id,
+        userName: req.body.userName,
+        hasDescription: !!req.body.description
+      }
     });
-    res.status(500).json({
+
+    // Handle specific Prisma errors
+    let errorMessage = 'Failed to create user report';
+    let statusCode = 500;
+
+    if (error.code === 'P2002') {
+      errorMessage = 'A report with this data already exists';
+      statusCode = 400;
+    } else if (error.code === 'P2003') {
+      errorMessage = 'Referenced data not found (user, organization, or project)';
+      statusCode = 400;
+    } else if (error.code === 'P2025') {
+      errorMessage = 'Required data not found';
+      statusCode = 404;
+    } else if (error.message?.includes('User')) {
+      errorMessage = 'User authentication error';
+      statusCode = 401;
+    } else if (error.message?.includes('Organization')) {
+      errorMessage = 'Organization not found';
+      statusCode = 400;
+    }
+
+    res.status(statusCode).json({
       success: false,
-      error: 'Failed to create user report',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? {
+        originalError: error.message,
+        code: error.code,
+        meta: error.meta
+      } : undefined
     });
   }
 });
