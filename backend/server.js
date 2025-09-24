@@ -1119,6 +1119,155 @@ app.get('/debug-tony-user', async (req, res) => {
   }
 });
 
+// EMERGENCY FIX - Ensure user and org exist for reports
+app.get('/api/emergency/setup-user-org', async (req, res) => {
+  try {
+    console.log('🚨 EMERGENCY: Setting up user and organization for reports');
+
+    const requiredUserId = '53ebe8d8-4700-43b0-aae7-f30608cd3b66';
+    const requiredOrgId = 'org_1757046595553';
+    const userEmail = 'tony@opusautomations.com';
+
+    // Step 1: Ensure user exists
+    let user = await prisma.user.findUnique({
+      where: { id: requiredUserId }
+    });
+
+    if (!user) {
+      console.log('👤 Creating missing user...');
+      user = await prisma.user.create({
+        data: {
+          id: requiredUserId,
+          email: userEmail,
+          name: 'Tony',
+          emailVerified: true
+        }
+      });
+      console.log('✅ User created:', user.id);
+    } else {
+      console.log('✅ User exists:', user.id);
+    }
+
+    // Step 2: Ensure organization exists
+    let org = await prisma.organization.findUnique({
+      where: { id: requiredOrgId }
+    });
+
+    if (!org) {
+      console.log('🏢 Creating missing organization...');
+      org = await prisma.organization.create({
+        data: {
+          id: requiredOrgId,
+          name: 'Veblen',
+          slug: 'veblen',
+          createdById: requiredUserId
+        }
+      });
+      console.log('✅ Organization created:', org.id);
+    } else {
+      console.log('✅ Organization exists:', org.id);
+    }
+
+    // Step 3: Ensure membership exists
+    let membership = await prisma.membership.findFirst({
+      where: {
+        userId: requiredUserId,
+        orgId: requiredOrgId
+      }
+    });
+
+    if (!membership) {
+      console.log('👥 Creating missing membership...');
+      membership = await prisma.membership.create({
+        data: {
+          userId: requiredUserId,
+          orgId: requiredOrgId,
+          role: 'OWNER'
+        }
+      });
+      console.log('✅ Membership created:', membership.id);
+    } else {
+      console.log('✅ Membership exists:', membership.id);
+    }
+
+    res.json({
+      success: true,
+      message: 'User and organization setup complete',
+      data: {
+        user: { id: user.id, email: user.email },
+        organization: { id: org.id, name: org.name },
+        membership: { id: membership.id, role: membership.role }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Emergency setup failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      code: error.code
+    });
+  }
+});
+
+// DEBUG ENDPOINT - Test user reports API manually
+app.post('/api/debug/test-user-report', async (req, res) => {
+  try {
+    console.log('🔧 DEBUG: Testing user report creation');
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    console.log('User:', req.user);
+    console.log('Query:', req.query);
+
+    const { title, description, userName, image, projectId } = req.body;
+    const orgId = req.query.orgId || 'org_1757046595553';
+
+    // Simulate the exact scenario from frontend
+    const testUserId = req.user?.id || '53ebe8d8-4700-43b0-aae7-f30608cd3b66'; // fallback
+
+    console.log('🔧 Debug values:', { orgId, testUserId, title, description, userName });
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: testUserId },
+      select: { id: true, email: true, name: true }
+    });
+    console.log('👤 User found:', user);
+
+    // Check if org exists
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { id: true, name: true, slug: true }
+    });
+    console.log('🏢 Organization found:', org);
+
+    // Check memberships
+    const membership = await prisma.membership.findFirst({
+      where: { userId: testUserId, orgId: orgId },
+      select: { role: true, userId: true, orgId: true }
+    });
+    console.log('👥 Membership found:', membership);
+
+    const result = {
+      debug: true,
+      user: user,
+      organization: org,
+      membership: membership,
+      requestData: { title, description, userName, projectId },
+      testParams: { orgId, testUserId }
+    };
+
+    res.json(result);
+  } catch (error) {
+    console.error('❌ Debug endpoint error:', error);
+    res.status(500).json({
+      error: error.message,
+      code: error.code,
+      debug: true
+    });
+  }
+});
+
 // Test endpoint for Whisper API debugging
 app.get('/api/ai/whisper-status', (req, res) => {
   const openaiKey = process.env.OPENAI_API_KEY;
