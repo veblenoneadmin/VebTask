@@ -344,7 +344,6 @@ export function Reports() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [showDateSelector, setShowDateSelector] = useState(false);
 
   // Fetch reports from database
   const fetchReports = async () => {
