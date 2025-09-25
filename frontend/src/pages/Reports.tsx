@@ -454,6 +454,44 @@ export function Reports() {
     }
   };
 
+  // Convert Tailwind color classes to hex colors
+  const tailwindToHex = (tailwindClass: string): string => {
+    const colorMap: { [key: string]: string } = {
+      'bg-primary': '#3b82f6',    // blue-500
+      'bg-secondary': '#6b7280',  // gray-500
+      'bg-success': '#10b981',    // emerald-500
+      'bg-warning': '#f59e0b',    // amber-500
+      'bg-danger': '#ef4444',     // red-500
+      'bg-info': '#06b6d4',       // cyan-500
+      'bg-purple': '#8b5cf6',     // violet-500
+      'bg-pink': '#ec4899',       // pink-500
+      'bg-indigo': '#6366f1',     // indigo-500
+      'bg-green': '#22c55e',      // green-500
+      'bg-red': '#ef4444',        // red-500
+      'bg-blue': '#3b82f6',       // blue-500
+      'bg-yellow': '#eab308',     // yellow-500
+      'bg-orange': '#f97316',     // orange-500
+      'bg-teal': '#14b8a6',       // teal-500
+      'bg-cyan': '#06b6d4',       // cyan-500
+    };
+    return colorMap[tailwindClass] || '#6b7280';
+  };
+
+  // Get project color for reports
+  const getProjectColor = (project?: any): string => {
+    if (!project?.color) {
+      return '#6b7280'; // Default gray color
+    }
+
+    // If it's already a hex color, return as is
+    if (project.color.startsWith('#')) {
+      return project.color;
+    }
+
+    // If it's a Tailwind class, convert to hex
+    return tailwindToHex(project.color);
+  };
+
   // Filter reports based on selected date
   const filteredReports = selectedDate
     ? reports.filter(report =>
@@ -580,8 +618,16 @@ export function Reports() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredReports.map((report) => (
-              <Card key={report.id} className="glass shadow-elevation hover:shadow-glow transition-all">
+            {filteredReports.map((report) => {
+              const projectColor = getProjectColor(report.project);
+
+              return (
+              <Card key={report.id} className="glass shadow-elevation hover:shadow-glow transition-all relative">
+                {/* Project Color Border */}
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-1 z-10 rounded-l-lg"
+                  style={{ backgroundColor: projectColor }}
+                />
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
@@ -649,7 +695,8 @@ export function Reports() {
                   )}
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
