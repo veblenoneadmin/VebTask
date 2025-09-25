@@ -454,37 +454,12 @@ export function Reports() {
     }
   };
 
-  // Group reports by date
-  const getReportsByDate = () => {
-    const grouped = reports.reduce((acc, report) => {
-      const date = new Date(report.createdAt).toDateString();
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(report);
-      return acc;
-    }, {});
-
-    // Sort dates in descending order (most recent first)
-    return Object.keys(grouped)
-      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-      .map(date => ({
-        date,
-        dateObj: new Date(date),
-        reports: grouped[date],
-        count: grouped[date].length
-      }));
-  };
-
   // Filter reports based on selected date
   const filteredReports = selectedDate
     ? reports.filter(report =>
         new Date(report.createdAt).toDateString() === new Date(selectedDate).toDateString()
       )
     : reports;
-
-  // Get unique dates from reports
-  const reportDates = getReportsByDate();
 
   return (
     <div className="space-y-8">
@@ -513,50 +488,33 @@ export function Reports() {
             </div>
 
             <div className="flex gap-3 items-center">
-              <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-4 py-2 glass-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-white min-w-[200px]"
-              >
-                <option value="">All Dates ({reports.length} reports)</option>
-                {reportDates.map(({ date, dateObj, count }) => (
-                  <option key={date} value={dateObj.toISOString()}>
-                    {dateObj.toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })} ({count} report{count !== 1 ? 's' : ''})
-                  </option>
-                ))}
-              </select>
-
-              <span className="text-muted-foreground">or</span>
-
               <input
                 type="date"
+                value={selectedDate ? new Date(selectedDate).toISOString().split('T')[0] : ''}
                 onChange={(e) => {
                   if (e.target.value) {
                     const selectedDate = new Date(e.target.value + 'T00:00:00.000Z');
                     setSelectedDate(selectedDate.toISOString());
+                  } else {
+                    setSelectedDate('');
                   }
                 }}
                 className="px-3 py-2 glass-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-white"
-                title="Pick any date"
+                title="Pick a date to filter reports"
               />
-            </div>
 
-            {selectedDate && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedDate('')}
-                className="text-muted-foreground hover:text-white"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Clear Filter
-              </Button>
-            )}
+              {selectedDate && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedDate('')}
+                  className="text-muted-foreground hover:text-white"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear Filter
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
