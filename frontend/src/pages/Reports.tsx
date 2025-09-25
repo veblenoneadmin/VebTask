@@ -14,6 +14,7 @@ import {
   Save,
   Building2,
   Trash2,
+  Calendar,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { createPortal } from 'react-dom';
@@ -342,6 +343,8 @@ export function Reports() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [showDateSelector, setShowDateSelector] = useState(false);
 
   // Fetch reports from database
   const fetchReports = async () => {
@@ -452,6 +455,38 @@ export function Reports() {
     }
   };
 
+  // Group reports by date
+  const getReportsByDate = () => {
+    const grouped = reports.reduce((acc, report) => {
+      const date = new Date(report.createdAt).toDateString();
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(report);
+      return acc;
+    }, {});
+
+    // Sort dates in descending order (most recent first)
+    return Object.keys(grouped)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+      .map(date => ({
+        date,
+        dateObj: new Date(date),
+        reports: grouped[date],
+        count: grouped[date].length
+      }));
+  };
+
+  // Filter reports based on selected date
+  const filteredReports = selectedDate
+    ? reports.filter(report =>
+        new Date(report.createdAt).toDateString() === new Date(selectedDate).toDateString()
+      )
+    : reports;
+
+  // Get unique dates from reports
+  const reportDates = getReportsByDate();
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -469,6 +504,61 @@ export function Reports() {
         </Button>
       </div>
 
+      {/* Date Filter */}
+      <Card className="glass shadow-elevation">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Filter by Date
+            </h3>
+            {selectedDate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedDate('')}
+                className="text-muted-foreground hover:text-white"
+              >
+                Show All Reports
+              </Button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {reportDates.map(({ date, dateObj, count }) => (
+              <button
+                key={date}
+                onClick={() => setSelectedDate(dateObj.toISOString())}
+                className={cn(
+                  "p-3 rounded-lg border transition-all text-left",
+                  selectedDate && new Date(selectedDate).toDateString() === date
+                    ? "bg-primary/20 border-primary text-primary"
+                    : "glass-surface border-border hover:border-primary/50 hover:bg-surface-elevated/50"
+                )}
+              >
+                <div className="font-medium text-sm">
+                  {dateObj.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {count} report{count !== 1 ? 's' : ''}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {reportDates.length === 0 && (
+            <div className="text-center py-4 text-muted-foreground">
+              No reports available to filter by date
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Reports List */}
       <div className="space-y-6">
         {loading ? (
@@ -479,24 +569,58 @@ export function Reports() {
               <p className="text-muted-foreground">Please wait while we fetch your reports.</p>
             </CardContent>
           </Card>
-        ) : reports.length === 0 ? (
+        ) : filteredReports.length === 0 ? (
           <Card className="glass shadow-elevation">
             <CardContent className="p-12 text-center">
               <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Reports Yet</h3>
-              <p className="text-muted-foreground mb-6">Create your first report to get started with project analysis and documentation.</p>
-              <Button
-                onClick={() => setShowReportModal(true)}
-                className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Report
-              </Button>
+              {selectedDate ? (
+                <>
+                  <h3 className="text-xl font-semibold mb-2">No Reports for Selected Date</h3>
+                  <p className="text-muted-foreground mb-6">
+                    No reports were created on{' '}
+                    {new Date(selectedDate).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                    . Try selecting a different date or create a new report.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedDate('')}
+                      className="shadow-glow"
+                    >
+                      Show All Reports
+                    </Button>
+                    <Button
+                      onClick={() => setShowReportModal(true)}
+                      className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Report
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl font-semibold mb-2">No Reports Yet</h3>
+                  <p className="text-muted-foreground mb-6">Create your first report to get started with project analysis and documentation.</p>
+                  <Button
+                    onClick={() => setShowReportModal(true)}
+                    className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-glow"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create First Report
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reports.map((report) => (
+            {filteredReports.map((report) => (
               <Card key={report.id} className="glass shadow-elevation hover:shadow-glow transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
