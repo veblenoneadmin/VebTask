@@ -433,7 +433,7 @@ export function Reports() {
     try {
       console.log('🗑️ Deleting report:', reportId);
 
-      const data = await apiClient.fetch(`/api/user-reports/${reportId}?orgId=${currentOrg.id}`, {
+      const data = await apiClient.fetch(`/api/simple/user-reports/${reportId}`, {
         method: 'DELETE',
       });
 

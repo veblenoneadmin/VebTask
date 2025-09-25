@@ -1393,6 +1393,69 @@ app.post('/api/simple/user-reports', async (req, res) => {
   }
 });
 
+// SIMPLE DELETE REPORTS ENDPOINT - Uses first available user/org
+app.delete('/api/simple/user-reports/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('🗑️ SIMPLE: Deleting report with id:', id);
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Report ID is required'
+      });
+    }
+
+    // Check if report exists
+    const existingReport = await prisma.report.findUnique({
+      where: { id },
+      select: { id: true, userName: true, title: true }
+    });
+
+    if (!existingReport) {
+      console.log('❌ Report not found:', id);
+      return res.status(404).json({
+        success: false,
+        error: 'Report not found'
+      });
+    }
+
+    console.log('Found report to delete:', {
+      id: existingReport.id,
+      userName: existingReport.userName,
+      title: existingReport.title
+    });
+
+    // Delete the report
+    await prisma.report.delete({
+      where: { id }
+    });
+
+    console.log('✅ Report deleted successfully:', id);
+
+    res.json({
+      success: true,
+      message: 'Report deleted successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error deleting report:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete report',
+      details: {
+        message: error.message,
+        code: error.code,
+        meta: error.meta
+      }
+    });
+  }
+});
+
 // BULLETPROOF REPORTS ENDPOINT - Bypasses all middleware
 app.post('/api/bulletproof/user-reports', async (req, res) => {
   try {
