@@ -13,6 +13,7 @@ import {
   X,
   Save,
   Building2,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { createPortal } from 'react-dom';
@@ -419,6 +420,38 @@ export function Reports() {
     }
   };
 
+  const handleDeleteReport = async (reportId: string) => {
+    if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+      return;
+    }
+
+    if (!currentOrg?.id) {
+      alert('Please make sure you have selected an organization.');
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting report:', reportId);
+
+      const data = await apiClient.fetch(`/api/user-reports/${reportId}?orgId=${currentOrg.id}`, {
+        method: 'DELETE',
+      });
+
+      if (data.success) {
+        console.log('✅ Report deleted successfully');
+        alert('Report deleted successfully!');
+        // Refresh the reports list
+        await fetchReports();
+      } else {
+        console.error('Failed to delete report:', data.error);
+        alert(`Failed to delete report: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      alert(`Error deleting report: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -470,9 +503,20 @@ export function Reports() {
                     <div className="h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
                       <FileText className="h-5 w-5 text-white" />
                     </div>
-                    <Badge className="bg-success/20 text-success">
-                      {new Date(report.createdAt).toLocaleDateString()}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-success/20 text-success">
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteReport(report.id)}
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                        title="Delete report"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
