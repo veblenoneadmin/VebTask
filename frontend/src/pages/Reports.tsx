@@ -506,11 +506,46 @@ export function Reports() {
       {/* Date Filter */}
       <Card className="glass shadow-elevation">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Filter by Date
-            </h3>
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              <label className="text-sm font-medium text-white">Filter by Date:</label>
+            </div>
+
+            <div className="flex gap-3 items-center">
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-4 py-2 glass-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-white min-w-[200px]"
+              >
+                <option value="">All Dates ({reports.length} reports)</option>
+                {reportDates.map(({ date, dateObj, count }) => (
+                  <option key={date} value={dateObj.toISOString()}>
+                    {dateObj.toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })} ({count} report{count !== 1 ? 's' : ''})
+                  </option>
+                ))}
+              </select>
+
+              <span className="text-muted-foreground">or</span>
+
+              <input
+                type="date"
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const selectedDate = new Date(e.target.value + 'T00:00:00.000Z');
+                    setSelectedDate(selectedDate.toISOString());
+                  }
+                }}
+                className="px-3 py-2 glass-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-white"
+                title="Pick any date"
+              />
+            </div>
+
             {selectedDate && (
               <Button
                 variant="ghost"
@@ -518,43 +553,11 @@ export function Reports() {
                 onClick={() => setSelectedDate('')}
                 className="text-muted-foreground hover:text-white"
               >
-                Show All Reports
+                <X className="h-4 w-4 mr-1" />
+                Clear Filter
               </Button>
             )}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {reportDates.map(({ date, dateObj, count }) => (
-              <button
-                key={date}
-                onClick={() => setSelectedDate(dateObj.toISOString())}
-                className={cn(
-                  "p-3 rounded-lg border transition-all text-left",
-                  selectedDate && new Date(selectedDate).toDateString() === date
-                    ? "bg-primary/20 border-primary text-primary"
-                    : "glass-surface border-border hover:border-primary/50 hover:bg-surface-elevated/50"
-                )}
-              >
-                <div className="font-medium text-sm">
-                  {dateObj.toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {count} report{count !== 1 ? 's' : ''}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {reportDates.length === 0 && (
-            <div className="text-center py-4 text-muted-foreground">
-              No reports available to filter by date
-            </div>
-          )}
         </CardContent>
       </Card>
 
