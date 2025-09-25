@@ -248,7 +248,7 @@ function ReportModal({ isOpen, onClose, onSave }: ReportModalProps) {
                     <img
                       src={uploadedImage}
                       alt="Uploaded screenshot"
-                      className="w-full max-h-48 object-cover rounded-lg border border-border"
+                      className="w-full max-h-96 object-contain rounded-lg border border-border"
                     />
                     <button
                       type="button"
@@ -492,7 +492,8 @@ export function Reports() {
                       <img
                         src={report.image}
                         alt="Report screenshot"
-                        className="w-full h-32 object-cover rounded border border-border"
+                        className="w-full max-h-96 object-contain rounded border border-border cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => window.open(report.image, '_blank')}
                       />
                     </div>
                   )}
