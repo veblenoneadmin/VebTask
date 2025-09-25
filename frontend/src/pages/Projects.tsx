@@ -85,7 +85,6 @@ export function Projects() {
   const [, setSelectedProject] = useState<DatabaseProject | null>(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState<DatabaseProject | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<DatabaseProject | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [showFullTitle, setShowFullTitle] = useState<string | null>(null);
   const [showFullDescription, setShowFullDescription] = useState<string | null>(null);
@@ -165,13 +164,17 @@ export function Projects() {
   };
 
 
-  const handleDeleteProject = async (projectId: string) => {
+  const handleDeleteProject = async (project: DatabaseProject) => {
+    if (!confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
     if (!session?.user?.id) return;
 
     try {
-      console.log('🗑️ Deleting project:', projectId);
+      console.log('🗑️ Deleting project:', project.id);
 
-      const data = await apiClient.fetch(`/api/projects/${projectId}`, {
+      const data = await apiClient.fetch(`/api/projects/${project.id}`, {
         method: 'DELETE',
       });
 
@@ -179,13 +182,13 @@ export function Projects() {
         console.log('✅ Project deleted successfully');
         // Refresh the projects list
         await fetchProjects();
-        setShowDeleteConfirm(null);
       } else {
         console.error('❌ Failed to delete project:', data.error);
         throw new Error(data.error || 'Failed to delete project');
       }
     } catch (error: any) {
       console.error('❌ Error deleting project:', error);
+      alert('Failed to delete project. Please try again.');
     }
   };
 
@@ -592,8 +595,8 @@ export function Projects() {
                           className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-red-400 hover:text-red-300 flex items-center gap-2"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setShowDeleteConfirm(project);
                             setDropdownOpen(null);
+                            handleDeleteProject(project);
                           }}
                         >
                           <Trash2 className="h-3 w-3" />
@@ -782,86 +785,6 @@ export function Projects() {
         } : undefined}
       />
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && createPortal(
-        <div
-          className="modal-overlay glass"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 99999
-          }}
-          onClick={(e) => {
-            // Close modal when clicking on overlay (not the modal content)
-            if (e.target === e.currentTarget) {
-              setShowDeleteConfirm(null);
-            }
-          }}
-        >
-          <div
-            className="modal-content glass shadow-elevation"
-            style={{
-              maxWidth: '400px',
-              width: '95%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              position: 'relative',
-              backgroundColor: '#1a1a1a',
-              borderRadius: '12px',
-              border: '1px solid #333'
-            }}
-          >
-            <div className="modal-header" style={{
-              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-              borderRadius: '8px 8px 0 0',
-              padding: '24px',
-              color: 'white'
-            }}>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Trash2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold m-0">Delete Project</h2>
-                  <p className="text-white/80 text-sm m-0 mt-1">
-                    This action cannot be undone
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ padding: '24px' }}>
-              <p className="text-white mb-6">
-                Are you sure you want to delete "{showDeleteConfirm.name}"? This will permanently remove the project and all associated data.
-              </p>
-
-              <div className="flex justify-end gap-3">
-                <button
-                  className="px-6 py-2 bg-surface-elevated hover:bg-muted border border-border rounded-lg text-white transition-all"
-                  onClick={() => setShowDeleteConfirm(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg text-white font-medium transition-all flex items-center gap-2 shadow-glow"
-                  onClick={() => handleDeleteProject(showDeleteConfirm.id)}
-                >
-                  <Trash2 size={16} />
-                  Delete Project
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {/* Full Title Modal */}
       {showFullTitle && createPortal(
