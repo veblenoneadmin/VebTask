@@ -81,8 +81,8 @@ export function TimeLogs() {
           const transformedLogs: TimeLog[] = (data.entries || []).map((entry: any) => ({
             id: entry.id,
             taskTitle: entry.taskTitle || 'Untitled Task',
-            projectName: 'Unknown Project', // TODO: Add project name from API
-            clientName: 'Unknown Client', // TODO: Add client name from API
+            projectName: entry.projectName || 'General',
+            clientName: entry.clientName || 'Internal',
             date: entry.startTime ? new Date(entry.startTime).toISOString().split('T')[0] : '',
             startTime: entry.startTime ? new Date(entry.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '',
             endTime: entry.endTime ? new Date(entry.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '',

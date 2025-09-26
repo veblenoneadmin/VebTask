@@ -284,7 +284,20 @@ export class TimerService {
           select: {
             id: true,
             title: true,
-            category: true
+            category: true,
+            projectId: true,
+            project: {
+              select: {
+                id: true,
+                name: true,
+                client: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              }
+            }
           }
         }
       },

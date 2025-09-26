@@ -650,7 +650,7 @@ export function Reports() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <h3 className="font-semibold text-lg mb-2">{report.title || report.project?.name || 'General Report'}</h3>
+                  <h3 className="font-semibold text-lg mb-2">{report.title || 'General Report'}</h3>
                   <p className="text-sm text-muted-foreground mb-2">Created by {report.userName}</p>
 
                   {report.description && (

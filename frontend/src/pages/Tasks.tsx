@@ -144,7 +144,9 @@ export function Tasks() {
       if (data.success) {
         const tasksWithDefaults = (data.tasks || []).map((task: any) => ({
           ...task,
-          tags: task.tags || []
+          tags: task.tags || [],
+          // Use the current project name from the project relation, not the stored category
+          project: task.project || 'General'
         }));
         setTasks(tasksWithDefaults);
       } else {

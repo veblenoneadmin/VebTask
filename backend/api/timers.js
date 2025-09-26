@@ -208,12 +208,15 @@ router.get('/recent', requireAuth, withOrgScope, validateQuery(commonSchemas.pag
     }
     
     const entries = await timerService.getRecentEntries(userId, orgId, parseInt(limit));
-    
+
     res.json({
       entries: entries.map(entry => ({
         id: entry.id,
         taskId: entry.taskId,
         taskTitle: entry.task?.title || 'Untitled Task',
+        projectName: entry.task?.project?.name || 'General',
+        projectId: entry.task?.projectId,
+        clientName: entry.task?.project?.client?.name || 'Internal',
         description: entry.description,
         category: entry.category,
         startTime: entry.begin,
