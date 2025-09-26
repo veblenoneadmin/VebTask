@@ -27,13 +27,6 @@ export class TimerService {
             id: true,
             title: true
           }
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
         }
       },
       orderBy: {
@@ -72,13 +65,6 @@ export class TimerService {
             select: {
               id: true,
               title: true
-            }
-          },
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
             }
           }
         }
@@ -121,13 +107,6 @@ export class TimerService {
           select: {
             id: true,
             title: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
           }
         }
       }
@@ -331,13 +310,6 @@ export class TimerService {
           select: {
             id: true,
             title: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
           }
         }
       }
