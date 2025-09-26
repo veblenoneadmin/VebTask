@@ -260,6 +260,7 @@ router.post('/', requireAuth, withOrgScope, validateBody(taskSchemas.create), as
         priority,
         estimatedHours: parseFloat(estimatedHours),
         category: taskCategory,
+        projectId: projectId || null,
         dueDate: dueDate ? new Date(dueDate) : null,
         tags: tags || null
       },
@@ -269,6 +270,14 @@ router.post('/', requireAuth, withOrgScope, validateBody(taskSchemas.create), as
             id: true,
             name: true,
             email: true
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            status: true
           }
         }
       }
@@ -321,7 +330,7 @@ router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (r
       updates.actualHours = typeof updates.actualHours === 'number' ? updates.actualHours : parseFloat(updates.actualHours) || 0;
     }
 
-    // Handle projectId - convert to category field
+    // Handle projectId - store it in database and also update category for compatibility
     if (updates.projectId !== undefined) {
       if (updates.projectId) {
         try {
@@ -331,14 +340,15 @@ router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (r
           });
           if (project) {
             updates.category = `Project: ${project.name}`;
+            // Keep projectId - it IS a valid database field
           }
         } catch (error) {
           console.error('Error fetching project for task update:', error);
         }
       } else {
         updates.category = 'General';
+        updates.projectId = null; // Set to null for no project
       }
-      delete updates.projectId; // Remove projectId since it's not a field in the DB
     }
 
     const task = await prisma.macroTask.update({
@@ -350,6 +360,14 @@ router.put('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async (r
             id: true,
             name: true,
             email: true
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            status: true
           }
         }
       }
@@ -402,7 +420,7 @@ router.patch('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async 
       updates.actualHours = typeof updates.actualHours === 'number' ? updates.actualHours : parseFloat(updates.actualHours) || 0;
     }
 
-    // Handle projectId - convert to category field
+    // Handle projectId - store it in database and also update category for compatibility
     if (updates.projectId !== undefined) {
       if (updates.projectId) {
         try {
@@ -412,14 +430,15 @@ router.patch('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async 
           });
           if (project) {
             updates.category = `Project: ${project.name}`;
+            // Keep projectId - it IS a valid database field
           }
         } catch (error) {
           console.error('Error fetching project for task update:', error);
         }
       } else {
         updates.category = 'General';
+        updates.projectId = null; // Set to null for no project
       }
-      delete updates.projectId; // Remove projectId since it's not a field in the DB
     }
 
     const task = await prisma.macroTask.update({
@@ -431,6 +450,14 @@ router.patch('/:taskId', requireAuth, withOrgScope, requireTaskOwnership, async 
             id: true,
             name: true,
             email: true
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            status: true
           }
         }
       }
